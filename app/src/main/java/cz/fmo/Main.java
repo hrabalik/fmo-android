@@ -1,6 +1,7 @@
 package cz.fmo;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -159,5 +160,10 @@ public class Main extends AppCompatActivity {
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);
+    }
+
+    public void runLiveCameraActivity(View view) {
+        Intent intent = new Intent(this, com.android.grafika.LiveCameraActivity.class);
+        startActivity(intent);
     }
 }
