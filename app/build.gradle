@@ -7,7 +7,7 @@ android {
     defaultConfig {
         applicationId "cz.fmo"
         minSdkVersion 18
-        targetSdkVersion 24
+        targetSdkVersion 18
         versionCode 1
         versionName "1.0"
     }

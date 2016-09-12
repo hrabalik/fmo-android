@@ -37,5 +37,13 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         </activity>
+
+        <activity
+            android:name="com.android.grafika.ContinuousCaptureActivity"
+            android:label="Live camera (TextureView)"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        </activity>
     </application>
 </manifest>

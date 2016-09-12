@@ -166,4 +166,9 @@ public class Main extends AppCompatActivity {
         Intent intent = new Intent(this, com.android.grafika.LiveCameraActivity.class);
         startActivity(intent);
     }
+
+    public void runContinuousCaptureActivity(View view) {
+        Intent intent = new Intent(this, com.android.grafika.ContinuousCaptureActivity.class);
+        startActivity(intent);
+    }
 }
