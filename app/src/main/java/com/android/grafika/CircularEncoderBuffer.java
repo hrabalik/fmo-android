@@ -17,7 +17,6 @@
 package com.android.grafika;
 
 import android.media.MediaCodec;
-import android.util.Log;
 
 import java.nio.ByteBuffer;
 
@@ -30,7 +29,6 @@ import java.nio.ByteBuffer;
  * Not thread-safe.
  */
 public class CircularEncoderBuffer {
-    private static final String TAG = "Grafika";
     private static final boolean EXTRA_DEBUG = true;
     private static final boolean VERBOSE = false;
 
@@ -45,15 +43,15 @@ public class CircularEncoderBuffer {
     // as needed.  This is a bit awkward when we hit the edge of the buffer, but for that
     // we can just do an allocation and data copy (we know it happens at most once per file
     // save operation).
-    private ByteBuffer mDataBufferWrapper;
-    private byte[] mDataBuffer;
+    private final ByteBuffer mDataBufferWrapper;
+    private final byte[] mDataBuffer;
 
     // Meta-data held here.  We're using a collection of arrays, rather than an array of
     // objects with multiple fields, to minimize allocations and heap footprint.
-    private int[] mPacketFlags;
-    private long[] mPacketPtsUsec;
-    private int[] mPacketStart;
-    private int[] mPacketLength;
+    private final int[] mPacketFlags;
+    private final long[] mPacketPtsUsec;
+    private final int[] mPacketStart;
+    private final int[] mPacketLength;
 
     // Data is added at head and removed from tail.  Head points to an empty node, so if
     // head==tail the list is empty.
@@ -82,9 +80,9 @@ public class CircularEncoderBuffer {
         mPacketLength = new int[metaBufferCount];
 
         if (VERBOSE) {
-            Log.d(TAG, "CBE: bitRate=" + bitRate + " frameRate=" + frameRate +
+            Log.d("CBE: bitRate=" + bitRate + " frameRate=" + frameRate +
                     " desiredSpan=" + desiredSpanSec + ": dataBufferSize=" + dataBufferSize +
-                " metaBufferCount=" + metaBufferCount);
+                    " metaBufferCount=" + metaBufferCount);
         }
     }
 
@@ -108,16 +106,15 @@ public class CircularEncoderBuffer {
     /**
      * Adds a new encoded data packet to the buffer.
      *
-     * @param buf The data.  Set position() to the start offset and limit() to position+size.
-     *     The position and limit may be altered by this method.
-     * @param size Number of bytes in the packet.
-     * @param flags MediaCodec.BufferInfo flags.
+     * @param buf     The data.  Set position() to the start offset and limit() to position+size.
+     *                The position and limit may be altered by this method.
+     * @param flags   MediaCodec.BufferInfo flags.
      * @param ptsUsec Presentation time stamp, in microseconds.
      */
     public void add(ByteBuffer buf, int flags, long ptsUsec) {
         int size = buf.limit() - buf.position();
         if (VERBOSE) {
-            Log.d(TAG, "add size=" + size + " flags=0x" + Integer.toHexString(flags) +
+            Log.d("add size=" + size + " flags=0x" + Integer.toHexString(flags) +
                     " pts=" + ptsUsec);
         }
         while (!canAdd(size)) {
@@ -139,7 +136,9 @@ public class CircularEncoderBuffer {
         } else {
             // two chunks
             int firstSize = dataLen - packetStart;
-            if (VERBOSE) { Log.v(TAG, "split, firstsize=" + firstSize + " size=" + size); }
+            if (VERBOSE) {
+                Log.v("split, firstsize=" + firstSize + " size=" + size);
+            }
             buf.get(mDataBuffer, packetStart, firstSize);
             buf.get(mDataBuffer, 0, size - firstSize);
         }
@@ -172,7 +171,7 @@ public class CircularEncoderBuffer {
         }
 
         if (index == mMetaHead) {
-            Log.w(TAG, "HEY: could not find sync frame in buffer");
+            Log.w("HEY: could not find sync frame in buffer");
             index = -1;
         }
         return index;
@@ -202,6 +201,7 @@ public class CircularEncoderBuffer {
         int packetStart = mPacketStart[index];
         int length = mPacketLength[index];
 
+        //noinspection WrongConstant
         info.flags = mPacketFlags[index];
         info.offset = packetStart;
         info.presentationTimeUs = mPacketPtsUsec[index];
@@ -262,7 +262,7 @@ public class CircularEncoderBuffer {
         int nextHead = (mMetaHead + 1) % metaLen;
         if (nextHead == mMetaTail) {
             if (VERBOSE) {
-                Log.v(TAG, "ran out of metadata (head=" + mMetaHead + " tail=" + mMetaTail +")");
+                Log.v("ran out of metadata (head=" + mMetaHead + " tail=" + mMetaTail + ")");
             }
             return false;
         }
@@ -274,14 +274,14 @@ public class CircularEncoderBuffer {
         int freeSpace = (tailStart + dataLen - headStart) % dataLen;
         if (size > freeSpace) {
             if (VERBOSE) {
-                Log.v(TAG, "ran out of data (tailStart=" + tailStart + " headStart=" + headStart +
-                    " req=" + size + " free=" + freeSpace + ")");
+                Log.v("ran out of data (tailStart=" + tailStart + " headStart=" + headStart +
+                        " req=" + size + " free=" + freeSpace + ")");
             }
             return false;
         }
 
         if (VERBOSE) {
-            Log.v(TAG, "OK: size=" + size + " free=" + freeSpace + " metaFree=" +
+            Log.v("OK: size=" + size + " free=" + freeSpace + " metaFree=" +
                     ((mMetaTail + metaLen - mMetaHead) % metaLen - 1));
         }
 

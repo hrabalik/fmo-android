@@ -23,7 +23,6 @@ import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -56,11 +55,9 @@ import cz.fmo.R;
  */
 public class ContinuousCaptureActivity extends Activity implements SurfaceHolder.Callback,
         SurfaceTexture.OnFrameAvailableListener {
-    private static final String TAG = "Grafika";
-
-    private static final int VIDEO_WIDTH = 1280;  // dimensions for 720p video
-    private static final int VIDEO_HEIGHT = 720;
-    private static final int DESIRED_PREVIEW_FPS = 15;
+    private static final int VIDEO_WIDTH = 1920;  // dimensions for 720p video
+    private static final int VIDEO_HEIGHT = 1080;
+    private static final int DESIRED_PREVIEW_FPS = 30;
 
     private EglCore mEglCore;
     private WindowSurface mDisplaySurface;
@@ -93,10 +90,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         public static final int MSG_FILE_SAVE_COMPLETE = 2;
         public static final int MSG_BUFFER_STATUS = 3;
 
-        private WeakReference<ContinuousCaptureActivity> mWeakActivity;
+        private final WeakReference<ContinuousCaptureActivity> mWeakActivity;
 
         public MainHandler(ContinuousCaptureActivity activity) {
-            mWeakActivity = new WeakReference<ContinuousCaptureActivity>(activity);
+            mWeakActivity = new WeakReference<>(activity);
         }
 
         // CircularEncoder.Callback, called on encoder thread
@@ -117,7 +114,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         public void handleMessage(Message msg) {
             ContinuousCaptureActivity activity = mWeakActivity.get();
             if (activity == null) {
-                Log.d(TAG, "Got message for dead activity");
+                Log.d("Got message for dead activity");
                 return;
             }
 
@@ -211,7 +208,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mEglCore.release();
             mEglCore = null;
         }
-        Log.d(TAG, "onPause() done");
+        Log.d("onPause() done");
     }
 
     /**
@@ -236,7 +233,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             }
         }
         if (mCamera == null) {
-            Log.d(TAG, "No front-facing camera found; opening default");
+            Log.d("No front-facing camera found; opening default");
             mCamera = Camera.open();    // opens first back-facing camera
         }
         if (mCamera == null) {
@@ -259,7 +256,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         Camera.Size cameraPreviewSize = parms.getPreviewSize();
         String previewFacts = cameraPreviewSize.width + "x" + cameraPreviewSize.height +
                 " @" + (mCameraPreviewThousandFps / 1000.0f) + "fps";
-        Log.i(TAG, "Camera config: " + previewFacts);
+        Log.i("Camera config: " + previewFacts);
 
         // Set the preview aspect ratio.
         AspectFrameLayout layout = (AspectFrameLayout) findViewById(R.id.continuousCapture_afl);
@@ -274,7 +271,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
-            Log.d(TAG, "releaseCamera -- done");
+            Log.d("releaseCamera -- done");
         }
     }
 
@@ -289,7 +286,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         boolean wantEnabled = (mCircEncoder != null) && !mFileSaveInProgress;
         Button button = (Button) findViewById(R.id.capture_button);
         if (button.isEnabled() != wantEnabled) {
-            Log.d(TAG, "setting enabled = " + wantEnabled);
+            Log.d("setting enabled = " + wantEnabled);
             button.setEnabled(wantEnabled);
         }
     }
@@ -297,10 +294,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     /**
      * Handles onClick for "capture" button.
      */
-    public void clickCapture(@SuppressWarnings("unused") View unused) {
-        Log.d(TAG, "capture");
+    public void clickCapture(@SuppressWarnings("UnusedParameters") View unused) {
+        Log.d("capture");
         if (mFileSaveInProgress) {
-            Log.w(TAG, "HEY: file save is already in progress");
+            Log.w("HEY: file save is already in progress");
             return;
         }
 
@@ -320,7 +317,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      * The file save has completed.  We can resume recording.
      */
     private void fileSaveComplete(int status) {
-        Log.d(TAG, "fileSaveComplete " + status);
+        Log.d("fileSaveComplete " + status);
         if (!mFileSaveInProgress) {
             throw new RuntimeException("WEIRD: got fileSaveCmplete when not in progress");
         }
@@ -350,7 +347,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     @Override   // SurfaceHolder.Callback
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.d(TAG, "surfaceCreated holder=" + holder);
+        Log.d("surfaceCreated holder=" + holder);
 
         // Set up everything that requires an EGL context.
         //
@@ -359,7 +356,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         //
         // The display surface that we use for the SurfaceView, and the encoder surface we
         // use for video, use the same EGL context.
-        mEglCore = new EglCore(null, EglCore.FLAG_RECORDABLE);
+        mEglCore = new EglCore();
         mDisplaySurface = new WindowSurface(mEglCore, holder.getSurface(), false);
         mDisplaySurface.makeCurrent();
 
@@ -369,7 +366,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mCameraTexture = new SurfaceTexture(mTextureId);
         mCameraTexture.setOnFrameAvailableListener(this);
 
-        Log.d(TAG, "starting camera preview");
+        Log.d("starting camera preview");
         try {
             mCamera.setPreviewTexture(mCameraTexture);
         } catch (IOException ioe) {
@@ -393,18 +390,17 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     @Override   // SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        Log.d(TAG, "surfaceChanged fmt=" + format + " size=" + width + "x" + height +
+        Log.d("surfaceChanged fmt=" + format + " size=" + width + "x" + height +
                 " holder=" + holder);
     }
 
     @Override   // SurfaceHolder.Callback
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.d(TAG, "surfaceDestroyed holder=" + holder);
+        Log.d("surfaceDestroyed holder=" + holder);
     }
 
     @Override   // SurfaceTexture.OnFrameAvailableListener; runs on arbitrary thread
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        //Log.d(TAG, "frame available");
         mHandler.sendEmptyMessage(MainHandler.MSG_FRAME_AVAILABLE);
     }
 
@@ -420,9 +416,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      * here after onPause().
      */
     private void drawFrame() {
-        //Log.d(TAG, "drawFrame");
         if (mEglCore == null) {
-            Log.d(TAG, "Skipping drawFrame after shutdown");
+            Log.d("Skipping drawFrame after shutdown");
             return;
         }
 

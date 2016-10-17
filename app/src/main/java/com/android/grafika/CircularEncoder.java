@@ -23,7 +23,6 @@ import android.media.MediaMuxer;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.view.Surface;
 
 import java.io.File;
@@ -49,7 +48,6 @@ import java.nio.ByteBuffer;
  * and then go back to what we were doing.
  */
 public class CircularEncoder {
-    private static final String TAG = "Grafika";
     private static final boolean VERBOSE = false;
 
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
@@ -115,7 +113,7 @@ public class CircularEncoder {
         format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
-        if (VERBOSE) Log.d(TAG, "format: " + format);
+        if (VERBOSE) Log.d("format: " + format);
 
         // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
         // we can use for input and wrap it with a class that handles the EGL work.
@@ -144,14 +142,14 @@ public class CircularEncoder {
      * Does not return until the encoder thread has stopped.
      */
     public void shutdown() {
-        if (VERBOSE) Log.d(TAG, "releasing encoder objects");
+        if (VERBOSE) Log.d("releasing encoder objects");
 
         Handler handler = mEncoderThread.getHandler();
         handler.sendMessage(handler.obtainMessage(EncoderThread.EncoderHandler.MSG_SHUTDOWN));
         try {
             mEncoderThread.join();
         } catch (InterruptedException ie) {
-            Log.w(TAG, "Encoder thread join() was interrupted", ie);
+            Log.w("Encoder thread join() was interrupted", ie);
         }
 
         if (mEncoder != null) {
@@ -212,13 +210,13 @@ public class CircularEncoder {
      * thread has been joined.
      */
     private static class EncoderThread extends Thread {
-        private MediaCodec mEncoder;
+        private final MediaCodec mEncoder;
         private MediaFormat mEncodedFormat;
-        private MediaCodec.BufferInfo mBufferInfo;
+        private final MediaCodec.BufferInfo mBufferInfo;
 
         private EncoderHandler mHandler;
-        private CircularEncoderBuffer mEncBuffer;
-        private CircularEncoder.Callback mCallback;
+        private final CircularEncoderBuffer mEncBuffer;
+        private final CircularEncoder.Callback mCallback;
         private int mFrameNum;
 
         private final Object mLock = new Object();
@@ -242,7 +240,7 @@ public class CircularEncoder {
         public void run() {
             Looper.prepare();
             mHandler = new EncoderHandler(this);    // must create on encoder thread
-            Log.d(TAG, "encoder thread ready");
+            Log.d("encoder thread ready");
             synchronized (mLock) {
                 mReady = true;
                 mLock.notify();    // signal waitUntilReady()
@@ -254,7 +252,7 @@ public class CircularEncoder {
                 mReady = false;
                 mHandler = null;
             }
-            Log.d(TAG, "looper quit");
+            Log.d("looper quit");
         }
 
         /**
@@ -307,9 +305,9 @@ public class CircularEncoder {
                     // rather than extract the codec-specific data and reconstruct a new
                     // MediaFormat later, we just grab it here and keep it around.
                     mEncodedFormat = mEncoder.getOutputFormat();
-                    Log.d(TAG, "encoder output format changed: " + mEncodedFormat);
+                    Log.d("encoder output format changed: " + mEncodedFormat);
                 } else if (encoderStatus < 0) {
-                    Log.w(TAG, "unexpected result from encoder.dequeueOutputBuffer: " +
+                    Log.w("unexpected result from encoder.dequeueOutputBuffer: " +
                             encoderStatus);
                     // let's ignore it
                 } else {
@@ -324,7 +322,7 @@ public class CircularEncoder {
                         // INFO_OUTPUT_FORMAT_CHANGED status.  The MediaMuxer won't accept
                         // a single big blob -- it wants separate csd-0/csd-1 chunks --
                         // so simply saving this off won't work.
-                        if (VERBOSE) Log.d(TAG, "ignoring BUFFER_FLAG_CODEC_CONFIG");
+                        if (VERBOSE) Log.d("ignoring BUFFER_FLAG_CODEC_CONFIG");
                         mBufferInfo.size = 0;
                     }
 
@@ -337,7 +335,7 @@ public class CircularEncoder {
                                 mBufferInfo.presentationTimeUs);
 
                         if (VERBOSE) {
-                            Log.d(TAG, "sent " + mBufferInfo.size + " bytes to muxer, ts=" +
+                            Log.d("sent " + mBufferInfo.size + " bytes to muxer, ts=" +
                                     mBufferInfo.presentationTimeUs);
                         }
                     }
@@ -345,7 +343,7 @@ public class CircularEncoder {
                     mEncoder.releaseOutputBuffer(encoderStatus, false);
 
                     if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        Log.w(TAG, "reached end of stream unexpectedly");
+                        Log.w("reached end of stream unexpectedly");
                         break;      // out of while
                     }
                 }
@@ -358,7 +356,7 @@ public class CircularEncoder {
          * See notes for {@link CircularEncoder#frameAvailableSoon()}.
          */
         void frameAvailableSoon() {
-            if (VERBOSE) Log.d(TAG, "frameAvailableSoon");
+            if (VERBOSE) Log.d("frameAvailableSoon");
             drainEncoder();
 
             mFrameNum++;
@@ -379,11 +377,11 @@ public class CircularEncoder {
          * away they'll end up saving video with a gap where we paused to write the file.
          */
         void saveVideo(File outputFile) {
-            if (VERBOSE) Log.d(TAG, "saveVideo " + outputFile);
+            if (VERBOSE) Log.d("saveVideo " + outputFile);
 
             int index = mEncBuffer.getFirstIndex();
             if (index < 0) {
-                Log.w(TAG, "Unable to get first index");
+                Log.w("Unable to get first index");
                 mCallback.fileSaveComplete(1);
                 return;
             }
@@ -400,14 +398,14 @@ public class CircularEncoder {
                 do {
                     ByteBuffer buf = mEncBuffer.getChunk(index, info);
                     if (VERBOSE) {
-                        Log.d(TAG, "SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
+                        Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
                     }
                     muxer.writeSampleData(videoTrack, buf, info);
                     index = mEncBuffer.getNextIndex(index);
                 } while (index >= 0);
                 result = 0;
             } catch (IOException ioe) {
-                Log.w(TAG, "muxer failed", ioe);
+                Log.w("muxer failed", ioe);
                 result = 2;
             } finally {
                 if (muxer != null) {
@@ -417,7 +415,7 @@ public class CircularEncoder {
             }
 
             if (VERBOSE) {
-                Log.d(TAG, "muxer stopped, result=" + result);
+                Log.d("muxer stopped, result=" + result);
             }
             mCallback.fileSaveComplete(result);
         }
@@ -426,8 +424,12 @@ public class CircularEncoder {
          * Tells the Looper to quit.
          */
         void shutdown() {
-            if (VERBOSE) Log.d(TAG, "shutdown");
-            Looper.myLooper().quit();
+            if (VERBOSE) Log.d("shutdown");
+
+            Looper looper = Looper.myLooper();
+            if (looper != null) {
+                looper.quit();
+            }
         }
 
         /**
@@ -443,25 +445,25 @@ public class CircularEncoder {
 
             // This shouldn't need to be a weak ref, since we'll go away when the Looper quits,
             // but no real harm in it.
-            private WeakReference<EncoderThread> mWeakEncoderThread;
+            private final WeakReference<EncoderThread> mWeakEncoderThread;
 
             /**
              * Constructor.  Instantiate object from encoder thread.
              */
             public EncoderHandler(EncoderThread et) {
-                mWeakEncoderThread = new WeakReference<EncoderThread>(et);
+                mWeakEncoderThread = new WeakReference<>(et);
             }
 
             @Override  // runs on encoder thread
             public void handleMessage(Message msg) {
                 int what = msg.what;
                 if (VERBOSE) {
-                    Log.v(TAG, "EncoderHandler: what=" + what);
+                    Log.v("EncoderHandler: what=" + what);
                 }
 
                 EncoderThread encoderThread = mWeakEncoderThread.get();
                 if (encoderThread == null) {
-                    Log.w(TAG, "EncoderHandler.handleMessage: weak ref is null");
+                    Log.w("EncoderHandler.handleMessage: weak ref is null");
                     return;
                 }
 

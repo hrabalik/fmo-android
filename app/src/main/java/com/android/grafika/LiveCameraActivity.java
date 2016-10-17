@@ -22,9 +22,9 @@ import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 import android.view.TextureView;
 
 import java.io.IOException;
@@ -35,21 +35,19 @@ import java.io.IOException;
  * TODO: add options for different display sizes, frame rates, camera selection, etc.
  */
 public class LiveCameraActivity extends Activity implements TextureView.SurfaceTextureListener {
-    private static final String TAG = "Grafika";
     private static final int CAMERA_PERMISSION_REQUEST = 1234;
 
     private Camera mCamera;
-    private TextureView mTextureView;
     private SurfaceTexture mSurfaceTexture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mTextureView = new TextureView(this);
-        mTextureView.setSurfaceTextureListener(this);
+        TextureView textureView = new TextureView(this);
+        textureView.setSurfaceTextureListener(this);
 
-        setContentView(mTextureView);
+        setContentView(textureView);
     }
 
     @Override
@@ -67,7 +65,7 @@ public class LiveCameraActivity extends Activity implements TextureView.SurfaceT
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] results) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] results) {
         switch (requestCode) {
             case CAMERA_PERMISSION_REQUEST: {
                 if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
@@ -108,7 +106,5 @@ public class LiveCameraActivity extends Activity implements TextureView.SurfaceT
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        // Invoked every time there's a new Camera preview frame
-        //Log.d(TAG, "updated, ts=" + surface.getTimestamp());
     }
 }

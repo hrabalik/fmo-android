@@ -16,19 +16,39 @@
 
 package com.android.grafika.gles;
 
+import java.nio.FloatBuffer;
+
 /**
  * This class essentially represents a viewport-sized sprite that will be rendered with
  * a texture, usually from an external source like the camera or video decoder.
  */
 public class FullFrameRect {
-    private final Drawable2d mRectDrawable = new Drawable2d(Drawable2d.Prefab.FULL_RECTANGLE);
+    private static final int SIZEOF_FLOAT = 4;
+
+    private static final float FULL_RECTANGLE_COORDS[] = {
+            -1.0f, -1.0f, // 0 bottom left
+            1.0f, -1.0f, // 1 bottom right
+            -1.0f, 1.0f, // 2 top left
+            1.0f, 1.0f, // 3 top right
+    };
+    private static final float FULL_RECTANGLE_TEX_COORDS[] = {
+            0.0f, 0.0f, // 0 bottom left
+            1.0f, 0.0f, // 1 bottom right
+            0.0f, 1.0f, // 2 top left
+            1.0f, 1.0f, // 3 top right
+    };
+    private static final FloatBuffer FULL_RECTANGLE_BUF =
+            GlUtil.createFloatBuffer(FULL_RECTANGLE_COORDS);
+    private static final FloatBuffer FULL_RECTANGLE_TEX_BUF =
+            GlUtil.createFloatBuffer(FULL_RECTANGLE_TEX_COORDS);
+
     private Texture2dProgram mProgram;
 
     /**
      * Prepares the object.
      *
-     * @param program The program to use.  FullFrameRect takes ownership, and will release
-     *     the program when no longer needed.
+     * @param program The program to use. FullFrameRect takes ownership, and will release
+     *                the program when no longer needed.
      */
     public FullFrameRect(Texture2dProgram program) {
         mProgram = program;
@@ -52,23 +72,6 @@ public class FullFrameRect {
     }
 
     /**
-     * Returns the program currently in use.
-     */
-    public Texture2dProgram getProgram() {
-        return mProgram;
-    }
-
-    /**
-     * Changes the program.  The previous program will be released.
-     * <p>
-     * The appropriate EGL context must be current.
-     */
-    public void changeProgram(Texture2dProgram program) {
-        mProgram.release();
-        mProgram = program;
-    }
-
-    /**
      * Creates a texture object suitable for use with drawFrame().
      */
     public int createTextureObject() {
@@ -80,10 +83,7 @@ public class FullFrameRect {
      */
     public void drawFrame(int textureId, float[] texMatrix) {
         // Use the identity matrix for MVP so our 2x2 FULL_RECTANGLE covers the viewport.
-        mProgram.draw(GlUtil.IDENTITY_MATRIX, mRectDrawable.getVertexArray(), 0,
-                mRectDrawable.getVertexCount(), mRectDrawable.getCoordsPerVertex(),
-                mRectDrawable.getVertexStride(),
-                texMatrix, mRectDrawable.getTexCoordArray(), textureId,
-                mRectDrawable.getTexCoordStride());
+        mProgram.draw(GlUtil.IDENTITY_MATRIX, FULL_RECTANGLE_BUF, 0, 4, 2, 2 * SIZEOF_FLOAT,
+                texMatrix, FULL_RECTANGLE_TEX_BUF, textureId, 2 * SIZEOF_FLOAT);
     }
 }

@@ -6,7 +6,7 @@
     android:paddingLeft="16dp"
     android:paddingRight="16dp"
     android:paddingTop="16dp"
-    tools:context=".ContinuousCaptureActivity" >
+    tools:context="com.android.grafika.ContinuousCaptureActivity" >
 
     <Button
         android:id="@+id/capture_button"

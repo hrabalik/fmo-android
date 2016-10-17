@@ -17,7 +17,6 @@
 package com.android.grafika;
 
 import android.hardware.Camera;
-import android.util.Log;
 
 import java.util.List;
 
@@ -25,8 +24,6 @@ import java.util.List;
  * Camera-related utility functions.
  */
 public class CameraUtils {
-    private static final String TAG = "Grafika";
-
     /**
      * Attempts to find a preview size that matches the provided width and height (which
      * specify the dimensions of the encoded video).  If it fails to find a match it just
@@ -40,8 +37,7 @@ public class CameraUtils {
         // size, and has the same aspect ratio.
         Camera.Size ppsfv = parms.getPreferredPreviewSizeForVideo();
         if (ppsfv != null) {
-            Log.d(TAG, "Camera preferred preview size for video is " +
-                    ppsfv.width + "x" + ppsfv.height);
+            Log.d("Camera preferred preview size for video is " + ppsfv.width + "x" + ppsfv.height);
         }
 
         //for (Camera.Size size : parms.getSupportedPreviewSizes()) {
@@ -55,7 +51,7 @@ public class CameraUtils {
             }
         }
 
-        Log.w(TAG, "Unable to set preview size to " + width + "x" + height);
+        Log.w("Unable to set preview size to " + width + "x" + height);
         if (ppsfv != null) {
             parms.setPreviewSize(ppsfv.width, ppsfv.height);
         }
@@ -75,7 +71,6 @@ public class CameraUtils {
         List<int[]> supported = parms.getSupportedPreviewFpsRange();
 
         for (int[] entry : supported) {
-            //Log.d(TAG, "entry: " + entry[0] + " - " + entry[1]);
             if ((entry[0] == entry[1]) && (entry[0] == desiredThousandFps)) {
                 parms.setPreviewFpsRange(entry[0], entry[1]);
                 return entry[0];
@@ -91,7 +86,7 @@ public class CameraUtils {
             guess = tmp[1] / 2;     // shrug
         }
 
-        Log.d(TAG, "Couldn't find match for " + desiredThousandFps + ", using " + guess);
+        Log.d("Couldn't find match for " + desiredThousandFps + ", using " + guess);
         return guess;
     }
 }
