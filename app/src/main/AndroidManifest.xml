@@ -32,17 +32,24 @@
 
         <activity
             android:name="com.android.grafika.LiveCameraActivity"
-            android:label="Live camera (TextureView)"
-            android:screenOrientation="landscape"
             android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Live camera"
+            android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         </activity>
 
         <activity
             android:name="com.android.grafika.ContinuousCaptureActivity"
-            android:label="Live camera (TextureView)"
-            android:screenOrientation="landscape"
             android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Continuous capture"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"></activity>
+
+        <activity
+            android:name="com.android.grafika.PlayMovieSurfaceActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Play movie"
+            android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         </activity>
     </application>

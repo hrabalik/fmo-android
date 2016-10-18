@@ -8,14 +8,6 @@
     <!-- The primary full-screen view. This can be replaced with whatever view
          is needed to present your content, e.g. VideoView, SurfaceView,
          TextureView, etc. -->
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Continuous capture activity"
-        android:id="@+id/runContinuousCaptureActivityButton"
-        android:layout_gravity="left|top"
-        android:onClick="runContinuousCaptureActivity" />
-
     <TextView
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
@@ -27,8 +19,28 @@
         android:textSize="50sp"
         android:textStyle="bold" />
 
-    <!-- This FrameLayout insets its children based on system windows using
-         android:fitsSystemWindows. -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/playMovieSurfaceActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|bottom"
+            android:onClick="runPlayMovieSurfaceActivity"
+            android:text="Play movie surface activity" />
+
+        <Button
+            android:id="@+id/playContinuousCaptureActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:onClick="runContinuousCaptureActivity"
+            android:text="Continuous capture activity" />
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -50,11 +62,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/dummy_button"
-                android:onClick="runLiveCameraActivity"/>
+                android:onClick="runLiveCameraActivity"
+                android:text="@string/dummy_button" />
 
         </LinearLayout>
 
     </FrameLayout>
+
+    <!-- This FrameLayout insets its children based on system windows using
+         android:fitsSystemWindows. -->
 
 </FrameLayout>

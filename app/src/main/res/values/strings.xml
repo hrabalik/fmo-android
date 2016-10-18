@@ -5,9 +5,11 @@
     <string name="dummy_content">DUMMY\nCONTENT</string>
 
     <string name="capture">Capture</string>
-    <string name="secondsOfVideo">%1$.3f seconds of video</string>
     <string name="nowRecording">" [RECORDING]"</string>
     <string name="nowSaving">" [saving]"</string>
+    <string name="play_button_text">Play</string>
+    <string name="stop_button_text">Stop</string>
     <string name="recordingSucceeded">Recording succeeded</string>
     <string name="recordingFailed">Recording FAILED (err=%1$d)</string>
+    <string name="secondsOfVideo">%1$.3f seconds of video</string>
 </resources>

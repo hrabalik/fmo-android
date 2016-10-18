@@ -2,10 +2,10 @@ package cz.fmo;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -123,11 +123,15 @@ public class Main extends AppCompatActivity {
         }
     }
 
-    public void runLiveCameraActivity(@SuppressWarnings("UnusedParameters")View view) {
+    public void runLiveCameraActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.LiveCameraActivity.class));
     }
 
-    public void runContinuousCaptureActivity(@SuppressWarnings("UnusedParameters")View view) {
+    public void runContinuousCaptureActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.ContinuousCaptureActivity.class));
+    }
+
+    public void runPlayMovieSurfaceActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }
 }

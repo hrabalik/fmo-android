@@ -117,7 +117,7 @@ public class Buffer {
      * Adds a single element to the back. If there is not enough space for the new element, one or
      * more elements will be removed from the front.
      *
-     * @param source array that contains frame data
+     * @param source array that contains frame data, its position and limit will be reset
      * @param info   frame metadata, including location (offset) and length (size) of the data in
      *               source
      */
@@ -127,9 +127,11 @@ public class Buffer {
         while (blockOverlapsFront(offset, info.size) || full()) popFront();
 
         // copy data
+        source.clear();
         source.position(info.offset);
         source.limit(info.offset + info.size);
         source.get(mData, offset, info.size);
+        source.clear();
 
         // the index of the new value is the old value of mTail (mTail is always one ahead)
         int index = mTail;
