@@ -62,11 +62,8 @@ public class FullFrameRect {
      * there's no value in having the caller make it current just to do this cleanup, so you
      * can pass a flag that will tell this function to skip any EGL-context-specific cleanup.
      */
-    public void release(boolean doEglCleanup) {
+    public void release() {
         if (mProgram != null) {
-            if (doEglCleanup) {
-                mProgram.release();
-            }
             mProgram = null;
         }
     }

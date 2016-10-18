@@ -72,6 +72,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private int mCameraPreviewThousandFps;
 
     private File mOutputFile;
+    private android.view.Surface mCircEncoderSurface;
     private CircularEncoder mCircEncoder;
     private EGL.Surface mEncoderSurface;
     private boolean mFileSaveInProgress;
@@ -148,8 +149,16 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mDisplaySurface.release();
             mDisplaySurface = null;
         }
+        if (mEncoderSurface != null) {
+            mEncoderSurface.release();
+            mEncoderSurface = null;
+        }
+        if (mCircEncoderSurface != null) {
+            mCircEncoderSurface.release();
+            mCircEncoderSurface = null;
+        }
         if (mFullFrameBlit != null) {
-            mFullFrameBlit.release(false);
+            mFullFrameBlit.release();
             mFullFrameBlit = null;
         }
         if (mEGL != null) {
@@ -301,7 +310,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // The display surface that we use for the SurfaceView, and the encoder surface we
         // use for video, use the same EGL context.
         mEGL = new EGL();
-        mDisplaySurface = new EGL.Surface(mEGL, holder.getSurface(), false);
+        mDisplaySurface = mEGL.makeSurface(holder.getSurface());
         mDisplaySurface.makeCurrent();
 
         mFullFrameBlit = new FullFrameRect(
@@ -327,7 +336,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        mEncoderSurface = new EGL.Surface(mEGL, mCircEncoder.getInputSurface(), true);
+        mCircEncoderSurface = mCircEncoder.getInputSurface();
+        mEncoderSurface = mEGL.makeSurface(mCircEncoderSurface);
 
         updateControls();
     }

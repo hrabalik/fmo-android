@@ -246,7 +246,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         // clearing to something other than black may look weird unless we do the clear
         // post-resize.
         EGL egl = new EGL();
-        EGL.Surface win = new EGL.Surface(egl, surface, false);
+        EGL.Surface win = egl.makeSurface(surface);
         win.makeCurrent();
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
