@@ -18,7 +18,6 @@ package com.android.grafika;
 
 import android.content.Context;
 import android.util.AttributeSet;
-
 import android.widget.FrameLayout;
 
 /**
@@ -43,7 +42,7 @@ public class AspectFrameLayout extends FrameLayout {
         if (aspectRatio < 0) {
             throw new IllegalArgumentException();
         }
-        Log.d("Setting aspect ratio to " + aspectRatio + " (was " + mTargetAspect + ")");
+        //Log.d("Setting aspect ratio to " + aspectRatio + " (was " + mTargetAspect + ")");
         if (mTargetAspect != aspectRatio) {
             mTargetAspect = aspectRatio;
             requestLayout();
@@ -52,9 +51,9 @@ public class AspectFrameLayout extends FrameLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.d("onMeasure target=" + mTargetAspect +
-                " width=[" + MeasureSpec.toString(widthMeasureSpec) +
-                "] height=[" + MeasureSpec.toString(heightMeasureSpec) + "]");
+        //Log.d("onMeasure target=" + mTargetAspect +
+        //        " width=[" + MeasureSpec.toString(widthMeasureSpec) +
+        //        "] height=[" + MeasureSpec.toString(heightMeasureSpec) + "]");
 
         // Target aspect ratio will be < 0 if it hasn't been set yet.  In that case,
         // we just use whatever we've been handed.
@@ -75,8 +74,8 @@ public class AspectFrameLayout extends FrameLayout {
                 // We're very close already.  We don't want to risk switching from e.g. non-scaled
                 // 1280x720 to scaled 1280x719 because of some floating-point round-off error,
                 // so if we're really close just leave it alone.
-                Log.d("aspect ratio is good (target=" + mTargetAspect +
-                        ", view=" + initialWidth + "x" + initialHeight + ")");
+                //Log.d("aspect ratio is good (target=" + mTargetAspect +
+                //        ", view=" + initialWidth + "x" + initialHeight + ")");
             } else {
                 if (aspectDiff > 0) {
                     // limited by narrow width; restrict height
@@ -85,8 +84,8 @@ public class AspectFrameLayout extends FrameLayout {
                     // limited by short height; restrict width
                     initialWidth = (int) (initialHeight * mTargetAspect);
                 }
-                Log.d("new size=" + initialWidth + "x" + initialHeight + " + padding " +
-                        horizPadding + "x" + vertPadding);
+                //Log.d("new size=" + initialWidth + "x" + initialHeight + " + padding " +
+                //        horizPadding + "x" + vertPadding);
                 initialWidth += horizPadding;
                 initialHeight += vertPadding;
                 widthMeasureSpec = MeasureSpec.makeMeasureSpec(initialWidth, MeasureSpec.EXACTLY);
