@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
+import cz.fmo.recording.Buffer;
+
 /**
  * Encodes video in a fixed-size circular buffer.
  * <p>
@@ -58,26 +60,6 @@ public class CircularEncoder {
     private MediaCodec mEncoder;
 
     /**
-     * Callback function definitions.  CircularEncoder caller must provide one.
-     */
-    public interface Callback {
-        /**
-         * Called some time after saveVideo(), when all data has been written to the
-         * output file.
-         *
-         * @param status Zero means success, nonzero indicates failure.
-         */
-        void fileSaveComplete(int status);
-
-        /**
-         * Called occasionally.
-         *
-         * @param totalTimeMsec Total length, in milliseconds, of buffered video.
-         */
-        void bufferStatus(long totalTimeMsec);
-    }
-
-    /**
      * Configures encoder, and prepares the input Surface.
      *
      * @param width Width of encoded video, in pixels.  Should be a multiple of 16.
@@ -101,8 +83,7 @@ public class CircularEncoder {
             throw new RuntimeException("Requested time span is too short: " + desiredSpanSec +
                     " vs. " + (IFRAME_INTERVAL * 2));
         }
-        CircularEncoderBuffer encBuffer = new CircularEncoderBuffer(bitRate, frameRate,
-                desiredSpanSec);
+        Buffer encBuffer = new Buffer(bitRate, frameRate, desiredSpanSec);
 
         MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
 
@@ -195,6 +176,26 @@ public class CircularEncoder {
     }
 
     /**
+     * Callback function definitions.  CircularEncoder caller must provide one.
+     */
+    public interface Callback {
+        /**
+         * Called some time after saveVideo(), when all data has been written to the
+         * output file.
+         *
+         * @param status Zero means success, nonzero indicates failure.
+         */
+        void fileSaveComplete(int status);
+
+        /**
+         * Called occasionally.
+         *
+         * @param totalTimeMsec Total length, in milliseconds, of buffered video.
+         */
+        void bufferStatus(long totalTimeMsec);
+    }
+
+    /**
      * Object that encapsulates the encoder thread.
      * <p>
      * We want to sleep until there's work to do.  We don't actually know when a new frame
@@ -211,21 +212,21 @@ public class CircularEncoder {
      */
     private static class EncoderThread extends Thread {
         private final MediaCodec mEncoder;
-        private MediaFormat mEncodedFormat;
         private final MediaCodec.BufferInfo mBufferInfo;
-
-        private EncoderHandler mHandler;
-        private final CircularEncoderBuffer mEncBuffer;
+        private final Buffer mBuf;
+        private final ByteBuffer mEncBufferOutput;
         private final CircularEncoder.Callback mCallback;
-        private int mFrameNum;
-
         private final Object mLock = new Object();
+        private MediaFormat mEncodedFormat;
+        private EncoderHandler mHandler;
+        private int mFrameNum;
         private volatile boolean mReady = false;
 
-        public EncoderThread(MediaCodec mediaCodec, CircularEncoderBuffer encBuffer,
-                CircularEncoder.Callback callback) {
+        public EncoderThread(MediaCodec mediaCodec, Buffer encBuffer,
+                             CircularEncoder.Callback callback) {
             mEncoder = mediaCodec;
-            mEncBuffer = encBuffer;
+            mBuf = encBuffer;
+            mEncBufferOutput = mBuf.getBuffer();
             mCallback = callback;
 
             mBufferInfo = new MediaCodec.BufferInfo();
@@ -327,12 +328,13 @@ public class CircularEncoder {
                     }
 
                     if (mBufferInfo.size != 0) {
-                        // adjust the ByteBuffer values to match BufferInfo (not needed?)
-                        encodedData.position(mBufferInfo.offset);
-                        encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
-
-                        mEncBuffer.add(encodedData, mBufferInfo.flags,
-                                mBufferInfo.presentationTimeUs);
+                        //// adjust the ByteBuffer values to match BufferInfo (not needed?)
+                        //encodedData.position(mBufferInfo.offset);
+                        //encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
+                        //
+                        //mBuf.add(encodedData, mBufferInfo.flags,
+                        //        mBufferInfo.presentationTimeUs);
+                        mBuf.pushBack(encodedData, mBufferInfo);
 
                         if (VERBOSE) {
                             Log.d("sent " + mBufferInfo.size + " bytes to muxer, ts=" +
@@ -361,7 +363,7 @@ public class CircularEncoder {
 
             mFrameNum++;
             if ((mFrameNum % 10) == 0) {        // TODO: should base off frame rate or clock?
-                mCallback.bufferStatus(mEncBuffer.computeTimeSpanUsec());
+                mCallback.bufferStatus(mBuf.getDuration());
             }
         }
 
@@ -379,8 +381,7 @@ public class CircularEncoder {
         void saveVideo(File outputFile) {
             if (VERBOSE) Log.d("saveVideo " + outputFile);
 
-            int index = mEncBuffer.getFirstIndex();
-            if (index < 0) {
+            if (mBuf.empty()) {
                 Log.w("Unable to get first index");
                 mCallback.fileSaveComplete(1);
                 return;
@@ -395,14 +396,13 @@ public class CircularEncoder {
                 int videoTrack = muxer.addTrack(mEncodedFormat);
                 muxer.start();
 
-                do {
-                    ByteBuffer buf = mEncBuffer.getChunk(index, info);
+                for (int index = mBuf.begin(); index != mBuf.end(); index = mBuf.next(index)) {
+                    mBuf.get(index, mEncBufferOutput, info);
                     if (VERBOSE) {
                         Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
                     }
-                    muxer.writeSampleData(videoTrack, buf, info);
-                    index = mEncBuffer.getNextIndex(index);
-                } while (index >= 0);
+                    muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
+                }
                 result = 0;
             } catch (IOException ioe) {
                 Log.w("muxer failed", ioe);

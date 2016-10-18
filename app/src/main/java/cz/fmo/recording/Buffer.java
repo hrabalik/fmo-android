@@ -23,19 +23,22 @@ public class Buffer {
      */
     public Buffer(double bps, double fps, double seconds) {
         // approximate the required buffer sizes
-        int nBytes = (int) Math.ceil((bps * seconds) * (1 / 8.));
-        int nFrames = (int) Math.ceil(2. * fps * seconds);
+        double nFrames = fps * seconds;
+        double nBytes = (bps * seconds) * (1 / 8.);
+        double factor = ((nFrames + 2.) / nFrames); // add extra space for a few frames
+        int dataSize = (int) Math.ceil(factor * nBytes);
+        int metaSize = (int) Math.ceil(2. * nFrames);
 
         // allocate buffers
-        mData = new byte[nBytes];
-        mMeta = new BufferInfo[nFrames];
-        for (int i = 0; i < nFrames; ++i) {
+        mData = new byte[dataSize];
+        mMeta = new BufferInfo[metaSize];
+        for (int i = 0; i < metaSize; ++i) {
             mMeta[i] = new BufferInfo();
             mMeta[i].set(-1, -1, -1, 0);
         }
     }
 
-    private boolean empty() {
+    public boolean empty() {
         return mHead == mTail;
     }
 
@@ -43,12 +46,20 @@ public class Buffer {
         return next(mTail) == mHead;
     }
 
-    private int next(int i) {
+    public int next(int i) {
         return (i + 1) % mMeta.length;
     }
 
     private int prev(int i) {
         return (i + mMeta.length - 1) % mMeta.length;
+    }
+
+    public int begin() {
+        return mHead;
+    }
+
+    public int end() {
+        return mTail;
     }
 
     private int front() {
@@ -107,15 +118,18 @@ public class Buffer {
      * more elements will be removed from the front.
      *
      * @param source array that contains frame data
-     * @param info   frame metadata, including location and length of the data
+     * @param info   frame metadata, including location (offset) and length (size) of the data in
+     *               source
      */
-    public void pushBack(byte[] source, BufferInfo info) {
+    public void pushBack(ByteBuffer source, BufferInfo info) {
         // allocate the new block, pop from front if necessary
         int offset = placeBlock(info.size);
         while (blockOverlapsFront(offset, info.size) || full()) popFront();
 
         // copy data
-        System.arraycopy(source, info.offset, mData, offset, info.size);
+        source.position(info.offset);
+        source.limit(info.offset + info.size);
+        source.get(mData, offset, info.size);
 
         // the index of the new value is the old value of mTail (mTail is always one ahead)
         int index = mTail;
@@ -152,6 +166,7 @@ public class Buffer {
             throw new RuntimeException("buffer has not been acquired by calling getBuffer()");
         }
         BufferInfo meta = mMeta[index];
+        buffer.clear();
         buffer.position(meta.offset);
         buffer.limit(meta.offset + meta.size);
         info.offset = meta.offset;
