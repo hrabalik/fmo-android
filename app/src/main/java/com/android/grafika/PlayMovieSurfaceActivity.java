@@ -188,7 +188,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             // Looks weird if the aspect ratio changes.
             clearSurface(surface);
 
-            MoviePlayer player = null;
+            MoviePlayer player;
             try {
                 player = new MoviePlayer(mFileMan.open(mMovieFiles[mSelectedMovie]), surface,
                         callback);
@@ -197,12 +197,6 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                 surface.release();
                 return;
             }
-
-            AspectFrameLayout layout = (AspectFrameLayout) findViewById(R.id.playMovie_afl);
-            int width = player.getVideoWidth();
-            int height = player.getVideoHeight();
-            layout.setAspectRatio((double) width / height);
-            //holder.setFixedSize(width, height);
 
             mPlayTask = new MoviePlayer.PlayTask(player, this);
 

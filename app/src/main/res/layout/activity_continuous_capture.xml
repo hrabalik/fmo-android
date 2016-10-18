@@ -1,57 +1,56 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingBottom="16dp"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    android:paddingTop="16dp"
-    tools:context="com.android.grafika.ContinuousCaptureActivity" >
+    tools:context="com.android.grafika.ContinuousCaptureActivity">
 
-    <Button
-        android:id="@+id/capture_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:onClick="clickCapture"
-        android:text="@string/capture" />
-
-    <TextView
-        android:id="@+id/capturedVideoDesc_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@id/capture_button"
-        android:layout_alignBottom="@id/capture_button"
-        android:layout_toRightOf="@id/capture_button"
-        android:text="@string/secondsOfVideo" />
-
-    <com.android.grafika.AspectFrameLayout
-        android:id="@+id/continuousCapture_afl"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
-        android:layout_below="@id/capture_button"
-        android:layout_centerInParent="true" >
+        android:layout_height="match_parent">
 
         <SurfaceView
             android:id="@+id/continuousCapture_surfaceView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center" />
+    </FrameLayout>
 
-    </com.android.grafika.AspectFrameLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingBottom="16dp"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="16dp">
 
-    <TextView
-        android:id="@+id/recording_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignLeft="@id/continuousCapture_afl"
-        android:layout_alignTop="@id/continuousCapture_afl"
-        android:text="@string/nowRecording"
-        android:textColor="#f00"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        <Button
+            android:id="@+id/capture_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:onClick="clickCapture"
+            android:text="@string/capture"
+            android:textAppearance="@android:style/TextAppearance.Large" />
 
-</RelativeLayout>
+        <TextView
+            android:id="@+id/recording_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:text="@string/nowRecording"
+            android:textAppearance="@android:style/TextAppearance.Large"
+            android:textColor="@color/colorAccent" />
+
+        <TextView
+            android:id="@+id/capturedVideoDesc_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@+id/capture_button"
+            android:paddingLeft="11sp"
+            android:text="@string/secondsOfVideo"
+            android:textAppearance="@android:style/TextAppearance.Large" />
+
+    </RelativeLayout>
+
+</merge>

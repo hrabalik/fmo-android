@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.android.grafika.PlayMovieSurfaceActivity">
 
-    <com.android.grafika.AspectFrameLayout
-        android:id="@+id/playMovie_afl"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
@@ -13,8 +12,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center" />
-
-    </com.android.grafika.AspectFrameLayout>
+    </FrameLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -33,8 +31,9 @@
             android:id="@+id/playMovieFile_spinner"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignBottom="@+id/play_stop_button"
             android:layout_alignTop="@id/play_stop_button"
-            android:layout_toRightOf="@id/play_stop_button" />
+            android:layout_toEndOf="@id/play_stop_button" />
     </RelativeLayout>
 
 </merge>
