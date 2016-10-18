@@ -18,6 +18,7 @@ package com.android.grafika.gles;
 
 import android.opengl.EGL14;
 import android.opengl.EGLSurface;
+import android.view.Surface;
 
 import com.android.grafika.Log;
 
@@ -39,9 +40,10 @@ public class EglSurfaceBase {
     /**
      * Creates a window surface.
      * <p>
+     *
      * @param surface May be a Surface or SurfaceTexture.
      */
-    public void createWindowSurface(Object surface) {
+    public void createWindowSurface(Surface surface) {
         if (mEGLSurface != EGL14.EGL_NO_SURFACE) {
             throw new IllegalStateException("surface already created");
         }

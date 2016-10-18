@@ -16,7 +16,6 @@
 
 package com.android.grafika.gles;
 
-import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.EGLConfig;
 import android.opengl.EGLContext;
@@ -155,11 +154,7 @@ public final class EglCore {
      * <p>
      * If this is destined for MediaCodec, the EGLConfig should have the "recordable" attribute.
      */
-    public EGLSurface createWindowSurface(Object surface) {
-        if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)) {
-            throw new RuntimeException("invalid surface: " + surface);
-        }
-
+    public EGLSurface createWindowSurface(Surface surface) {
         // Create a window surface, and attach it to the Surface we received.
         int[] surfaceAttribs = {
                 EGL14.EGL_NONE
@@ -172,24 +167,6 @@ public final class EglCore {
         }
         return eglSurface;
     }
-
-    ///**
-    // * Creates an EGL surface associated with an offscreen buffer.
-    // */
-    //public EGLSurface createOffscreenSurface(int width, int height) {
-    //    int[] surfaceAttribs = {
-    //            EGL14.EGL_WIDTH, width,
-    //            EGL14.EGL_HEIGHT, height,
-    //            EGL14.EGL_NONE
-    //    };
-    //    EGLSurface eglSurface = EGL14.eglCreatePbufferSurface(mEGLDisplay, mEGLConfig,
-    //            surfaceAttribs, 0);
-    //    checkEglError("eglCreatePbufferSurface");
-    //    if (eglSurface == null) {
-    //        throw new RuntimeException("surface was null");
-    //    }
-    //    return eglSurface;
-    //}
 
     /**
      * Makes our EGL context current, using the supplied surface for both "draw" and "read".
