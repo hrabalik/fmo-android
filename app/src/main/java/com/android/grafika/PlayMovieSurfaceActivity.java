@@ -32,10 +32,10 @@ import android.widget.Spinner;
 import com.android.grafika.gles.EglCore;
 import com.android.grafika.gles.WindowSurface;
 
-import java.io.File;
 import java.io.IOException;
 
 import cz.fmo.R;
+import cz.fmo.util.FileManager;
 
 /**
  * Play a movie from a file on disk.  Output goes to a SurfaceView.
@@ -65,12 +65,13 @@ import cz.fmo.R;
  * use SurfaceHolder#setFixedSize() to set the dimensions.  The hardware scaler will scale
  * the video to match the view size, so if we want to preserve the correct aspect ratio
  * we need to adjust the View layout.  We can use our custom AspectFrameLayout for this.
- * <p>
+ * <p>)
  * The actual playback of the video -- sending frames to a Surface -- is the same for
  * TextureView and SurfaceView.
  */
 public class PlayMovieSurfaceActivity extends Activity implements OnItemSelectedListener,
         SurfaceHolder.Callback, MoviePlayer.PlayerFeedback {
+    private final FileManager mFileMan = new FileManager(this);
     private SurfaceView mSurfaceView;
     private String[] mMovieFiles;
     private int mSelectedMovie;
@@ -90,7 +91,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
         // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
         // for the widget itself.
-        mMovieFiles = MiscUtils.getFiles(getFilesDir(), "*.mp4");
+        mMovieFiles = mFileMan.listMP4();
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, mMovieFiles);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -189,8 +190,8 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
             MoviePlayer player = null;
             try {
-                player = new MoviePlayer(
-                        new File(getFilesDir(), mMovieFiles[mSelectedMovie]), surface, callback);
+                player = new MoviePlayer(mFileMan.open(mMovieFiles[mSelectedMovie]), surface,
+                        callback);
             } catch (IOException ioe) {
                 Log.e("Unable to play movie", ioe);
                 surface.release();
