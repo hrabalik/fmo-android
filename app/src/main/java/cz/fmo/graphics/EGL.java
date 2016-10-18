@@ -49,10 +49,10 @@ public final class EGL {
         mConfig = null;
     }
 
-    public void checkError() throws RuntimeException {
+    private void checkError() throws RuntimeException {
         int errCode = EGL14.eglGetError();
         if (errCode == EGL14.EGL_SUCCESS) return;
-        throw new RuntimeException("EGL error");
+        throw new RuntimeException("EGL error " + errCode);
     }
 
     public static final class Surface {
@@ -62,7 +62,7 @@ public final class EGL {
         private final boolean mIsOwner;
         private boolean mReleased = false;
 
-        Surface(EGL egl, android.view.Surface surface, boolean isOwner) {
+        public Surface(EGL egl, android.view.Surface surface, boolean isOwner) {
             mEGL = egl;
             mSurface = surface;
             mIsOwner = isOwner;

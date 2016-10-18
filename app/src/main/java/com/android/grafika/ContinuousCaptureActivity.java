@@ -30,16 +30,15 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.grafika.gles.EglCore;
 import com.android.grafika.gles.FullFrameRect;
 import com.android.grafika.gles.Texture2dProgram;
-import com.android.grafika.gles.WindowSurface;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 import cz.fmo.R;
+import cz.fmo.graphics.EGL;
 import cz.fmo.util.FileManager;
 
 /**
@@ -62,8 +61,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     private final FileManager mFileMan = new FileManager(this);
     private final float[] mTmpMatrix = new float[16];
-    private EglCore mEglCore;
-    private WindowSurface mDisplaySurface;
+    private EGL mEGL;
+    private EGL.Surface mDisplaySurface;
     private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
     private FullFrameRect mFullFrameBlit;
     private int mTextureId;
@@ -74,7 +73,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     private File mOutputFile;
     private CircularEncoder mCircEncoder;
-    private WindowSurface mEncoderSurface;
+    private EGL.Surface mEncoderSurface;
     private boolean mFileSaveInProgress;
 
     private MainHandler mHandler;
@@ -153,9 +152,9 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mFullFrameBlit.release(false);
             mFullFrameBlit = null;
         }
-        if (mEglCore != null) {
-            mEglCore.release();
-            mEglCore = null;
+        if (mEGL != null) {
+            mEGL.release();
+            mEGL = null;
         }
         Log.d("onPause() done");
     }
@@ -301,8 +300,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         //
         // The display surface that we use for the SurfaceView, and the encoder surface we
         // use for video, use the same EGL context.
-        mEglCore = new EglCore();
-        mDisplaySurface = new WindowSurface(mEglCore, holder.getSurface(), false);
+        mEGL = new EGL();
+        mDisplaySurface = new EGL.Surface(mEGL, holder.getSurface(), false);
         mDisplaySurface.makeCurrent();
 
         mFullFrameBlit = new FullFrameRect(
@@ -328,7 +327,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        mEncoderSurface = new WindowSurface(mEglCore, mCircEncoder.getInputSurface(), true);
+        mEncoderSurface = new EGL.Surface(mEGL, mCircEncoder.getInputSurface(), true);
 
         updateControls();
     }
@@ -361,7 +360,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      * here after onPause().
      */
     private void drawFrame() {
-        if (mEglCore == null) {
+        if (mEGL == null) {
             Log.d("Skipping drawFrame after shutdown");
             return;
         }
@@ -387,7 +386,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
             drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
             mCircEncoder.frameAvailableSoon();
-            mEncoderSurface.setPresentationTime(mCameraTexture.getTimestamp());
+            mEncoderSurface.presentationTime(mCameraTexture.getTimestamp());
             mEncoderSurface.swapBuffers();
         }
 

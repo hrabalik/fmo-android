@@ -29,12 +29,10 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
 
-import com.android.grafika.gles.EglCore;
-import com.android.grafika.gles.WindowSurface;
-
 import java.io.IOException;
 
 import cz.fmo.R;
+import cz.fmo.graphics.EGL;
 import cz.fmo.util.FileManager;
 
 /**
@@ -247,13 +245,13 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         // If the Surface is resized to be larger, the new portions will be black, so
         // clearing to something other than black may look weird unless we do the clear
         // post-resize.
-        EglCore eglCore = new EglCore();
-        WindowSurface win = new WindowSurface(eglCore, surface, false);
+        EGL egl = new EGL();
+        EGL.Surface win = new EGL.Surface(egl, surface, false);
         win.makeCurrent();
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         win.swapBuffers();
         win.release();
-        eglCore.release();
+        egl.release();
     }
 }
