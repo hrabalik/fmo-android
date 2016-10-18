@@ -91,7 +91,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
         // for the widget itself.
         mMovieFiles = MiscUtils.getFiles(getFilesDir(), "*.mp4");
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, mMovieFiles);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         // Apply the adapter to the spinner.
@@ -164,7 +164,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     /**
      * onClick handler for "play"/"stop" button.
      */
-    public void clickPlayStop(@SuppressWarnings("unused") View unused) {
+    public void clickPlayStop(@SuppressWarnings("UnusedParameters") View unused) {
         if (mShowStopLabel) {
             Log.d("stopping movie");
             stopPlayback();

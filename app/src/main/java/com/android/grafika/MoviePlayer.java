@@ -36,13 +36,13 @@ import java.nio.ByteBuffer;
  */
 public class MoviePlayer {
     private static final boolean VERBOSE = false;
-    FrameCallback mFrameCallback;
+    final FrameCallback mFrameCallback;
     // Declare this here to reduce allocations.
-    private MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
+    private final MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
+    private final File mSourceFile;
+    private final Surface mOutputSurface;
     // May be set/read by different threads.
     private volatile boolean mIsStopRequested;
-    private File mSourceFile;
-    private Surface mOutputSurface;
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
@@ -410,11 +410,11 @@ public class MoviePlayer {
     public static class PlayTask implements Runnable {
         private static final int MSG_PLAY_STOPPED = 0;
         private final Object mStopLock = new Object();
-        private MoviePlayer mPlayer;
-        private PlayerFeedback mFeedback;
+        private final MoviePlayer mPlayer;
+        private final PlayerFeedback mFeedback;
+        private final LocalHandler mLocalHandler;
         private boolean mDoLoop;
         private Thread mThread;
-        private LocalHandler mLocalHandler;
         private boolean mStopped = false;
 
         /**
