@@ -29,23 +29,14 @@ package com.android.grafika;
  * Thread restrictions are noted in the method descriptions.  The FrameCallback overrides should
  * only be called from the MoviePlayer.
  */
-public class SpeedControlCallback implements MoviePlayer.FrameCallback {
+class SpeedControlCallback implements MoviePlayer.FrameCallback {
     private static final boolean CHECK_SLEEP_TIME = false;
 
     private static final long ONE_MILLION = 1000000L;
 
     private long mPrevPresentUsec;
     private long mPrevMonoUsec;
-    private long mFixedFrameDurationUsec;
     private boolean mLoopReset;
-
-    /**
-     * Sets a fixed playback rate.  If set, this will ignore the presentation time stamp
-     * in the video file.  Must be called before playback thread starts.
-     */
-    public void setFixedPlaybackRate(int fps) {
-        mFixedFrameDurationUsec = ONE_MILLION / fps;
-    }
 
     // runs on decode thread
     @Override
@@ -64,7 +55,6 @@ public class SpeedControlCallback implements MoviePlayer.FrameCallback {
             mPrevPresentUsec = presentationTimeUsec;
         } else {
             // Compute the desired time delta between the previous frame and this frame.
-            long frameDelta;
             if (mLoopReset) {
                 // We don't get an indication of how long the last frame should appear
                 // on-screen, so we just throw a reasonable value in.  We could probably
@@ -73,12 +63,9 @@ public class SpeedControlCallback implements MoviePlayer.FrameCallback {
                 mPrevPresentUsec = presentationTimeUsec - ONE_MILLION / 30;
                 mLoopReset = false;
             }
-            if (mFixedFrameDurationUsec != 0) {
-                // Caller requested a fixed frame rate.  Ignore PTS.
-                frameDelta = mFixedFrameDurationUsec;
-            } else {
-                frameDelta = presentationTimeUsec - mPrevPresentUsec;
-            }
+
+            long frameDelta = presentationTimeUsec - mPrevPresentUsec;
+
             if (frameDelta < 0) {
                 Log.w("Weird, video times went backward");
                 frameDelta = 0;

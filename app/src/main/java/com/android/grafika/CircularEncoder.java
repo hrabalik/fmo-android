@@ -44,7 +44,7 @@ import cz.fmo.recording.Buffer;
  * When we're told to save a snapshot, we create a MediaMuxer, write all the frames out,
  * and then go back to what we were doing.
  */
-public class CircularEncoder {
+class CircularEncoder {
     private static final boolean VERBOSE = false;
 
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding

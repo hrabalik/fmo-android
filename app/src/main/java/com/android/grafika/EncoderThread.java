@@ -106,7 +106,7 @@ public class EncoderThread extends Thread {
     /**
      * Drains all pending output from the decoder, and adds it to the circular buffer.
      */
-    public void drainEncoder() {
+    private void drainEncoder() {
         final int TIMEOUT_USEC = 0;     // no timeout -- check for buffers, bail if none
 
         ByteBuffer[] encoderOutputBuffers = mEncoder.getOutputBuffers();
@@ -176,7 +176,7 @@ public class EncoderThread extends Thread {
      * <p>
      * See notes for {@link CircularEncoder#frameAvailableSoon()}.
      */
-    void frameAvailableSoon() {
+    private void frameAvailableSoon() {
         //if (VERBOSE) Log.d("frameAvailableSoon");
         drainEncoder();
 
@@ -197,7 +197,7 @@ public class EncoderThread extends Thread {
      * We may want to reset the buffer after this -- if they hit "capture" again right
      * away they'll end up saving video with a gap where we paused to write the file.
      */
-    void saveVideo(File outputFile) {
+    private void saveVideo(File outputFile) {
         //if (VERBOSE) Log.d("saveVideo " + outputFile);
 
         if (mBuf.empty()) {
@@ -242,7 +242,7 @@ public class EncoderThread extends Thread {
     /**
      * Tells the Looper to quit.
      */
-    void shutdown() {
+    private void shutdown() {
         //if (VERBOSE) Log.d("shutdown");
 
         Looper looper = Looper.myLooper();

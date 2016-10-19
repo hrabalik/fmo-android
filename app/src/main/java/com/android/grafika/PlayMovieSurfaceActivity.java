@@ -196,7 +196,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                 return;
             }
 
-            mPlayTask = new MoviePlayer.PlayTask(player, this);
+            mPlayTask = new MoviePlayer.PlayTask(player, this, false);
 
             mShowStopLabel = true;
             updateControls();

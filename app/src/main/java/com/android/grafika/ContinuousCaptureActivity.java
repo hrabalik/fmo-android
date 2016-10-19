@@ -58,7 +58,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private static final int DESIRED_PREVIEW_FPS = 30;
 
     private final FileManager mFileMan = new FileManager(this);
-    private final float[] mTmpMatrix = new float[16];
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private Renderer mRenderer;

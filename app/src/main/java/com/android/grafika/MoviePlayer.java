@@ -34,9 +34,9 @@ import java.nio.ByteBuffer;
  * <p>
  * TODO: needs more advanced shuttle controls (pause/resume, skip)
  */
-public class MoviePlayer {
+class MoviePlayer {
     private static final boolean VERBOSE = false;
-    final FrameCallback mFrameCallback;
+    private final FrameCallback mFrameCallback;
     // Declare this here to reduce allocations.
     private final MediaCodec.BufferInfo mBufferInfo = new MediaCodec.BufferInfo();
     private final File mSourceFile;
@@ -112,23 +112,9 @@ public class MoviePlayer {
     }
 
     /**
-     * Returns the width, in pixels, of the video.
-     */
-    public int getVideoWidth() {
-        return mVideoWidth;
-    }
-
-    /**
-     * Returns the height, in pixels, of the video.
-     */
-    public int getVideoHeight() {
-        return mVideoHeight;
-    }
-
-    /**
      * Sets the loop mode.  If true, playback will loop forever.
      */
-    public void setLoopMode(boolean loopMode) {
+    private void setLoopMode(boolean loopMode) {
         mLoop = loopMode;
     }
 
@@ -137,7 +123,7 @@ public class MoviePlayer {
      * <p>
      * Called from arbitrary thread.
      */
-    public void requestStop() {
+    private void requestStop() {
         mIsStopRequested = true;
     }
 
@@ -147,7 +133,7 @@ public class MoviePlayer {
      * Does not return until video playback is complete, or we get a "stop" signal from
      * frameCallback.
      */
-    public void play() throws IOException {
+    private void play() throws IOException {
         MediaExtractor extractor = null;
         MediaCodec decoder = null;
 
@@ -413,18 +399,11 @@ public class MoviePlayer {
          * @param player   The player object, configured with control and output.
          * @param feedback UI feedback object.
          */
-        public PlayTask(MoviePlayer player, PlayerFeedback feedback) {
+        public PlayTask(MoviePlayer player, PlayerFeedback feedback, boolean doLoop) {
             mPlayer = player;
             mFeedback = feedback;
-
+            mDoLoop = doLoop;
             mLocalHandler = new LocalHandler();
-        }
-
-        /**
-         * Sets the loop mode.  If true, playback will loop forever.
-         */
-        public void setLoopMode(boolean loopMode) {
-            mDoLoop = loopMode;
         }
 
         /**

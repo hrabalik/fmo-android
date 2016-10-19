@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Camera-related utility functions.
  */
-public class CameraUtils {
+class CameraUtils {
     /**
      * Attempts to find a preview size that matches the provided width and height (which
      * specify the dimensions of the encoded video).  If it fails to find a match it just

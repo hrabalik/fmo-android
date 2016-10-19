@@ -1,13 +1,10 @@
 package com.android.grafika;
 
-public class Log {
+class Log {
     private static final String TAG = "Grafika";
 
     public static void d(String msg) {
         android.util.Log.d(TAG, msg);
-    }
-    public static void e(String msg) {
-        android.util.Log.e(TAG, msg);
     }
 
     public static void e(String msg, Exception e) {
