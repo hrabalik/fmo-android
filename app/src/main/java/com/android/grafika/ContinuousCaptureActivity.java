@@ -36,7 +36,7 @@ import java.lang.ref.WeakReference;
 
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
-import cz.fmo.graphics.GL;
+import cz.fmo.graphics.Renderer;
 import cz.fmo.util.FileManager;
 
 /**
@@ -62,7 +62,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
-    private GL.Renderer mRenderer;
+    private Renderer mRenderer;
     private int mFrameNum;
 
     private Camera mCamera;
@@ -310,7 +310,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface = mEGL.makeSurface(holder.getSurface());
         mDisplaySurface.makeCurrent();
 
-        mRenderer = new GL.Renderer();
+        mRenderer = new Renderer();
         mCameraTexture = new SurfaceTexture(mRenderer.getTextureId());
         mCameraTexture.setOnFrameAvailableListener(this);
 
