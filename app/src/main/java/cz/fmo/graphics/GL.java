@@ -2,6 +2,9 @@ package cz.fmo.graphics;
 
 import android.opengl.GLES20;
 
+/**
+ * Utility functions for working with OpenGL.
+ */
 class GL {
     /**
      * Checks whether the last GL call succeeded.
@@ -14,12 +17,18 @@ class GL {
         throw new RuntimeException("GL error " + errCode);
     }
 
+    /**
+     * Transform an array of floats into a read-only Buffer.
+     *
+     * @param arr array of floats
+     * @return a new, read-only, directly allocated buffer with its contents copied from arr
+     */
     static java.nio.Buffer makeBuffer(float[] arr) {
         java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * arr.length);
         byteBuf.order(java.nio.ByteOrder.nativeOrder());
         java.nio.FloatBuffer floatBuf = byteBuf.asFloatBuffer();
         floatBuf.put(arr);
         byteBuf.clear();
-        return byteBuf;
+        return byteBuf.asReadOnlyBuffer();
     }
 }

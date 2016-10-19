@@ -1,8 +1,25 @@
 package cz.fmo.graphics;
 
+import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
+/**
+ * A simple, specialized OpenGL ES 2.0 renderer for drawing whole surface textures
+ * (e.g. android.graphics.SurfaceTexture). Usage:
+ * <ul>
+ * <li>initialize OpenGL, e.g. create an instance of the EGL class</li>
+ * <li>create an instance of Renderer</li>
+ * <li>bind the renderer's surface texture to a source, e.g.
+ * camera.setPreviewTexture(renderer.getSurfaceTexture())</li>
+ * </ul>
+ * When a new frame is available in the surface texture:
+ * <ul>
+ * <li>make some surface current for writing, e.g. using EGL.Surface.makeCurrent()</li>
+ * <li>call the drawRectangle() method to draw the surface texture onto the current surface</li>
+ * </ul>
+ * To clean up, call release().
+ */
 public class Renderer {
     private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
     private static final String VERTEX_SOURCE = "" +
@@ -34,6 +51,8 @@ public class Renderer {
     private final int mLoc_pos;
     private final int mLoc_uv1;
     private final int mLoc_uvMat;
+    private final SurfaceTexture mSurfTex;
+    private final float[] mTemp = new float[16];
     private boolean mReleased = false;
 
     public Renderer() throws RuntimeException {
@@ -67,26 +86,40 @@ public class Renderer {
         GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         GL.checkError();
+
+        mSurfTex = new SurfaceTexture(mTexId);
     }
 
     public void release() {
         if (mReleased) return;
         mReleased = true;
-        if (mVert != null) mVert.release();
-        if (mFrag != null) mFrag.release();
+        if (mSurfTex != null) mSurfTex.release();
         if (mTexId != 0) {
             int[] textures = {mTexId};
             GLES20.glDeleteTextures(1, textures, 0);
         }
+        if (mVert != null) mVert.release();
+        if (mFrag != null) mFrag.release();
         GLES20.glDeleteProgram(mId);
     }
 
-    public int getTextureId() {
-        return mTexId;
+    /**
+     * Provides the input surface texture. Bind this texture to some source of images (e.g. a camera
+     * preview stream). The renderer will draw the contents of this surface texture.
+     *
+     * @return an internal input surface texture
+     */
+    public SurfaceTexture getSurfaceTexture() {
+        return mSurfTex;
     }
 
-    public void drawRectangle(float[] uvMat) {
+    /**
+     * Draw the whole input surface texture onto the current output surface.
+     */
+    public void drawRectangle() {
         if (mReleased) throw new RuntimeException("Draw after release");
+        mSurfTex.updateTexImage();
+        mSurfTex.getTransformMatrix(mTemp);
         GLES20.glUseProgram(mId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(TEXTURE_TYPE, mTexId);
@@ -94,7 +127,7 @@ public class Renderer {
         GLES20.glVertexAttribPointer(mLoc_pos, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_POS);
         GLES20.glEnableVertexAttribArray(mLoc_uv1);
         GLES20.glVertexAttribPointer(mLoc_uv1, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_UV);
-        GLES20.glUniformMatrix4fv(mLoc_uvMat, 1, false, uvMat, 0);
+        GLES20.glUniformMatrix4fv(mLoc_uvMat, 1, false, mTemp, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glUseProgram(0);
         GL.checkError();

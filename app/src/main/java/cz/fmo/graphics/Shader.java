@@ -2,6 +2,10 @@ package cz.fmo.graphics;
 
 import android.opengl.GLES20;
 
+/**
+ * Represents an OpenGL ES 2.0 shader. Initialization is performed by the constructor, clean-up is
+ * performed by calling the release() method.
+ */
 class Shader {
     private final int mId;
     private boolean mReleased = false;
@@ -26,6 +30,9 @@ class Shader {
         GLES20.glDeleteShader(mId);
     }
 
+    /**
+     * @return unique OpenGL-internal identifier of the shader
+     */
     int getId() {
         return mId;
     }

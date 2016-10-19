@@ -61,7 +61,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private final float[] mTmpMatrix = new float[16];
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
-    private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
     private Renderer mRenderer;
     private int mFrameNum;
 
@@ -137,10 +136,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         if (mCircEncoder != null) {
             mCircEncoder.shutdown();
             mCircEncoder = null;
-        }
-        if (mCameraTexture != null) {
-            mCameraTexture.release();
-            mCameraTexture = null;
         }
         if (mDisplaySurface != null) {
             mDisplaySurface.release();
@@ -311,12 +306,11 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface.makeCurrent();
 
         mRenderer = new Renderer();
-        mCameraTexture = new SurfaceTexture(mRenderer.getTextureId());
-        mCameraTexture.setOnFrameAvailableListener(this);
+        mRenderer.getSurfaceTexture().setOnFrameAvailableListener(this);
 
         Log.d("starting camera preview");
         try {
-            mCamera.setPreviewTexture(mCameraTexture);
+            mCamera.setPreviewTexture(mRenderer.getSurfaceTexture());
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
@@ -372,15 +366,13 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
         // Latch the next frame from the camera.
         mDisplaySurface.makeCurrent();
-        mCameraTexture.updateTexImage();
-        mCameraTexture.getTransformMatrix(mTmpMatrix);
 
         // Fill the SurfaceView with it.
         SurfaceView sv = (SurfaceView) findViewById(R.id.continuousCapture_surfaceView);
         int viewWidth = sv.getWidth();
         int viewHeight = sv.getHeight();
         GLES20.glViewport(0, 0, viewWidth, viewHeight);
-        mRenderer.drawRectangle(mTmpMatrix);
+        mRenderer.drawRectangle();
         drawExtra(mFrameNum, viewWidth, viewHeight);
         mDisplaySurface.swapBuffers();
 
@@ -388,10 +380,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         if (!mFileSaveInProgress) {
             mEncoderSurface.makeCurrent();
             GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-            mRenderer.drawRectangle(mTmpMatrix);
+            mRenderer.drawRectangle();
             drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
             mCircEncoder.frameAvailableSoon();
-            mEncoderSurface.presentationTime(mCameraTexture.getTimestamp());
+            mEncoderSurface.presentationTime(mRenderer.getSurfaceTexture().getTimestamp());
             mEncoderSurface.swapBuffers();
         }
 
