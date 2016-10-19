@@ -22,5 +22,4 @@ public class GL {
         byteBuf.clear();
         return byteBuf;
     }
-
 }
