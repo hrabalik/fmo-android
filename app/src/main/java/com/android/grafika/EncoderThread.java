@@ -153,7 +153,9 @@ public class EncoderThread extends Thread {
                     //
                     //mBuf.add(encodedData, mBufferInfo.flags,
                     //        mBufferInfo.presentationTimeUs);
-                    mBuf.pushBack(encodedData, mBufferInfo);
+                    synchronized (mBuf) {
+                        mBuf.pushBack(encodedData, mBufferInfo);
+                    }
 
                     //if (VERBOSE) {
                     //    Log.d("sent " + mBufferInfo.size + " bytes to muxer, ts=" +
@@ -200,43 +202,45 @@ public class EncoderThread extends Thread {
     private void saveVideo(File outputFile) {
         //if (VERBOSE) Log.d("saveVideo " + outputFile);
 
-        if (mBuf.empty()) {
-            Log.w("Unable to get first index");
-            mCallback.fileSaveComplete(1);
-            return;
-        }
-
-        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-        MediaMuxer muxer = null;
-        int result = -1;
-        try {
-            muxer = new MediaMuxer(outputFile.getPath(),
-                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int videoTrack = muxer.addTrack(mEncodedFormat);
-            muxer.start();
-
-            for (int index = mBuf.begin(); index != mBuf.end(); index = mBuf.next(index)) {
-                mBuf.get(index, mEncBufferOutput, info);
-                //if (VERBOSE) {
-                //    Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
-                //}
-                muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
+        synchronized (mBuf) {
+            if (mBuf.empty()) {
+                Log.w("Unable to get first index");
+                mCallback.fileSaveComplete(1);
+                return;
             }
-            result = 0;
-        } catch (IOException ioe) {
-            Log.w("muxer failed", ioe);
-            result = 2;
-        } finally {
-            if (muxer != null) {
-                muxer.stop();
-                muxer.release();
-            }
-        }
 
-        //if (VERBOSE) {
-        //    Log.d("muxer stopped, result=" + result);
-        //}
-        mCallback.fileSaveComplete(result);
+            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+            MediaMuxer muxer = null;
+            int result = -1;
+            try {
+                muxer = new MediaMuxer(outputFile.getPath(),
+                        MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+                int videoTrack = muxer.addTrack(mEncodedFormat);
+                muxer.start();
+
+                for (int index = mBuf.begin(); index != mBuf.end(); index = mBuf.next(index)) {
+                    mBuf.get(index, mEncBufferOutput, info);
+                    //if (VERBOSE) {
+                    //    Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
+                    //}
+                    muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
+                }
+                result = 0;
+            } catch (IOException ioe) {
+                Log.w("muxer failed", ioe);
+                result = 2;
+            } finally {
+                if (muxer != null) {
+                    muxer.stop();
+                    muxer.release();
+                }
+            }
+
+            //if (VERBOSE) {
+            //    Log.d("muxer stopped, result=" + result);
+            //}
+            mCallback.fileSaveComplete(result);
+        }
     }
 
     /**
