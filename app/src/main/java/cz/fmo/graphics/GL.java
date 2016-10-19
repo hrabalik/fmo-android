@@ -4,6 +4,8 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
 public class GL {
+    private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
+
     /**
      * Checks whether the last GL call succeeded.
      *
@@ -100,11 +102,8 @@ public class GL {
             mLoc_uvMat = GLES20.glGetUniformLocation(mId, "uvMat");
 
             GLES20.glEnableVertexAttribArray(loc_pos);
-            checkError();
             GLES20.glVertexAttribPointer(loc_pos, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_POS);
-            checkError();
             GLES20.glEnableVertexAttribArray(loc_uv1);
-            checkError();
             GLES20.glVertexAttribPointer(loc_uv1, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_UV);
             checkError();
         }
@@ -121,16 +120,15 @@ public class GL {
             if (mReleased) throw new RuntimeException("Draw after release");
             GLES20.glUseProgram(mId);
             GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(Renderer.TEXTURE_TYPE, texId);
+            GLES20.glBindTexture(TEXTURE_TYPE, texId);
             GLES20.glUniformMatrix4fv(mLoc_uvMat, 1, false, uvMat, 0);
             GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
             GLES20.glUseProgram(0);
+            checkError();
         }
     }
 
     public static class Renderer {
-        private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
-
         private final Program mProgram;
         private final int mTexId;
         private boolean mReleased = false;
@@ -150,7 +148,7 @@ public class GL {
             checkError();
         }
 
-        private void release() {
+        public void release() {
             if (mReleased) return;
             mReleased = true;
 

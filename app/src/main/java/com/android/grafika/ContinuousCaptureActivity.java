@@ -30,15 +30,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.grafika.gles.FullFrameRect;
-import com.android.grafika.gles.Texture2dProgram;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
+import cz.fmo.graphics.GL;
 import cz.fmo.util.FileManager;
 
 /**
@@ -64,9 +62,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
-    private Texture2dProgram mProgram;
-    private FullFrameRect mFullFrameBlit;
-    private int mTextureId;
+    private GL.Renderer mRenderer;
     private int mFrameNum;
 
     private Camera mCamera;
@@ -158,13 +154,9 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mCircEncoderSurface.release();
             mCircEncoderSurface = null;
         }
-        if (mFullFrameBlit != null) {
-            mFullFrameBlit.release();
-            mFullFrameBlit = null;
-        }
-        if (mProgram != null) {
-            mProgram.release();
-            mProgram = null;
+        if (mRenderer != null) {
+            mRenderer.release();
+            mRenderer = null;
         }
         if (mEGL != null) {
             mEGL.release();
@@ -318,10 +310,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface = mEGL.makeSurface(holder.getSurface());
         mDisplaySurface.makeCurrent();
 
-        mProgram = new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT);
-        mFullFrameBlit = new FullFrameRect(mProgram);
-        mTextureId = mFullFrameBlit.createTextureObject();
-        mCameraTexture = new SurfaceTexture(mTextureId);
+        mRenderer = new GL.Renderer();
+        mCameraTexture = new SurfaceTexture(mRenderer.getTextureId());
         mCameraTexture.setOnFrameAvailableListener(this);
 
         Log.d("starting camera preview");
@@ -390,7 +380,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         int viewWidth = sv.getWidth();
         int viewHeight = sv.getHeight();
         GLES20.glViewport(0, 0, viewWidth, viewHeight);
-        mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
+        mRenderer.draw(mTmpMatrix);
         drawExtra(mFrameNum, viewWidth, viewHeight);
         mDisplaySurface.swapBuffers();
 
@@ -398,7 +388,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         if (!mFileSaveInProgress) {
             mEncoderSurface.makeCurrent();
             GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
-            mFullFrameBlit.drawFrame(mTextureId, mTmpMatrix);
+            mRenderer.draw(mTmpMatrix);
             drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
             mCircEncoder.frameAvailableSoon();
             mEncoderSurface.presentationTime(mCameraTexture.getTimestamp());
