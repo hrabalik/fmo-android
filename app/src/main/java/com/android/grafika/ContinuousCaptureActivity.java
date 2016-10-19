@@ -64,6 +64,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private SurfaceTexture mCameraTexture;  // receives the output from the camera preview
+    private Texture2dProgram mProgram;
     private FullFrameRect mFullFrameBlit;
     private int mTextureId;
     private int mFrameNum;
@@ -160,6 +161,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         if (mFullFrameBlit != null) {
             mFullFrameBlit.release();
             mFullFrameBlit = null;
+        }
+        if (mProgram != null) {
+            mProgram.release();
+            mProgram = null;
         }
         if (mEGL != null) {
             mEGL.release();
@@ -313,8 +318,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface = mEGL.makeSurface(holder.getSurface());
         mDisplaySurface.makeCurrent();
 
-        mFullFrameBlit = new FullFrameRect(
-                new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT));
+        mProgram = new Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_EXT);
+        mFullFrameBlit = new FullFrameRect(mProgram);
         mTextureId = mFullFrameBlit.createTextureObject();
         mCameraTexture = new SurfaceTexture(mTextureId);
         mCameraTexture.setOnFrameAvailableListener(this);
