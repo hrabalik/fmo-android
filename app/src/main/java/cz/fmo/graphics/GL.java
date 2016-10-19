@@ -2,7 +2,7 @@ package cz.fmo.graphics;
 
 import android.opengl.GLES20;
 
-public class GL {
+class GL {
     /**
      * Checks whether the last GL call succeeded.
      *
