@@ -350,9 +350,6 @@ public class MoviePlayer {
                         frameCallback.preRender(mBufferInfo.presentationTimeUs);
                     }
                     decoder.releaseOutputBuffer(decoderStatus, doRender);
-                    if (doRender && frameCallback != null) {
-                        frameCallback.postRender();
-                    }
 
                     if (doLoop) {
                         Log.d("Reached EOS, looping");
@@ -386,13 +383,6 @@ public class MoviePlayer {
          * @param presentationTimeUsec The desired presentation time, in microseconds.
          */
         void preRender(long presentationTimeUsec);
-
-        /**
-         * Called immediately after the frame render call returns.  The frame may not have
-         * actually been rendered yet.
-         * TODO: is this actually useful?
-         */
-        void postRender();
 
         /**
          * Called after the last frame of a looped movie has been rendered.  This allows the
