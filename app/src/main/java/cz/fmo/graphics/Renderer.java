@@ -29,8 +29,8 @@ public class Renderer {
 
     private final int mId;
     private final int mTexId;
-    private final GL.Shader mVert;
-    private final GL.Shader mFrag;
+    private final Shader mVert;
+    private final Shader mFrag;
     private final int mLoc_pos;
     private final int mLoc_uv1;
     private final int mLoc_uvMat;
@@ -39,8 +39,8 @@ public class Renderer {
     public Renderer() throws RuntimeException {
         mId = GLES20.glCreateProgram();
         GL.checkError();
-        mVert = new GL.Shader(GLES20.GL_VERTEX_SHADER, VERTEX_SOURCE);
-        mFrag = new GL.Shader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SOURCE);
+        mVert = new Shader(GLES20.GL_VERTEX_SHADER, VERTEX_SOURCE);
+        mFrag = new Shader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SOURCE);
         GLES20.glAttachShader(mId, mVert.getId());
         GLES20.glAttachShader(mId, mFrag.getId());
         GLES20.glLinkProgram(mId);
