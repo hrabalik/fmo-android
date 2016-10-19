@@ -4,8 +4,6 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
 public class GL {
-    private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
-
     /**
      * Checks whether the last GL call succeeded.
      *
@@ -51,7 +49,8 @@ public class GL {
         }
     }
 
-    private static class Program {
+    public static class Renderer {
+        private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
         private static final String VERTEX_SOURCE = "" +
                 "uniform mat4 uvMat;\n" +
                 "attribute vec4 pos;\n" +
@@ -75,12 +74,15 @@ public class GL {
         private static final java.nio.Buffer RECTANGLE_UV = makeBuffer(RECTANGLE_UV_DATA);
 
         private final int mId;
+        private final int mTexId;
         private final Shader mVert;
         private final Shader mFrag;
+        private final int mLoc_pos;
+        private final int mLoc_uv1;
         private final int mLoc_uvMat;
         private boolean mReleased = false;
 
-        private Program() throws RuntimeException {
+        public Renderer() throws RuntimeException {
             mId = GLES20.glCreateProgram();
             checkError();
             mVert = new Shader(GLES20.GL_VERTEX_SHADER, VERTEX_SOURCE);
@@ -97,50 +99,15 @@ public class GL {
                 throw new RuntimeException(log);
             }
 
-            int loc_pos = GLES20.glGetAttribLocation(mId, "pos");
-            int loc_uv1 = GLES20.glGetAttribLocation(mId, "uv1");
+            mLoc_pos = GLES20.glGetAttribLocation(mId, "pos");
+            mLoc_uv1 = GLES20.glGetAttribLocation(mId, "uv1");
             mLoc_uvMat = GLES20.glGetUniformLocation(mId, "uvMat");
 
-            GLES20.glEnableVertexAttribArray(loc_pos);
-            GLES20.glVertexAttribPointer(loc_pos, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_POS);
-            GLES20.glEnableVertexAttribArray(loc_uv1);
-            GLES20.glVertexAttribPointer(loc_uv1, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_UV);
-            checkError();
-        }
-
-        private void release() {
-            if (mReleased) return;
-            mReleased = true;
-            if (mVert != null) mVert.release();
-            if (mFrag != null) mFrag.release();
-            GLES20.glDeleteProgram(mId);
-        }
-
-        private void drawRectangle(int texId, float[] uvMat) {
-            if (mReleased) throw new RuntimeException("Draw after release");
-            GLES20.glUseProgram(mId);
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-            GLES20.glBindTexture(TEXTURE_TYPE, texId);
-            GLES20.glUniformMatrix4fv(mLoc_uvMat, 1, false, uvMat, 0);
-            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-            GLES20.glUseProgram(0);
-            checkError();
-        }
-    }
-
-    public static class Renderer {
-        private final Program mProgram;
-        private final int mTexId;
-        private boolean mReleased = false;
-
-        public Renderer() throws RuntimeException {
-            mProgram = new Program();
-
-            int[] result = {0};
             GLES20.glGenTextures(1, result, 0);
             checkError();
             mTexId = result[0];
             GLES20.glBindTexture(TEXTURE_TYPE, mTexId);
+            checkError();
             GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
             GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
             GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
@@ -151,21 +118,32 @@ public class GL {
         public void release() {
             if (mReleased) return;
             mReleased = true;
-
+            if (mVert != null) mVert.release();
+            if (mFrag != null) mFrag.release();
             if (mTexId != 0) {
                 int[] textures = {mTexId};
                 GLES20.glDeleteTextures(1, textures, 0);
             }
-
-            if (mProgram != null) mProgram.release();
+            GLES20.glDeleteProgram(mId);
         }
 
         public int getTextureId() {
             return mTexId;
         }
 
-        public void draw(float[] uvMat) {
-            mProgram.drawRectangle(mTexId, uvMat);
+        public void drawRectangle(float[] uvMat) {
+            if (mReleased) throw new RuntimeException("Draw after release");
+            GLES20.glUseProgram(mId);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+            GLES20.glBindTexture(TEXTURE_TYPE, mTexId);
+            GLES20.glEnableVertexAttribArray(mLoc_pos);
+            GLES20.glVertexAttribPointer(mLoc_pos, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_POS);
+            GLES20.glEnableVertexAttribArray(mLoc_uv1);
+            GLES20.glVertexAttribPointer(mLoc_uv1, 2, GLES20.GL_FLOAT, false, 8, RECTANGLE_UV);
+            GLES20.glUniformMatrix4fv(mLoc_uvMat, 1, false, uvMat, 0);
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+            GLES20.glUseProgram(0);
+            checkError();
         }
     }
 }
