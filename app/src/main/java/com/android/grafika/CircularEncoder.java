@@ -179,7 +179,7 @@ class CircularEncoder implements SaveMovieThread.Callback {
      * frames during this time.
      */
     public void saveVideo(File outputFile) {
-        mSaveMovieThread.getHandler().sendWork(outputFile);
+        mSaveMovieThread.getHandler().sendSave(outputFile);
     }
 
     @Override

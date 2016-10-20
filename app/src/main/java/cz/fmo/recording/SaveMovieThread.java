@@ -10,7 +10,8 @@ import java.nio.ByteBuffer;
 import cz.fmo.util.GenericThread;
 
 /**
- * Thread for saving videos from stored frames in a buffer.
+ * Thread for saving videos from frames stored in a buffer. The buffer needs to be filled with
+ * MPEG-4 frames and the exact format has to be specified using the Buffer.setFormat() method.
  */
 public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
@@ -30,16 +31,25 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         mCb = cb;
     }
 
-    protected android.os.Handler makeHandler() {
+    @Override
+    protected SaveMovieThreadHandler makeHandler() {
         return new SaveMovieThreadHandler(this);
     }
 
-    void work(File file) {
-        boolean win = save(file);
+    /**
+     * Saves the latest MOVIE_LENGTH of frames to the specified file. If the start of the movie
+     * is less than TIME_TO_SAVE from the start of the buffer, the method refuses to save the file.
+     * The TIME_TO_SAVE requirement is a precaution to avoid overwriting data of a frame while it is
+     * still being saved.
+     *
+     * @param file file to save to, should be writable and have a .mp4 extension
+     */
+    void save(File file) {
+        boolean win = saveImpl(file);
         mCb.saveCompleted(file.getName(), win);
     }
 
-    private boolean save(File file) {
+    private boolean saveImpl(File file) {
         int first;
         int last;
 
