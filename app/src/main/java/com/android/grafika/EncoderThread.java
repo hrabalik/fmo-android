@@ -1,7 +1,6 @@
 package com.android.grafika;
 
 import android.media.MediaCodec;
-import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.os.Handler;
 import android.os.Looper;
@@ -46,12 +45,11 @@ public class EncoderThread extends Thread {
     private static final long MOVIE_LENGTH_MIN = 2 * SECONDS;
     private static final long TIME_TO_SAVE_MIN = SECONDS / 2;
     private final MediaCodec mEncoder;
-    private final MediaCodec.BufferInfo mBufferInfo;
+    private final MediaCodec.BufferInfo mInfoCache;
     private final Buffer mBuf;
-    private final ByteBuffer mEncBufferOutput;
+    private final ByteBuffer mBufCache;
     private final CircularEncoder.Callback mCallback;
     private final Object mLock = new Object();
-    private MediaFormat mEncodedFormat;
     private EncoderHandler mHandler;
     private int mFrameNum;
     private volatile boolean mReady = false;
@@ -60,10 +58,10 @@ public class EncoderThread extends Thread {
                          CircularEncoder.Callback callback) {
         mEncoder = mediaCodec;
         mBuf = encBuffer;
-        mEncBufferOutput = mBuf.getBuffer();
+        mBufCache = mBuf.getCache();
         mCallback = callback;
 
-        mBufferInfo = new MediaCodec.BufferInfo();
+        mInfoCache = new MediaCodec.BufferInfo();
     }
 
     /**
@@ -126,7 +124,7 @@ public class EncoderThread extends Thread {
 
         ByteBuffer[] encoderOutputBuffers = mEncoder.getOutputBuffers();
         while (true) {
-            int encoderStatus = mEncoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+            int encoderStatus = mEncoder.dequeueOutputBuffer(mInfoCache, TIMEOUT_USEC);
             if (encoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
                 // no output available yet
                 break;
@@ -139,8 +137,8 @@ public class EncoderThread extends Thread {
                 // for MediaMuxer.  It's unclear what else MediaMuxer might want, so
                 // rather than extract the codec-specific data and reconstruct a new
                 // MediaFormat later, we just grab it here and keep it around.
-                mEncodedFormat = mEncoder.getOutputFormat();
-                Log.d("encoder output format changed: " + mEncodedFormat);
+                mBuf.setFormat(mEncoder.getOutputFormat());
+                Log.d("encoder output format changed: " + mBuf.getFormat());
             } else if (encoderStatus < 0) {
                 Log.w("unexpected result from encoder.dequeueOutputBuffer: " +
                         encoderStatus);
@@ -152,35 +150,35 @@ public class EncoderThread extends Thread {
                             " was null");
                 }
 
-                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                if ((mInfoCache.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                     // The codec config data was pulled out when we got the
                     // INFO_OUTPUT_FORMAT_CHANGED status.  The MediaMuxer won't accept
                     // a single big blob -- it wants separate csd-0/csd-1 chunks --
                     // so simply saving this off won't work.
                     //if (VERBOSE) Log.d("ignoring BUFFER_FLAG_CODEC_CONFIG");
-                    mBufferInfo.size = 0;
+                    mInfoCache.size = 0;
                 }
 
-                if (mBufferInfo.size != 0) {
+                if (mInfoCache.size != 0) {
                     //// adjust the ByteBuffer values to match BufferInfo (not needed?)
-                    //encodedData.position(mBufferInfo.offset);
-                    //encodedData.limit(mBufferInfo.offset + mBufferInfo.size);
+                    //encodedData.position(mInfoCache.offset);
+                    //encodedData.limit(mInfoCache.offset + mInfoCache.size);
                     //
-                    //mBuf.add(encodedData, mBufferInfo.flags,
-                    //        mBufferInfo.presentationTimeUs);
+                    //mBuf.add(encodedData, mInfoCache.flags,
+                    //        mInfoCache.presentationTimeUs);
                     synchronized (mBuf) {
-                        mBuf.pushBack(encodedData, mBufferInfo);
+                        mBuf.pushBack(encodedData, mInfoCache);
                     }
 
                     //if (VERBOSE) {
-                    //    Log.d("sent " + mBufferInfo.size + " bytes to muxer, ts=" +
-                    //            mBufferInfo.presentationTimeUs);
+                    //    Log.d("sent " + mInfoCache.size + " bytes to muxer, ts=" +
+                    //            mInfoCache.presentationTimeUs);
                     //}
                 }
 
                 mEncoder.releaseOutputBuffer(encoderStatus, false);
 
-                if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                if ((mInfoCache.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                     Log.w("reached end of stream unexpectedly");
                     break;      // out of while
                 }
@@ -239,15 +237,15 @@ public class EncoderThread extends Thread {
         try {
             muxer = new MediaMuxer(outputFile.getPath(),
                     MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int videoTrack = muxer.addTrack(mEncodedFormat);
+            int videoTrack = muxer.addTrack(mBuf.getFormat());
             muxer.start();
 
             for (int index = first; index != last; index = mBuf.next(index)) {
-                mBuf.get(index, mEncBufferOutput, info);
+                mBuf.get(index, mBufCache, info);
                 //if (VERBOSE) {
                 //    Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
                 //}
-                muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
+                muxer.writeSampleData(videoTrack, mBufCache, info);
             }
             result = 0;
         } catch (IOException ioe) {

@@ -1,6 +1,7 @@
 package cz.fmo.recording;
 
 import android.media.MediaCodec.BufferInfo;
+import android.media.MediaFormat;
 
 import java.nio.ByteBuffer;
 
@@ -15,6 +16,7 @@ public class Buffer {
     private final BufferInfo[] mMeta;
     private int mHead = 0;
     private int mTail = 0;
+    private MediaFormat mFormat = null;
 
     /**
      * @param bps     expected bits per second
@@ -238,26 +240,26 @@ public class Buffer {
      * the returned object as the parameter of the get() method. Call this method outside
      * performance-critical code.
      *
-     * @return buffer to be used with the get() method
+     * @return cache to be used with the get() method
      */
-    public ByteBuffer getBuffer() {
+    public ByteBuffer getCache() {
         return ByteBuffer.wrap(mData);
     }
 
     /**
      * Provides access to a frame by filling the given data structures.
      *
-     * @param index  frame index
-     * @param buffer object to be filled, obtained via getBuffer()
-     * @param info   object to be filled
+     * @param index frame index
+     * @param cache object to be filled, obtained via getCache()
+     * @param info  object to be filled
      */
-    public void get(int index, ByteBuffer buffer, BufferInfo info) {
+    public void get(int index, ByteBuffer cache, BufferInfo info) {
         if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
-        if (buffer.array() != mData) throw new RuntimeException("Bad buffer");
+        if (cache.array() != mData) throw new RuntimeException("Bad buffer");
         BufferInfo meta = mMeta[index];
-        buffer.clear();
-        buffer.position(meta.offset);
-        buffer.limit(meta.offset + meta.size);
+        cache.clear();
+        cache.position(meta.offset);
+        cache.limit(meta.offset + meta.size);
         info.offset = meta.offset;
         info.size = meta.size;
         info.flags = meta.flags;
@@ -271,5 +273,24 @@ public class Buffer {
     public long getTime(int index) {
         if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         return mMeta[index].presentationTimeUs;
+    }
+
+    /**
+     * @return the format of stored frames, specified previously via setFormat(). If setFormat() was
+     * not called, the return value is null.
+     */
+    public MediaFormat getFormat() {
+        return mFormat;
+    }
+
+    /**
+     * Stores the format of the encoded video, as produced by e.g. MediaCodec.getOutputFormat().
+     * This information is not relevant to storing the data in a buffer, but it may be important
+     * for the consumer of the stored data (e.g. MediaMuxer).
+     *
+     * @param format format of stored frames
+     */
+    public void setFormat(MediaFormat format) {
+        mFormat = format;
     }
 }
