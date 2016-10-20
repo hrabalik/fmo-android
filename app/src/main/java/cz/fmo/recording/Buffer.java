@@ -23,13 +23,13 @@ public class Buffer {
      * @param fps     expected frames per second
      * @param seconds approximate buffer length
      */
-    public Buffer(double bps, double fps, double seconds) {
+    public Buffer(int bps, float fps, float seconds) {
         // approximate the required buffer sizes
-        double nFrames = fps * seconds;
-        double nBytes = (bps * seconds) * (1 / 8.);
-        double factor = ((nFrames + 2.) / nFrames); // add extra space for a few frames
+        float nFrames = fps * seconds;
+        float nBytes = (bps * seconds) * (1 / 8.f);
+        float factor = ((nFrames + 2.f) / nFrames); // add extra space for a few frames
         int dataSize = (int) Math.ceil(factor * nBytes);
-        int metaSize = (int) Math.ceil(2. * nFrames);
+        int metaSize = (int) Math.ceil(2.f * nFrames);
 
         // allocate buffers
         mData = new byte[dataSize];

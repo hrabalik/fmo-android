@@ -11,7 +11,7 @@ import android.os.Looper;
  */
 public abstract class GenericThread<H extends android.os.Handler> extends Thread {
     private final Object mLock = new Object();
-    private H mHandler;
+    private H mHandler = null;
 
     /**
      * The main method of the thread. The statement Looper.Loop() blocks until the kill() method is
@@ -19,14 +19,16 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
      */
     @Override
     public final void run() {
-        Looper.prepare();
         synchronized (mLock) {
+            Looper.prepare();
+            setup();
             mHandler = makeHandler();
             mLock.notify();
         }
         Looper.loop();
         synchronized (mLock) {
             mHandler = null;
+            teardown();
         }
     }
 
@@ -66,7 +68,7 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     }
 
     /**
-     * Stops the execution of the main loop, terminating the thread.
+     * Stops the execution of the event loop, terminating the thread.
      */
     public final void kill() {
         Looper l = Looper.myLooper();
@@ -78,4 +80,18 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
      * @return a new handler instance bound to "this"
      */
     protected abstract H makeHandler();
+
+    /**
+     * Optional extension point. This method is called before the event loop is started. The method
+     * runs in the same thread as the event loop.
+     */
+    protected void setup() {
+    }
+
+    /**
+     * Optional extension point. This method is called after the event loop is stopped. The method
+     * runs in the same thread as the event loop.
+     */
+    protected void teardown() {
+    }
 }
