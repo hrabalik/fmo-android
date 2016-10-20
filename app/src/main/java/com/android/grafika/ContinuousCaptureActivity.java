@@ -376,7 +376,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface.swapBuffers();
 
         // Send it to the video encoder.
-        if (!mFileSaveInProgress) {
+        //if (!mFileSaveInProgress) {
             mEncoderSurface.makeCurrent();
             GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
             mRenderer.drawRectangle();
@@ -384,7 +384,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mCircEncoder.frameAvailableSoon();
             mEncoderSurface.presentationTime(mRenderer.getSurfaceTexture().getTimestamp());
             mEncoderSurface.swapBuffers();
-        }
+        //}
 
         mFrameNum++;
     }

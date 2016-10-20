@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 
 import cz.fmo.recording.Buffer;
+import cz.fmo.recording.SaveMovieThread;
 
 /**
  * Encodes video in a fixed-size circular buffer.
@@ -44,13 +45,14 @@ import cz.fmo.recording.Buffer;
  * When we're told to save a snapshot, we create a MediaMuxer, write all the frames out,
  * and then go back to what we were doing.
  */
-class CircularEncoder {
+class CircularEncoder implements SaveMovieThread.Callback {
     private static final boolean VERBOSE = false;
 
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
     private static final int IFRAME_INTERVAL = 1;           // sync frame every second
-
+    private final Callback mCb;
     private EncoderThread mEncoderThread;
+    private SaveMovieThread mSaveMovieThread;
     private Surface mInputSurface;
     private MediaCodec mEncoder;
 
@@ -103,6 +105,14 @@ class CircularEncoder {
         mEncoderThread = new EncoderThread(mEncoder, encBuffer, cb);
         mEncoderThread.start();
         mEncoderThread.waitUntilReady();
+
+        mSaveMovieThread = new SaveMovieThread(encBuffer, this);
+        mSaveMovieThread.start();
+        mSaveMovieThread.waitForHandler();
+        mCb = cb;
+
+        mEncoderThread.setPriority(Thread.MAX_PRIORITY);
+        mSaveMovieThread.setPriority(Thread.MIN_PRIORITY);
     }
 
     /**
@@ -122,10 +132,14 @@ class CircularEncoder {
 
         Handler handler = mEncoderThread.getHandler();
         handler.sendMessage(handler.obtainMessage(EncoderThread.EncoderHandler.MSG_SHUTDOWN));
+
+        mSaveMovieThread.getHandler().sendKill();
+
         try {
             mEncoderThread.join();
+            mSaveMovieThread.join();
         } catch (InterruptedException ie) {
-            Log.w("Encoder thread join() was interrupted", ie);
+            throw new RuntimeException("Interrupted");
         }
 
         if (mEncoder != null) {
@@ -165,9 +179,12 @@ class CircularEncoder {
      * frames during this time.
      */
     public void saveVideo(File outputFile) {
-        Handler handler = mEncoderThread.getHandler();
-        handler.sendMessage(handler.obtainMessage(
-                EncoderThread.EncoderHandler.MSG_SAVE_VIDEO, outputFile));
+        mSaveMovieThread.getHandler().sendWork(outputFile);
+    }
+
+    @Override
+    public void saveCompleted(String filename, boolean success) {
+        mCb.fileSaveComplete(success ? 0 : 1);
     }
 
     /**

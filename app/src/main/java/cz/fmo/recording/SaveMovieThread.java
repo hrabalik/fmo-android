@@ -9,12 +9,15 @@ import java.nio.ByteBuffer;
 
 import cz.fmo.util.GenericThread;
 
+/**
+ * Thread for saving videos from stored frames in a buffer.
+ */
 public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
     private static final long SECONDS = 1000000;
     private static final long MOVIE_LENGTH = 3 * SECONDS;
     private static final long MOVIE_MIN_LENGTH = 2 * SECONDS;
-    private static final long TIME_TO_SAVE = SECONDS / 2;
+    private static final long TIME_TO_SAVE = SECONDS;
     private final Buffer mBuf;
     private final ByteBuffer mBufCache;
     private final MediaCodec.BufferInfo mInfoCache;
@@ -31,7 +34,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         return new SaveMovieThreadHandler(this);
     }
 
-    public void work(File file) {
+    void work(File file) {
         boolean win = save(file);
         mCb.saveCompleted(file.getName(), win);
     }
@@ -55,8 +58,9 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         MediaMuxer muxer = null;
         try {
             muxer = new MediaMuxer(file.getPath(), OUTPUT_FORMAT);
-            muxer.start();
             int track = muxer.addTrack(mBuf.getFormat());
+            muxer.start();
+
             for (int index = first; index != last; index = mBuf.next(index)) {
                 mBuf.get(index, mBufCache, mInfoCache);
                 muxer.writeSampleData(track, mBufCache, mInfoCache);

@@ -3,7 +3,10 @@ package cz.fmo.recording;
 import java.io.File;
 import java.lang.ref.WeakReference;
 
-class SaveMovieThreadHandler extends android.os.Handler {
+/**
+ * Message handler for SaveMovieThread.
+ */
+public class SaveMovieThreadHandler extends android.os.Handler {
     private static final int KILL = 1;
     private static final int WORK = 2;
     private final WeakReference<SaveMovieThread> mThreadRef;
