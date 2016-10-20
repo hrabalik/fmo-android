@@ -50,7 +50,7 @@ public class Buffer {
         return (i + 1) % mMeta.length;
     }
 
-    private int prev(int i) {
+    public int prev(int i) {
         return (i + mMeta.length - 1) % mMeta.length;
     }
 
@@ -62,29 +62,116 @@ public class Buffer {
         return mTail;
     }
 
-    private int front() {
-        return mHead;
-    }
-
-    private int back() {
+    /**
+     * @return index of the last frame in buffer
+     * @throws RuntimeException if the buffer is empty
+     */
+    public int lastFrame() throws RuntimeException {
+        if (empty()) throw new RuntimeException("Empty");
         return prev(mTail);
     }
 
     /**
+     * @param first start of range, index of the first frame
+     * @param last  end of range, index of the frame after the last frame (past-the-end index)
+     * @return range midpoint, index of the frame in the middle
+     */
+    private int midpoint(int first, int last) {
+        if (first <= last) {
+            return (first + last) / 2;
+        } else {
+            return ((first + (last + mMeta.length)) / 2) % mMeta.length;
+        }
+    }
+
+    /**
+     * Binary search for the frame that has a timestamp close to the specified one. It is assumed
+     * that the timestamps in the range are strictly increasing, with a fixed frame rate.
+     *
+     * @param first start of range, index of the first frame
+     * @param last  end of range, index of the frame after the last frame (past-the-end index)
+     * @param time  time to search for, in microseconds
+     * @return a frame in the specified range that is the first or second closest in time to the
+     * specified timestamp
+     */
+    public int findByTime(int first, int last, long time) {
+        if (first == last) throw new RuntimeException("findByTime called on an empty range");
+        int mid = midpoint(first, last);
+        if (mid == first) return first;
+
+        if (time < mMeta[mid].presentationTimeUs) {
+            return findByTime(first, mid, time);
+        } else {
+            return findByTime(mid, last, time);
+        }
+    }
+
+    /**
+     * Finds an I-frame near to the specified index, suitable for being placed as the first frame of
+     * a video file.
+     *
+     * @param index a valid index of a frame
+     * @return the closest I-frame to the specified index, or index, if no I-frame is found
+     */
+    public int findIFrame(int index) {
+        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        boolean backFail = false;
+        boolean fwdFail = false;
+        int backIdx = index;
+        int fwdIdx = index;
+
+        while (!backFail || !fwdFail) {
+            if (!backFail) {
+                if (isIFrame(backIdx)) return backIdx;
+                if (backIdx == mHead) backFail = true;
+                backIdx = prev(backIdx);
+            }
+            if (!fwdFail) {
+                fwdIdx = next(fwdIdx);
+                if (fwdIdx == mTail) fwdFail = true;
+                else if (isIFrame(fwdIdx)) return fwdIdx;
+            }
+        }
+
+        return index;
+    }
+
+    private boolean isInRange(int first, int last, int index) {
+        if (first <= last) return index >= first && index < last;
+        else return index >= first || index < last;
+    }
+
+    private boolean isIFrame(int index) {
+        return (mMeta[index].flags & android.media.MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
+    }
+
+    /**
+     * Calculates the presentation time difference between the first and the last frame in range.
+     *
+     * @param first start of range, index of the first frame
+     * @param last  end of range, index of the frame after the last frame (past-the-end index)
+     * @return presentation time delta in microseconds
+     */
+    public long getDuration(int first, int last) {
+        if (first == last) return 0;
+        return mMeta[prev(last)].presentationTimeUs - mMeta[first].presentationTimeUs;
+    }
+
+    /**
      * Provides a location of the first byte in mData that immediately follows data belonging to
-     * back(). If data of the specified size wouldn't fit in the data buffer, location 0 is returned
-     * (i.e., index of the first byte of the buffer). It is not tested whether the block overlaps
-     * other blocks. The method cannot fail.
+     * the last frame. If data of the specified size wouldn't fit in the data buffer, location 0
+     * is returned (i.e., index of the first byte of the buffer). It is not tested whether the block
+     * overlaps other blocks. The method cannot fail.
      *
      * @param size size of a new block to be placed
-     * @return index into mData that immediately follows data belonging to back(), or 0
+     * @return index into mData that immediately follows data belonging to the last frame, or 0
      */
     private int placeBlock(int size) {
         if (size > mData.length) {
             throw new RuntimeException("frame with " + size + " bytes is too big for the buffer");
         }
         if (empty()) return 0;
-        BufferInfo backMeta = mMeta[back()];
+        BufferInfo backMeta = mMeta[prev(mTail)];
         int backEnd = backMeta.offset + backMeta.size;
         if (backEnd + size <= mData.length) return backEnd;
         return 0;
@@ -92,19 +179,20 @@ public class Buffer {
 
     /**
      * Tests whether a block of the specified size inserted at the specified offset overlaps the
-     * block owned by front(). The block offset must be retrieved using the placeBlock() method.
+     * block owned by the first frame. The block offset must be retrieved using the placeBlock()
+     * method.
      *
      * @param offset location of the new block
      * @param size   size of the new block
      */
     private boolean blockOverlapsFront(int offset, int size) {
         if (empty()) return false;
-        BufferInfo frontMeta = mMeta[front()];
+        BufferInfo frontMeta = mMeta[mHead];
         return offset <= frontMeta.offset && offset + size >= frontMeta.offset;
     }
 
     /**
-     * Removes a single element from the front.
+     * Removes a single frame from the front.
      */
     private void popFront() {
         if (empty()) {
@@ -114,8 +202,8 @@ public class Buffer {
     }
 
     /**
-     * Adds a single element to the back. If there is not enough space for the new element, one or
-     * more elements will be removed from the front.
+     * Adds a single frame to the back. If there is not enough space for the new frame, one or
+     * more frames will be removed from the front.
      *
      * @param source array that contains frame data, its position and limit will be reset
      * @param info   frame metadata, including location (offset) and length (size) of the data in
@@ -157,16 +245,15 @@ public class Buffer {
     }
 
     /**
-     * Provides access to an element by filling the given data structures.
+     * Provides access to a frame by filling the given data structures.
      *
-     * @param index  element index
+     * @param index  frame index
      * @param buffer object to be filled, obtained via getBuffer()
      * @param info   object to be filled
      */
     public void get(int index, ByteBuffer buffer, BufferInfo info) {
-        if (buffer.array() != mData) {
-            throw new RuntimeException("buffer has not been acquired by calling getBuffer()");
-        }
+        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        if (buffer.array() != mData) throw new RuntimeException("Bad buffer");
         BufferInfo meta = mMeta[index];
         buffer.clear();
         buffer.position(meta.offset);
@@ -178,12 +265,11 @@ public class Buffer {
     }
 
     /**
-     * Calculates the presentation time difference between the first and the last available frame.
-     *
-     * @return presentation time delta in microseconds
+     * @param index frame index
+     * @return timestamp of frame at index, in microseconds
      */
-    public long getDuration() {
-        if (empty()) return 0;
-        return mMeta[back()].presentationTimeUs - mMeta[front()].presentationTimeUs;
+    public long getTime(int index) {
+        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        return mMeta[index].presentationTimeUs;
     }
 }

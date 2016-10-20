@@ -30,6 +30,21 @@ import cz.fmo.recording.Buffer;
  * thread has been joined.
  */
 public class EncoderThread extends Thread {
+    /**
+     * Saves the encoder output to a .mp4 file.
+     * <p>
+     * We'll drain the encoder to get any lingering data, but we're not going to shut
+     * the encoder down or use other tricks to try to "flush" the encoder.  This may
+     * mean we miss the last couple of submitted frames if they're still working their
+     * way through.
+     * <p>
+     * We may want to reset the buffer after this -- if they hit "capture" again right
+     * away they'll end up saving video with a gap where we paused to write the file.
+     */
+    private static final long SECONDS = 1000000;
+    private static final long MOVIE_LENGTH = 3 * SECONDS;
+    private static final long MOVIE_LENGTH_MIN = 2 * SECONDS;
+    private static final long TIME_TO_SAVE_MIN = SECONDS / 2;
     private final MediaCodec mEncoder;
     private final MediaCodec.BufferInfo mBufferInfo;
     private final Buffer mBuf;
@@ -184,63 +199,71 @@ public class EncoderThread extends Thread {
 
         mFrameNum++;
         if ((mFrameNum % 10) == 0) {        // TODO: should base off frame rate or clock?
-            mCallback.bufferStatus(mBuf.getDuration());
+            synchronized (mBuf) {
+                long duration = mBuf.getDuration(mBuf.begin(), mBuf.end());
+                mCallback.bufferStatus(duration);
+            }
         }
     }
 
-    /**
-     * Saves the encoder output to a .mp4 file.
-     * <p>
-     * We'll drain the encoder to get any lingering data, but we're not going to shut
-     * the encoder down or use other tricks to try to "flush" the encoder.  This may
-     * mean we miss the last couple of submitted frames if they're still working their
-     * way through.
-     * <p>
-     * We may want to reset the buffer after this -- if they hit "capture" again right
-     * away they'll end up saving video with a gap where we paused to write the file.
-     */
     private void saveVideo(File outputFile) {
-        //if (VERBOSE) Log.d("saveVideo " + outputFile);
-
+        int first, last;
         synchronized (mBuf) {
             if (mBuf.empty()) {
-                Log.w("Unable to get first index");
+                Log.w("Buffer is empty");
                 mCallback.fileSaveComplete(1);
                 return;
             }
 
-            MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
-            MediaMuxer muxer = null;
-            int result = -1;
-            try {
-                muxer = new MediaMuxer(outputFile.getPath(),
-                        MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-                int videoTrack = muxer.addTrack(mEncodedFormat);
-                muxer.start();
+            long endTime = mBuf.getTime(mBuf.prev(mBuf.end()));
+            long startTime = endTime - MOVIE_LENGTH;
+            first = mBuf.findByTime(mBuf.begin(), mBuf.end(), startTime);
+            first = mBuf.findIFrame(first);
+            last = mBuf.end();
 
-                for (int index = mBuf.begin(); index != mBuf.end(); index = mBuf.next(index)) {
-                    mBuf.get(index, mEncBufferOutput, info);
-                    //if (VERBOSE) {
-                    //    Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
-                    //}
-                    muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
-                }
-                result = 0;
-            } catch (IOException ioe) {
-                Log.w("muxer failed", ioe);
-                result = 2;
-            } finally {
-                if (muxer != null) {
-                    muxer.stop();
-                    muxer.release();
-                }
+            if (mBuf.getDuration(first, last) < MOVIE_LENGTH_MIN) {
+                Log.w("Movie is too short");
+                mCallback.fileSaveComplete(1);
+                return;
             }
-
-            //if (VERBOSE) {
-            //    Log.d("muxer stopped, result=" + result);
-            //}
-            mCallback.fileSaveComplete(result);
+            if (mBuf.getDuration(mBuf.begin(), first) < TIME_TO_SAVE_MIN) {
+                Log.w("Not enough time to save");
+                mCallback.fileSaveComplete(1);
+                return;
+            }
         }
+
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        MediaMuxer muxer = null;
+        int result = -1;
+        try {
+            muxer = new MediaMuxer(outputFile.getPath(),
+                    MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            int videoTrack = muxer.addTrack(mEncodedFormat);
+            muxer.start();
+
+            for (int index = first; index != last; index = mBuf.next(index)) {
+                mBuf.get(index, mEncBufferOutput, info);
+                //if (VERBOSE) {
+                //    Log.d("SAVE " + index + " flags=0x" + Integer.toHexString(info.flags));
+                //}
+                muxer.writeSampleData(videoTrack, mEncBufferOutput, info);
+            }
+            result = 0;
+        } catch (IOException ioe) {
+            Log.w("muxer failed", ioe);
+            result = 2;
+        } finally {
+            if (muxer != null) {
+                muxer.stop();
+                muxer.release();
+            }
+        }
+
+        //if (VERBOSE) {
+        //    Log.d("muxer stopped, result=" + result);
+        //}
+        mCallback.fileSaveComplete(result);
     }
 
     /**
