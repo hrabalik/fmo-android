@@ -108,7 +108,6 @@ class CircularEncoder implements SaveMovieThread.Callback {
 
         mSaveMovieThread = new SaveMovieThread(encBuffer, this);
         mSaveMovieThread.start();
-        mSaveMovieThread.waitForHandler();
         mCb = cb;
 
         mEncoderThread.setPriority(Thread.MAX_PRIORITY);

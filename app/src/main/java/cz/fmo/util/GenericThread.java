@@ -31,9 +31,18 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     }
 
     /**
+     * Start the thread, blocking until the message handler is available.
+     */
+    @Override
+    public synchronized void start() {
+        super.start();
+        waitForHandler();
+    }
+
+    /**
      * Blocks until the handler is available.
      */
-    public final void waitForHandler() {
+    private final void waitForHandler() {
         synchronized (mLock) {
             while (mHandler == null) {
                 try {
