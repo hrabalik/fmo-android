@@ -62,7 +62,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private CameraCapture mCapture;
 
     private File mOutputFile;
-    private android.view.Surface mCircEncoderSurface;
     private CircularEncoder mCircEncoder;
     private EGL.Surface mEncoderSurface;
     private boolean mFileSaveInProgress;
@@ -156,8 +155,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        mCircEncoderSurface = mCircEncoder.getInputSurface();
-        mEncoderSurface = mEGL.makeSurface(mCircEncoderSurface);
+        mEncoderSurface = mEGL.makeSurface(mCircEncoder.getInputSurface());
 
         updateControls();
     }
@@ -166,29 +164,25 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     protected void onPause() {
         super.onPause();
 
-        if (mCapture != null) {
-            mCapture.release();
-            mCapture = null;
+        if (mEncoderSurface != null) {
+            mEncoderSurface.release();
+            mEncoderSurface = null;
         }
         if (mCircEncoder != null) {
             mCircEncoder.shutdown();
             mCircEncoder = null;
         }
-        if (mDisplaySurface != null) {
-            mDisplaySurface.release();
-            mDisplaySurface = null;
-        }
-        if (mEncoderSurface != null) {
-            mEncoderSurface.release();
-            mEncoderSurface = null;
-        }
-        if (mCircEncoderSurface != null) {
-            mCircEncoderSurface.release();
-            mCircEncoderSurface = null;
+        if (mCapture != null) {
+            mCapture.release();
+            mCapture = null;
         }
         if (mRenderer != null) {
             mRenderer.release();
             mRenderer = null;
+        }
+        if (mDisplaySurface != null) {
+            mDisplaySurface.release();
+            mDisplaySurface = null;
         }
         if (mEGL != null) {
             mEGL.release();

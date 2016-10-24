@@ -126,6 +126,11 @@ class CircularEncoder implements SaveMovieThread.Callback {
             throw new RuntimeException("Interrupted");
         }
 
+        if (mInputSurface != null) {
+            mInputSurface.release();
+            mInputSurface = null;
+        }
+
         if (mEncoder != null) {
             mEncoder.stop();
             mEncoder.release();
