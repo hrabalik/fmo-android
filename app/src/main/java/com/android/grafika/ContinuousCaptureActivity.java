@@ -74,6 +74,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     private MainHandler mHandler;
     private float mSecondsOfVideo;
+    private boolean mSurfaceCreated = false;
 
     /**
      * Adds a bit of extra stuff to the display just to give it flavor.
@@ -105,9 +106,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_continuous_capture);
 
-        SurfaceView sv = (SurfaceView) findViewById(R.id.continuousCapture_surfaceView);
-        SurfaceHolder sh = sv.getHolder();
-        sh.addCallback(this);
+        getSurfaceHolder().addCallback(this);
 
         mHandler = new MainHandler(this);
         mHandler.sendEmptyMessageDelayed(MainHandler.MSG_BLINK_TEXT, 1500);
@@ -117,6 +116,11 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         updateControls();
     }
 
+    private SurfaceHolder getSurfaceHolder() {
+        SurfaceView sv = (SurfaceView) findViewById(R.id.continuousCapture_surfaceView);
+        return sv.getHolder();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -124,6 +128,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // Ideally, the frames from the camera are at the same resolution as the input to
         // the video encoder so we don't have to scale.
         openCamera(VIDEO_WIDTH, VIDEO_HEIGHT, DESIRED_PREVIEW_FPS);
+
+        if (mSurfaceCreated) {
+            setup();
+        }
     }
 
     @Override
@@ -291,8 +299,13 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     @Override   // SurfaceHolder.Callback
     public void surfaceCreated(SurfaceHolder holder) {
+        if (holder != getSurfaceHolder()) throw new RuntimeException("Unexpected callback");
         Log.d("surfaceCreated holder=" + holder);
+        mSurfaceCreated = true;
+        setup();
+    }
 
+    private void setup() {
         // Set up everything that requires an EGL context.
         //
         // We had to wait until we had a surface because you can't make an EGL context current
@@ -301,7 +314,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // The display surface that we use for the SurfaceView, and the encoder surface we
         // use for video, use the same EGL context.
         mEGL = new EGL();
-        mDisplaySurface = mEGL.makeSurface(holder.getSurface());
+        mDisplaySurface = mEGL.makeSurface(getSurfaceHolder().getSurface());
         mDisplaySurface.makeCurrent();
 
         mRenderer = new Renderer();
