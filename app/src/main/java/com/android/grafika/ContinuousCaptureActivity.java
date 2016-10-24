@@ -17,7 +17,6 @@
 package com.android.grafika;
 
 import android.app.Activity;
-import android.graphics.SurfaceTexture;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -52,7 +51,7 @@ import cz.fmo.util.FileManager;
  * our video encoder.
  */
 public class ContinuousCaptureActivity extends Activity implements SurfaceHolder.Callback,
-        SurfaceTexture.OnFrameAvailableListener {
+        Renderer.Callback {
     private final FileManager mFileMan = new FileManager(this);
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
@@ -140,11 +139,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface = mEGL.makeSurface(getSurfaceHolder().getSurface());
         mDisplaySurface.makeCurrent();
 
-        mRenderer = new Renderer();
-        mRenderer.getSurfaceTexture().setOnFrameAvailableListener(this);
+        mRenderer = new Renderer(this);
 
         Log.d("starting camera preview");
-        mCapture.setTexture(mRenderer.getSurfaceTexture());
+        mCapture.setTexture(mRenderer.getInputTexture());
         mCapture.start();
 
         // TODO: adjust bit rate based on frame rate?
@@ -280,8 +278,8 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         Log.d("surfaceDestroyed holder=" + holder);
     }
 
-    @Override   // SurfaceTexture.OnFrameAvailableListener; runs on arbitrary thread
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+    @Override   // Renderer.Callback; runs on arbitrary thread
+    public void onFrameAvailable() {
         mHandler.sendEmptyMessage(MainHandler.MSG_FRAME_AVAILABLE);
     }
 
@@ -296,9 +294,9 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      * If there was a pending frame available notification when we shut down, we might get
      * here after onPause().
      */
-    private void drawFrame() {
+    private void processFrame() {
         if (mEGL == null) {
-            Log.d("Skipping drawFrame after shutdown");
+            Log.d("Skipping processFrame after shutdown");
             return;
         }
 
@@ -321,7 +319,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mRenderer.drawRectangle();
         drawExtra(mFrameNum, mCapture.getWidth(), mCapture.getHeight());
             mCircEncoder.frameAvailableSoon();
-            mEncoderSurface.presentationTime(mRenderer.getSurfaceTexture().getTimestamp());
+        mEncoderSurface.presentationTime(mRenderer.getTimestamp());
             mEncoderSurface.swapBuffers();
         //}
 
@@ -387,7 +385,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
                     break;
                 }
                 case MSG_FRAME_AVAILABLE: {
-                    activity.drawFrame();
+                    activity.processFrame();
                     break;
                 }
                 case MSG_FILE_SAVE_COMPLETE: {

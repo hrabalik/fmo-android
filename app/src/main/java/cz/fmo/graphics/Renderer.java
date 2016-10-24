@@ -11,7 +11,7 @@ import android.opengl.GLES20;
  * <li>initialize OpenGL, e.g. create an instance of the EGL class</li>
  * <li>create an instance of Renderer</li>
  * <li>bind the renderer's surface texture to a source, e.g.
- * camera.setPreviewTexture(renderer.getSurfaceTexture())</li>
+ * camera.setPreviewTexture(renderer.getInputTexture())</li>
  * </ul>
  * When a new frame is available in the surface texture:
  * <ul>
@@ -20,7 +20,7 @@ import android.opengl.GLES20;
  * </ul>
  * To clean up, call release().
  */
-public class Renderer {
+public class Renderer implements SurfaceTexture.OnFrameAvailableListener {
     private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
     private static final String VERTEX_SOURCE = "" +
             "uniform mat4 uvMat;\n" +
@@ -51,11 +51,12 @@ public class Renderer {
     private final int mLoc_pos;
     private final int mLoc_uv1;
     private final int mLoc_uvMat;
-    private final SurfaceTexture mSurfTex;
+    private final SurfaceTexture mInputTex;
     private final float[] mTemp = new float[16];
+    private final Callback mCb;
     private boolean mReleased = false;
 
-    public Renderer() throws RuntimeException {
+    public Renderer(Callback cb) throws RuntimeException {
         mId = GLES20.glCreateProgram();
         GL.checkError();
         mVert = new Shader(GLES20.GL_VERTEX_SHADER, VERTEX_SOURCE);
@@ -87,13 +88,15 @@ public class Renderer {
         GLES20.glTexParameterf(TEXTURE_TYPE, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         GL.checkError();
 
-        mSurfTex = new SurfaceTexture(mTexId);
+        mInputTex = new SurfaceTexture(mTexId);
+        mInputTex.setOnFrameAvailableListener(this);
+        mCb = cb;
     }
 
     public void release() {
         if (mReleased) return;
         mReleased = true;
-        if (mSurfTex != null) mSurfTex.release();
+        if (mInputTex != null) mInputTex.release();
         if (mTexId != 0) {
             int[] textures = {mTexId};
             GLES20.glDeleteTextures(1, textures, 0);
@@ -109,8 +112,15 @@ public class Renderer {
      *
      * @return an internal input surface texture
      */
-    public SurfaceTexture getSurfaceTexture() {
-        return mSurfTex;
+    public SurfaceTexture getInputTexture() {
+        return mInputTex;
+    }
+
+    /**
+     * @return timestamp of last input frame, in nanoseconds
+     */
+    public long getTimestamp() {
+        return mInputTex.getTimestamp();
     }
 
     /**
@@ -118,8 +128,8 @@ public class Renderer {
      */
     public void drawRectangle() {
         if (mReleased) throw new RuntimeException("Draw after release");
-        mSurfTex.updateTexImage();
-        mSurfTex.getTransformMatrix(mTemp);
+        mInputTex.updateTexImage();
+        mInputTex.getTransformMatrix(mTemp);
         GLES20.glUseProgram(mId);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(TEXTURE_TYPE, mTexId);
@@ -131,5 +141,14 @@ public class Renderer {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glUseProgram(0);
         GL.checkError();
+    }
+
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        mCb.onFrameAvailable();
+    }
+
+    public interface Callback {
+        void onFrameAvailable();
     }
 }
