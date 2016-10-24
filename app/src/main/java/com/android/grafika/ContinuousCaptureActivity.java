@@ -125,13 +125,51 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     protected void onResume() {
         super.onResume();
 
+        if (mSurfaceCreated) {
+            onResumeImpl();
+        }
+    }
+
+    private void onResumeImpl() {
         // Ideally, the frames from the camera are at the same resolution as the input to
         // the video encoder so we don't have to scale.
         openCamera(VIDEO_WIDTH, VIDEO_HEIGHT, DESIRED_PREVIEW_FPS);
 
-        if (mSurfaceCreated) {
-            setup();
+        // Set up everything that requires an EGL context.
+        //
+        // We had to wait until we had a surface because you can't make an EGL context current
+        // without one, and creating a temporary 1x1 pbuffer is a waste of time.
+        //
+        // The display surface that we use for the SurfaceView, and the encoder surface we
+        // use for video, use the same EGL context.
+        mEGL = new EGL();
+        mDisplaySurface = mEGL.makeSurface(getSurfaceHolder().getSurface());
+        mDisplaySurface.makeCurrent();
+
+        mRenderer = new Renderer();
+        mRenderer.getSurfaceTexture().setOnFrameAvailableListener(this);
+
+        Log.d("starting camera preview");
+        try {
+            mCamera.setPreviewTexture(mRenderer.getSurfaceTexture());
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
         }
+        mCamera.startPreview();
+
+        // TODO: adjust bit rate based on frame rate?
+        // TODO: adjust video width/height based on what we're getting from the camera preview?
+        //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
+        try {
+            mCircEncoder = new CircularEncoder(VIDEO_WIDTH, VIDEO_HEIGHT, 6000000,
+                    mCameraPreviewThousandFps / 1000, 7, mHandler);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+        mCircEncoderSurface = mCircEncoder.getInputSurface();
+        mEncoderSurface = mEGL.makeSurface(mCircEncoderSurface);
+
+        updateControls();
     }
 
     @Override
@@ -302,45 +340,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         if (holder != getSurfaceHolder()) throw new RuntimeException("Unexpected callback");
         Log.d("surfaceCreated holder=" + holder);
         mSurfaceCreated = true;
-        setup();
-    }
-
-    private void setup() {
-        // Set up everything that requires an EGL context.
-        //
-        // We had to wait until we had a surface because you can't make an EGL context current
-        // without one, and creating a temporary 1x1 pbuffer is a waste of time.
-        //
-        // The display surface that we use for the SurfaceView, and the encoder surface we
-        // use for video, use the same EGL context.
-        mEGL = new EGL();
-        mDisplaySurface = mEGL.makeSurface(getSurfaceHolder().getSurface());
-        mDisplaySurface.makeCurrent();
-
-        mRenderer = new Renderer();
-        mRenderer.getSurfaceTexture().setOnFrameAvailableListener(this);
-
-        Log.d("starting camera preview");
-        try {
-            mCamera.setPreviewTexture(mRenderer.getSurfaceTexture());
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-        mCamera.startPreview();
-
-        // TODO: adjust bit rate based on frame rate?
-        // TODO: adjust video width/height based on what we're getting from the camera preview?
-        //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
-        try {
-            mCircEncoder = new CircularEncoder(VIDEO_WIDTH, VIDEO_HEIGHT, 6000000,
-                    mCameraPreviewThousandFps / 1000, 7, mHandler);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-        mCircEncoderSurface = mCircEncoder.getInputSurface();
-        mEncoderSurface = mEGL.makeSurface(mCircEncoderSurface);
-
-        updateControls();
+        onResumeImpl();
     }
 
     @Override   // SurfaceHolder.Callback
