@@ -1,10 +1,19 @@
-package cz.fmo;
+package cz.fmo.recording;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 
+/**
+ * A class encapsulating android.hardware.Camera.
+ * <p>
+ * On construction, the best camera (according to preferred parameters) is selected. Your target
+ * texture will immediately start receiving frames.
+ * <p>
+ * To stop receiving frames, call the release() method.
+ */
+@SuppressWarnings("deprecation")
 public class CameraCapture {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
@@ -14,21 +23,47 @@ public class CameraCapture {
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
 
     private final Camera mCamera;
-    private final Camera.CameraInfo mInfo = new Camera.CameraInfo();
     private final Camera.Parameters mParams;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
     private boolean mReleased = false;
 
-    public CameraCapture() {
+    /**
+     * Selects a suitable camera, and starts writing frames into the provided texture.
+     *
+     * @param outputTexture texture used as the target of camera capture
+     */
+    public CameraCapture(SurfaceTexture outputTexture) {
         int bestCam = selectCamera();
         mCamera = Camera.open(bestCam);
         if (mCamera == null) throw new RuntimeException("Failed to open camera");
-        Camera.getCameraInfo(bestCam, mInfo);
         mParams = mCamera.getParameters();
         configureCamera();
+
+        try {
+            mCamera.setPreviewTexture(outputTexture);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("setOutputTexture() failed");
+        }
+        mCamera.startPreview();
     }
 
+    /**
+     * Stops writing frames into the output texture and releases all resources.
+     */
+    public void release() {
+        if (mReleased) return;
+        mReleased = true;
+
+        if (mCamera != null) {
+            mCamera.stopPreview();
+            mCamera.release();
+        }
+    }
+
+    /**
+     * @return index of some back-facing camera, if available; 0 otherwise
+     */
     private int selectCamera() {
         int nCam = Camera.getNumberOfCameras();
         if (nCam == 0) throw new RuntimeException("No camera");
@@ -37,6 +72,8 @@ public class CameraCapture {
         for (int i = 0; i < nCam; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.orientation == Camera.CameraInfo.CAMERA_FACING_BACK) {
+                // you might want to keep the chosen CameraInfo object, if interested in proper
+                // camera rotation relative to screen
                 return i;
             }
         }
@@ -44,6 +81,9 @@ public class CameraCapture {
         return 0;
     }
 
+    /**
+     * Modifies and updates camera parameters according to preferences.
+     */
     private void configureCamera() {
         configureSize();
         configureFrameRate();
@@ -51,6 +91,10 @@ public class CameraCapture {
         mCamera.setParameters(mParams);
     }
 
+    /**
+     * Modifies camera width and height parameters. Lists all supported sizes and chooses the size
+     * that is closest to PREFER_WIDTH x PREFER_HEIGHT.
+     */
     private void configureSize() {
         Camera.Size bestSize = null;
         int bestScore = Integer.MAX_VALUE;
@@ -72,6 +116,10 @@ public class CameraCapture {
         mSize = bestSize;
     }
 
+    /**
+     * Modifies camera minimum and maximum frames per second parameters. Lists all supported frame
+     * rate ranges and chooses the one closest to PREFER_FRAME_RATE.
+     */
     private void configureFrameRate() {
         int[] bestRange = null;
         int bestScore = Integer.MAX_VALUE;
@@ -94,26 +142,16 @@ public class CameraCapture {
         mFrameRate = (float) (bestRange[0] + bestRange[1]) / (2 * 1000.f);
     }
 
-    public void release() {
-        if (mReleased) return;
-        mReleased = true;
-
-        if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
-        }
-    }
-
-    public void start() {
-        mCamera.startPreview();
-    }
-
-    public void setTexture(SurfaceTexture texture) {
-        try {
-            mCamera.setPreviewTexture(texture);
-        } catch (java.io.IOException e) {
-            throw new RuntimeException("setTexture() failed");
-        }
+    /**
+     * @return a MediaFormat object describing a video format compatible with the camera output
+     */
+    public MediaFormat getMediaFormat() {
+        MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
+        f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
+        f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
+        f.setFloat(MediaFormat.KEY_FRAME_RATE, mFrameRate);
+        f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, PREFER_I_FRAME_INTERVAL);
+        return f;
     }
 
     public int getWidth() {
@@ -130,18 +168,5 @@ public class CameraCapture {
 
     public float getFrameRate() {
         return mFrameRate;
-    }
-
-    public String getMIMEType() {
-        return MIME_TYPE;
-    }
-
-    public MediaFormat getMediaFormat() {
-        MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
-        f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
-        f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
-        f.setFloat(MediaFormat.KEY_FRAME_RATE, mFrameRate);
-        f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, PREFER_I_FRAME_INTERVAL);
-        return f;
     }
 }

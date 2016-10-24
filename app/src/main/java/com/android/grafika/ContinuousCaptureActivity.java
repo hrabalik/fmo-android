@@ -29,13 +29,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.ref.WeakReference;
 
-import cz.fmo.CameraCapture;
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
+import cz.fmo.recording.CameraCapture;
 import cz.fmo.util.FileManager;
 
 /**
@@ -124,10 +123,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     }
 
     private void onResumeImpl() {
-        //// Ideally, the frames from the camera are at the same resolution as the input to
-        //// the video encoder so we don't have to scale.
-        mCapture = new CameraCapture();
-
         // Set up everything that requires an EGL context.
         //
         // We had to wait until we had a surface because you can't make an EGL context current
@@ -140,19 +135,12 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface.makeCurrent();
 
         mRenderer = new Renderer(this);
-
-        Log.d("starting camera preview");
-        mCapture.setTexture(mRenderer.getInputTexture());
-        mCapture.start();
+        mCapture = new CameraCapture(mRenderer.getInputTexture());
 
         // TODO: adjust bit rate based on frame rate?
         // TODO: adjust video width/height based on what we're getting from the camera preview?
         //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
-        try {
-            mCircEncoder = new CircularEncoder(mCapture, 7, mHandler);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
+        mCircEncoder = new CircularEncoder(mCapture, 7, mHandler);
         mEncoderSurface = mEGL.makeSurface(mCircEncoder.getInputSurface());
 
         updateControls();

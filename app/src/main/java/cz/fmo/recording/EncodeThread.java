@@ -7,11 +7,12 @@ import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import cz.fmo.CameraCapture;
 import cz.fmo.util.GenericThread;
 
+/**
+ * A separate thread to manage an encoder and save its output into a buffer.
+ */
 public class EncodeThread extends GenericThread<EncodeThreadHandler> {
-    private final CameraCapture mCapture;
     private final Buffer mBuf;
     private final Callback mCb;
     private final MediaCodec.BufferInfo mInfo;
@@ -19,32 +20,20 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
     private final Surface mInputSurface;
     private boolean mReleased = false;
 
-    public EncodeThread(CameraCapture capture, Buffer buf, Callback cb) {
-        mCapture = capture;
+    public EncodeThread(MediaFormat format, Buffer buf, Callback cb) {
         mBuf = buf;
         mCb = cb;
         mInfo = new MediaCodec.BufferInfo();
 
         try {
-            mCodec = MediaCodec.createEncoderByType(capture.getMIMEType());
+            mCodec = MediaCodec.createEncoderByType(format.getString(MediaFormat.KEY_MIME));
         } catch (IOException e) {
             throw new RuntimeException("Cannot create codec");
         }
 
-        MediaFormat format = mCapture.getMediaFormat();
         mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
         mInputSurface = mCodec.createInputSurface();
         mCodec.start();
-    }
-
-    @Override
-    protected EncodeThreadHandler makeHandler() {
-        return new EncodeThreadHandler(this);
-    }
-
-    @Override
-    protected void teardown() {
-        release();
     }
 
     private void release() {
@@ -55,7 +44,13 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
         mCodec.release();
     }
 
-    void drain() {
+    /**
+     * Writes all available output frames from the encoder into the buffer. Non-blocking: if there
+     * are no frames in the output of the encoder, no work is done. Always calls the
+     * flushCompleted() callback.
+     */
+    void flush() {
+        //noinspection deprecation
         ByteBuffer[] buffers = mCodec.getOutputBuffers();
         while (true) {
             int status = mCodec.dequeueOutputBuffer(mInfo, 0);
@@ -74,7 +69,17 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
             mCodec.releaseOutputBuffer(status, false);
             if ((mInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) break;
         }
-        mCb.drainCompleted();
+        mCb.flushCompleted();
+    }
+
+    @Override
+    protected EncodeThreadHandler makeHandler() {
+        return new EncodeThreadHandler(this);
+    }
+
+    @Override
+    protected void teardown() {
+        release();
     }
 
     public Surface getInputSurface() {
@@ -82,6 +87,6 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
     }
 
     public interface Callback {
-        void drainCompleted();
+        void flushCompleted();
     }
 }

@@ -20,8 +20,8 @@ import android.view.Surface;
 
 import java.io.File;
 
-import cz.fmo.CameraCapture;
 import cz.fmo.recording.Buffer;
+import cz.fmo.recording.CameraCapture;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;
 
@@ -56,7 +56,7 @@ class CircularEncoder implements SaveMovieThread.Callback, EncodeThread.Callback
     public CircularEncoder(CameraCapture capture, float desiredSpanSec, Callback cb) {
         mCb = cb;
         mBuf = new Buffer(capture.getBitRate(), capture.getFrameRate(), desiredSpanSec);
-        mEncodeThread = new EncodeThread(capture, mBuf, this);
+        mEncodeThread = new EncodeThread(capture.getMediaFormat(), mBuf, this);
         mEncodeThread.start();
         mSaveMovieThread = new SaveMovieThread(mBuf, this);
         mSaveMovieThread.start();
@@ -101,7 +101,7 @@ class CircularEncoder implements SaveMovieThread.Callback, EncodeThread.Callback
      * indefinitely.
      */
     public void frameAvailableSoon() {
-        mEncodeThread.getHandler().sendDrain();
+        mEncodeThread.getHandler().sendFlush();
     }
 
     /**
@@ -123,7 +123,7 @@ class CircularEncoder implements SaveMovieThread.Callback, EncodeThread.Callback
     }
 
     @Override
-    public void drainCompleted() {
+    public void flushCompleted() {
         long duration;
 
         synchronized (mBuf) {
