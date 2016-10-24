@@ -17,7 +17,6 @@
 package com.android.grafika;
 
 import android.media.MediaCodec;
-import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.os.Handler;
 import android.view.Surface;
@@ -25,6 +24,7 @@ import android.view.Surface;
 import java.io.File;
 import java.io.IOException;
 
+import cz.fmo.CameraCapture;
 import cz.fmo.recording.Buffer;
 import cz.fmo.recording.SaveMovieThread;
 
@@ -59,14 +59,9 @@ class CircularEncoder implements SaveMovieThread.Callback {
     /**
      * Configures encoder, and prepares the input Surface.
      *
-     * @param width Width of encoded video, in pixels.  Should be a multiple of 16.
-     * @param height Height of encoded video, in pixels.  Usually a multiple of 16 (1080 is ok).
-     * @param bitRate Target bit rate, in bits.
-     * @param frameRate Expected frame rate.
      * @param desiredSpanSec How many seconds of video we want to have in our buffer at any time.
      */
-    public CircularEncoder(int width, int height, int bitRate, int frameRate, int desiredSpanSec,
-            Callback cb) throws IOException {
+    public CircularEncoder(CameraCapture capture, float desiredSpanSec, Callback cb) throws IOException {
         // The goal is to size the buffer so that we can accumulate N seconds worth of video,
         // where N is passed in as "desiredSpanSec".  If the codec generates data at roughly
         // the requested bit rate, we can compute it as time * bitRate / bitsPerByte.
@@ -80,18 +75,8 @@ class CircularEncoder implements SaveMovieThread.Callback {
             throw new RuntimeException("Requested time span is too short: " + desiredSpanSec +
                     " vs. " + (IFRAME_INTERVAL * 2));
         }
-        Buffer encBuffer = new Buffer(bitRate, frameRate, desiredSpanSec);
-
-        MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, width, height);
-
-        // Set some properties.  Failing to specify some of these can cause the MediaCodec
-        // configure() call to throw an unhelpful exception.
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, bitRate);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, frameRate);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
-        if (VERBOSE) Log.d("format: " + format);
+        Buffer encBuffer = new Buffer(capture.getBitRate(), capture.getFrameRate(), desiredSpanSec);
+        MediaFormat format = capture.getMediaFormat();
 
         // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
         // we can use for input and wrap it with a class that handles the EGL work.

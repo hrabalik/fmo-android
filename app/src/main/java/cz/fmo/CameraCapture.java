@@ -1,5 +1,6 @@
 package cz.fmo;
 
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
@@ -10,7 +11,7 @@ public class CameraCapture {
     private static final int PREFER_HEIGHT = 1080; // pixels
     private static final float PREFER_FRAME_RATE = 30.f; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
-    private static final float PREFER_I_FRAME_INTERVAL = 1.f; // seconds
+    private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
 
     private final Camera mCamera;
     private final Camera.CameraInfo mInfo = new Camera.CameraInfo();
@@ -55,6 +56,7 @@ public class CameraCapture {
         int bestScore = Integer.MAX_VALUE;
 
         for (Camera.Size size : mParams.getSupportedPreviewSizes()) {
+            if (size.width % 16 != 0 || size.height % 16 != 0) continue;
             int dWidth = Math.abs(size.width - PREFER_WIDTH);
             int dHeight = Math.abs(size.height - PREFER_HEIGHT);
             int score = dWidth + dHeight;
@@ -102,12 +104,40 @@ public class CameraCapture {
         }
     }
 
+    public void start() {
+        mCamera.startPreview();
+    }
+
+    public void setTexture(SurfaceTexture texture) {
+        try {
+            mCamera.setPreviewTexture(texture);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("setTexture() failed");
+        }
+    }
+
+    public int getWidth() {
+        return mSize.width;
+    }
+
+    public int getHeight() {
+        return mSize.height;
+    }
+
+    public int getBitRate() {
+        return PREFER_BIT_RATE;
+    }
+
+    public float getFrameRate() {
+        return mFrameRate;
+    }
+
     public MediaFormat getMediaFormat() {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
         f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
         f.setFloat(MediaFormat.KEY_FRAME_RATE, mFrameRate);
-        f.setFloat(MediaFormat.KEY_I_FRAME_INTERVAL, PREFER_I_FRAME_INTERVAL);
+        f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, PREFER_I_FRAME_INTERVAL);
         return f;
     }
 }

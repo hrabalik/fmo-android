@@ -18,7 +18,6 @@ package com.android.grafika;
 
 import android.app.Activity;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 
+import cz.fmo.CameraCapture;
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
@@ -53,18 +53,13 @@ import cz.fmo.util.FileManager;
  */
 public class ContinuousCaptureActivity extends Activity implements SurfaceHolder.Callback,
         SurfaceTexture.OnFrameAvailableListener {
-    private static final int VIDEO_WIDTH = 1920;  // dimensions for 720p video
-    private static final int VIDEO_HEIGHT = 1080;
-    private static final int DESIRED_PREVIEW_FPS = 30;
-
     private final FileManager mFileMan = new FileManager(this);
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private Renderer mRenderer;
     private int mFrameNum;
 
-    private Camera mCamera;
-    private int mCameraPreviewThousandFps;
+    private CameraCapture mCapture;
 
     private File mOutputFile;
     private android.view.Surface mCircEncoderSurface;
@@ -131,9 +126,9 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     }
 
     private void onResumeImpl() {
-        // Ideally, the frames from the camera are at the same resolution as the input to
-        // the video encoder so we don't have to scale.
-        openCamera(VIDEO_WIDTH, VIDEO_HEIGHT, DESIRED_PREVIEW_FPS);
+        //// Ideally, the frames from the camera are at the same resolution as the input to
+        //// the video encoder so we don't have to scale.
+        mCapture = new CameraCapture();
 
         // Set up everything that requires an EGL context.
         //
@@ -150,19 +145,14 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mRenderer.getSurfaceTexture().setOnFrameAvailableListener(this);
 
         Log.d("starting camera preview");
-        try {
-            mCamera.setPreviewTexture(mRenderer.getSurfaceTexture());
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-        mCamera.startPreview();
+        mCapture.setTexture(mRenderer.getSurfaceTexture());
+        mCapture.start();
 
         // TODO: adjust bit rate based on frame rate?
         // TODO: adjust video width/height based on what we're getting from the camera preview?
         //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
         try {
-            mCircEncoder = new CircularEncoder(VIDEO_WIDTH, VIDEO_HEIGHT, 6000000,
-                    mCameraPreviewThousandFps / 1000, 7, mHandler);
+            mCircEncoder = new CircularEncoder(mCapture, 7, mHandler);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
@@ -176,8 +166,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     protected void onPause() {
         super.onPause();
 
-        releaseCamera();
-
+        if (mCapture != null) {
+            mCapture.release();
+            mCapture = null;
+        }
         if (mCircEncoder != null) {
             mCircEncoder.shutdown();
             mCircEncoder = null;
@@ -203,66 +195,6 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mEGL = null;
         }
         Log.d("onPause() done");
-    }
-
-    /**
-     * Opens a camera, and attempts to establish preview mode at the specified width and height.
-     * <p>
-     * Sets mCameraPreviewFps to the expected frame rate (which might actually be variable).
-     */
-    private void openCamera(int desiredWidth, int desiredHeight, int desiredFps) {
-        if (mCamera != null) {
-            throw new RuntimeException("camera already initialized");
-        }
-
-        Camera.CameraInfo info = new Camera.CameraInfo();
-
-        // Try to find a front-facing camera (e.g. for videoconferencing).
-        int numCameras = Camera.getNumberOfCameras();
-        for (int i = 0; i < numCameras; i++) {
-            Camera.getCameraInfo(i, info);
-            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-                mCamera = Camera.open(i);
-                break;
-            }
-        }
-        if (mCamera == null) {
-            Log.d("No front-facing camera found; opening default");
-            mCamera = Camera.open();    // opens first back-facing camera
-        }
-        if (mCamera == null) {
-            throw new RuntimeException("Unable to open camera");
-        }
-
-        Camera.Parameters parms = mCamera.getParameters();
-
-        CameraUtils.choosePreviewSize(parms, desiredWidth, desiredHeight);
-
-        // Try to set the frame rate to a constant value.
-        mCameraPreviewThousandFps = CameraUtils.chooseFixedPreviewFps(parms, desiredFps * 1000);
-
-        // Give the camera a hint that we're recording video.  This can have a big
-        // impact on frame rate.
-        parms.setRecordingHint(true);
-
-        mCamera.setParameters(parms);
-
-        Camera.Size cameraPreviewSize = parms.getPreviewSize();
-        String previewFacts = cameraPreviewSize.width + "x" + cameraPreviewSize.height +
-                " @" + (mCameraPreviewThousandFps / 1000.0f) + "fps";
-        Log.i("Camera config: " + previewFacts);
-    }
-
-    /**
-     * Stops camera preview, and releases the camera to the system.
-     */
-    private void releaseCamera() {
-        if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
-            mCamera = null;
-            Log.d("releaseCamera -- done");
-        }
     }
 
     /**
@@ -391,9 +323,9 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // Send it to the video encoder.
         //if (!mFileSaveInProgress) {
             mEncoderSurface.makeCurrent();
-            GLES20.glViewport(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+        GLES20.glViewport(0, 0, mCapture.getWidth(), mCapture.getHeight());
             mRenderer.drawRectangle();
-            drawExtra(mFrameNum, VIDEO_WIDTH, VIDEO_HEIGHT);
+        drawExtra(mFrameNum, mCapture.getWidth(), mCapture.getHeight());
             mCircEncoder.frameAvailableSoon();
             mEncoderSurface.presentationTime(mRenderer.getSurfaceTexture().getTimestamp());
             mEncoderSurface.swapBuffers();
