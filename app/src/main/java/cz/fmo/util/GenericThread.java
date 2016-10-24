@@ -44,7 +44,7 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     /**
      * Blocks until the handler is available.
      */
-    private final void waitForHandler() {
+    private void waitForHandler() {
         synchronized (mLock) {
             while (mHandler == null) {
                 try {

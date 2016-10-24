@@ -65,15 +65,6 @@ public class Buffer {
     }
 
     /**
-     * @return index of the last frame in buffer
-     * @throws RuntimeException if the buffer is empty
-     */
-    public int lastFrame() throws RuntimeException {
-        if (empty()) throw new RuntimeException("Empty");
-        return prev(mTail);
-    }
-
-    /**
      * @param first start of range, index of the first frame
      * @param last  end of range, index of the frame after the last frame (past-the-end index)
      * @return range midpoint, index of the frame in the middle
@@ -116,7 +107,7 @@ public class Buffer {
      * @return the closest I-frame to the specified index, or index, if no I-frame is found
      */
     public int findIFrame(int index) {
-        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         boolean backFail = false;
         boolean fwdFail = false;
         int backIdx = index;
@@ -138,12 +129,13 @@ public class Buffer {
         return index;
     }
 
-    private boolean isInRange(int first, int last, int index) {
-        if (first <= last) return index >= first && index < last;
-        else return index >= first || index < last;
+    private boolean outOfRange(int first, int last, int index) {
+        if (first <= last) return index < first || index >= last;
+        else return index < first && index >= last;
     }
 
     private boolean isIFrame(int index) {
+        //noinspection deprecation
         return (mMeta[index].flags & android.media.MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
     }
 
@@ -254,7 +246,7 @@ public class Buffer {
      * @param info  object to be filled
      */
     public void get(int index, ByteBuffer cache, BufferInfo info) {
-        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         if (cache.array() != mData) throw new RuntimeException("Bad buffer");
         BufferInfo meta = mMeta[index];
         cache.clear();
@@ -271,7 +263,7 @@ public class Buffer {
      * @return timestamp of frame at index, in microseconds
      */
     public long getTime(int index) {
-        if (!isInRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
+        if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         return mMeta[index].presentationTimeUs;
     }
 

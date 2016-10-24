@@ -389,7 +389,7 @@ class MoviePlayer {
         private final MoviePlayer mPlayer;
         private final PlayerFeedback mFeedback;
         private final LocalHandler mLocalHandler;
-        private boolean mDoLoop;
+        private final boolean mDoLoop;
         private Thread mThread;
         private boolean mStopped = false;
 
