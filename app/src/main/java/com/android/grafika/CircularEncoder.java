@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import cz.fmo.CameraCapture;
 import cz.fmo.recording.Buffer;
+import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;
 
 /**
@@ -45,13 +46,15 @@ import cz.fmo.recording.SaveMovieThread;
  * When we're told to save a snapshot, we create a MediaMuxer, write all the frames out,
  * and then go back to what we were doing.
  */
-class CircularEncoder implements SaveMovieThread.Callback {
+class CircularEncoder implements SaveMovieThread.Callback, EncodeThread.Callback {
     private static final boolean VERBOSE = false;
 
     private static final String MIME_TYPE = "video/avc";    // H.264 Advanced Video Coding
     private static final int IFRAME_INTERVAL = 1;           // sync frame every second
     private final Callback mCb;
+    private final Buffer mBuf;
     private EncoderThread mEncoderThread;
+    private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
     private Surface mInputSurface;
     private MediaCodec mEncoder;
@@ -62,6 +65,8 @@ class CircularEncoder implements SaveMovieThread.Callback {
      * @param desiredSpanSec How many seconds of video we want to have in our buffer at any time.
      */
     public CircularEncoder(CameraCapture capture, float desiredSpanSec, Callback cb) throws IOException {
+        mCb = cb;
+
         // The goal is to size the buffer so that we can accumulate N seconds worth of video,
         // where N is passed in as "desiredSpanSec".  If the codec generates data at roughly
         // the requested bit rate, we can compute it as time * bitRate / bitsPerByte.
@@ -75,7 +80,7 @@ class CircularEncoder implements SaveMovieThread.Callback {
             throw new RuntimeException("Requested time span is too short: " + desiredSpanSec +
                     " vs. " + (IFRAME_INTERVAL * 2));
         }
-        Buffer encBuffer = new Buffer(capture.getBitRate(), capture.getFrameRate(), desiredSpanSec);
+        mBuf = new Buffer(capture.getBitRate(), capture.getFrameRate(), desiredSpanSec);
         MediaFormat format = capture.getMediaFormat();
 
         // Create a MediaCodec encoder, and configure it with our format.  Get a Surface
@@ -87,13 +92,15 @@ class CircularEncoder implements SaveMovieThread.Callback {
 
         // Start the encoder thread last.  That way we're sure it can see all of the state
         // we've initialized.
-        mEncoderThread = new EncoderThread(mEncoder, encBuffer, cb);
+        mEncoderThread = new EncoderThread(mEncoder, mBuf, cb);
         mEncoderThread.start();
         mEncoderThread.waitUntilReady();
 
-        mSaveMovieThread = new SaveMovieThread(encBuffer, this);
+        mEncodeThread = new EncodeThread(capture, mBuf, this);
+        mEncodeThread.start();
+
+        mSaveMovieThread = new SaveMovieThread(mBuf, this);
         mSaveMovieThread.start();
-        mCb = cb;
 
         mEncoderThread.setPriority(Thread.MAX_PRIORITY);
         mSaveMovieThread.setPriority(Thread.MIN_PRIORITY);
@@ -103,7 +110,7 @@ class CircularEncoder implements SaveMovieThread.Callback {
      * Returns the encoder's input surface.
      */
     public Surface getInputSurface() {
-        return mInputSurface;
+        return mEncodeThread.getInputSurface();
     }
 
     /**
@@ -117,10 +124,12 @@ class CircularEncoder implements SaveMovieThread.Callback {
         Handler handler = mEncoderThread.getHandler();
         handler.sendMessage(handler.obtainMessage(EncoderThread.EncoderHandler.MSG_SHUTDOWN));
 
+        mEncodeThread.getHandler().sendKill();
         mSaveMovieThread.getHandler().sendKill();
 
         try {
             mEncoderThread.join();
+            mEncodeThread.join();
             mSaveMovieThread.join();
         } catch (InterruptedException ie) {
             throw new RuntimeException("Interrupted");
@@ -156,6 +165,8 @@ class CircularEncoder implements SaveMovieThread.Callback {
         Handler handler = mEncoderThread.getHandler();
         handler.sendMessage(handler.obtainMessage(
                 EncoderThread.EncoderHandler.MSG_FRAME_AVAILABLE_SOON));
+
+        mEncodeThread.getHandler().sendDrain();
     }
 
     /**
@@ -174,6 +185,17 @@ class CircularEncoder implements SaveMovieThread.Callback {
     @Override
     public void saveCompleted(String filename, boolean success) {
         mCb.fileSaveComplete(success ? 0 : 1);
+    }
+
+    @Override
+    public void drainCompleted() {
+        long duration;
+
+        synchronized (mBuf) {
+            duration = mBuf.getDuration(mBuf.begin(), mBuf.end());
+        }
+
+        mCb.bufferStatus(duration);
     }
 
     /**

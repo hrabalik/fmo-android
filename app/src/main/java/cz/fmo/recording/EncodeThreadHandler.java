@@ -7,7 +7,7 @@ import java.lang.ref.WeakReference;
  */
 public class EncodeThreadHandler extends android.os.Handler {
     private static final int KILL = 1;
-    private static final int ENCODE = 2;
+    private static final int DRAIN = 2;
     private final WeakReference<EncodeThread> mThreadRef;
 
     public EncodeThreadHandler(EncodeThread thread) {
@@ -22,10 +22,10 @@ public class EncodeThreadHandler extends android.os.Handler {
     }
 
     /**
-     * Send a command to encode all currently available input data and save it to the buffer.
+     * Send a command to drain all currently available encoder output and save it into the buffer.
      */
-    public void sendEncode() {
-        sendMessage(obtainMessage(ENCODE));
+    public void sendDrain() {
+        sendMessage(obtainMessage(DRAIN));
     }
 
     @Override
@@ -36,8 +36,8 @@ public class EncodeThreadHandler extends android.os.Handler {
             case KILL:
                 thread.kill();
                 break;
-            case ENCODE:
-                thread.encode();
+            case DRAIN:
+                thread.drain();
                 break;
         }
     }

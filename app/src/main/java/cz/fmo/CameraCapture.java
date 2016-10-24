@@ -132,6 +132,10 @@ public class CameraCapture {
         return mFrameRate;
     }
 
+    public String getMIMEType() {
+        return MIME_TYPE;
+    }
+
     public MediaFormat getMediaFormat() {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
         f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
