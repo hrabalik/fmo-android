@@ -73,22 +73,19 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      */
     private static void drawExtra(int frameNum, int width, int height) {
         // We "draw" with the scissor rect and clear calls.  Note this uses window coordinates.
-        int val = frameNum % 3;
+        int val = frameNum % 2;
         switch (val) {
             case 0:
-                GLES20.glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+                GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
                 break;
             case 1:
-                GLES20.glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-                break;
-            case 2:
                 GLES20.glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
                 break;
         }
 
-        int xpos = (int) (width * ((frameNum % 100) / 100.0f));
+        //int xpos = (int) (width * ((frameNum % 100) / 100.0f));
         GLES20.glEnable(GLES20.GL_SCISSOR_TEST);
-        GLES20.glScissor(xpos, 0, width / 32, height / 32);
+        GLES20.glScissor(0, 0, 128, 128);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glDisable(GLES20.GL_SCISSOR_TEST);
     }
