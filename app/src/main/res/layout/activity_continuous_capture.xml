@@ -25,7 +25,7 @@
             android:id="@+id/capture_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
+            android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
             android:onClick="clickCapture"
             android:text="@string/capture"
@@ -35,8 +35,8 @@
             android:id="@+id/recording_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
             android:text="@string/nowRecording"
             android:textAppearance="@android:style/TextAppearance.Large"
             android:textColor="@color/colorAccent" />
@@ -45,9 +45,8 @@
             android:id="@+id/capturedVideoDesc_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
             android:layout_toEndOf="@+id/capture_button"
-            android:paddingLeft="11sp"
             android:text="@string/secondsOfVideo"
             android:textAppearance="@android:style/TextAppearance.Large" />
 

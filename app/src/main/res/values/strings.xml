@@ -6,7 +6,7 @@
 
     <string name="capture">Capture</string>
     <string name="nowRecording">" [RECORDING]"</string>
-    <string name="nowSaving">" [saving]"</string>
+    <string name="nowSaving">" [SAVING]"</string>
     <string name="play_button_text">Play</string>
     <string name="stop_button_text">Stop</string>
     <string name="recordingSucceeded">Recording succeeded</string>
