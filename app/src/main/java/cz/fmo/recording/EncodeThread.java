@@ -69,7 +69,7 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
             mCodec.releaseOutputBuffer(status, false);
             if ((mInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) break;
         }
-        mCb.flushCompleted();
+        mCb.flushCompleted(this);
     }
 
     @Override
@@ -86,7 +86,15 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
         return mInputSurface;
     }
 
+    public long getBufferContentsDuration() {
+        long duration;
+        synchronized (mBuf) {
+            duration = mBuf.getDuration(mBuf.begin(), mBuf.end());
+        }
+        return duration;
+    }
+
     public interface Callback {
-        void flushCompleted();
+        void flushCompleted(EncodeThread thread);
     }
 }

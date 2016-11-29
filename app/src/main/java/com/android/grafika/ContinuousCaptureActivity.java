@@ -34,7 +34,10 @@ import java.lang.ref.WeakReference;
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
+import cz.fmo.recording.Buffer;
 import cz.fmo.recording.CameraCapture;
+import cz.fmo.recording.EncodeThread;
+import cz.fmo.recording.SaveMovieThread;
 import cz.fmo.util.FileManager;
 
 /**
@@ -51,6 +54,8 @@ import cz.fmo.util.FileManager;
  */
 public class ContinuousCaptureActivity extends Activity implements SurfaceHolder.Callback,
         Renderer.Callback {
+    private static final float BUFFER_SIZE_SEC = 7.f;
+
     private final FileManager mFileMan = new FileManager(this);
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
@@ -60,18 +65,19 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
     private CameraCapture mCapture;
 
     private File mOutputFile;
-    private CircularEncoder mCircEncoder;
     private EGL.Surface mEncoderSurface;
     private boolean mFileSaveInProgress;
 
     private MainHandler mHandler;
     private float mSecondsOfVideo;
     private boolean mSurfaceCreated = false;
+    private EncodeThread mEncodeThread;
+    private SaveMovieThread mSaveMovieThread;
 
     /**
      * Adds a bit of extra stuff to the display just to give it flavor.
      */
-    private static void drawExtra(int frameNum, int width, int height) {
+    private static void drawExtra(int frameNum) {
         // We "draw" with the scissor rect and clear calls.  Note this uses window coordinates.
         int val = frameNum % 2;
         switch (val) {
@@ -137,8 +143,13 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // TODO: adjust bit rate based on frame rate?
         // TODO: adjust video width/height based on what we're getting from the camera preview?
         //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
-        mCircEncoder = new CircularEncoder(mCapture, 7, mHandler);
-        mEncoderSurface = mEGL.makeSurface(mCircEncoder.getInputSurface());
+        Buffer buf = new Buffer(mCapture.getBitRate(), mCapture.getFrameRate(), BUFFER_SIZE_SEC);
+        mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
+        mEncodeThread.start();
+        mSaveMovieThread = new SaveMovieThread(buf, mHandler);
+        mSaveMovieThread.start();
+
+        mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
 
         updateControls();
     }
@@ -151,10 +162,18 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mEncoderSurface.release();
             mEncoderSurface = null;
         }
-        if (mCircEncoder != null) {
-            mCircEncoder.shutdown();
-            mCircEncoder = null;
+
+        mEncodeThread.getHandler().sendKill();
+        mSaveMovieThread.getHandler().sendKill();
+        try {
+            mEncodeThread.join();
+            mSaveMovieThread.join();
+        } catch (InterruptedException ie) {
+            throw new RuntimeException("Interrupted");
         }
+        mEncodeThread = null;
+        mSaveMovieThread = null;
+
         if (mCapture != null) {
             mCapture.release();
             mCapture = null;
@@ -182,7 +201,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         TextView tv = (TextView) findViewById(R.id.capturedVideoDesc_text);
         tv.setText(str);
 
-        boolean wantEnabled = (mCircEncoder != null) && !mFileSaveInProgress;
+        boolean wantEnabled = (mEncodeThread != null) && !mFileSaveInProgress;
         Button button = (Button) findViewById(R.id.capture_button);
         if (button.isEnabled() != wantEnabled) {
             Log.d("setting enabled = " + wantEnabled);
@@ -208,8 +227,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         String str = getString(R.string.nowSaving);
         tv.setText(str);
 
-
-        mCircEncoder.saveVideo(mOutputFile);
+        mSaveMovieThread.getHandler().sendSave(mOutputFile);
     }
 
     /**
@@ -294,19 +312,17 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         int viewHeight = sv.getHeight();
         GLES20.glViewport(0, 0, viewWidth, viewHeight);
         mRenderer.drawRectangle();
-        drawExtra(mFrameNum, viewWidth, viewHeight);
+        drawExtra(mFrameNum);
         mDisplaySurface.swapBuffers();
 
         // Send it to the video encoder.
-        //if (!mFileSaveInProgress) {
-            mEncoderSurface.makeCurrent();
+        mEncoderSurface.makeCurrent();
         GLES20.glViewport(0, 0, mCapture.getWidth(), mCapture.getHeight());
-            mRenderer.drawRectangle();
-        drawExtra(mFrameNum, mCapture.getWidth(), mCapture.getHeight());
-            mCircEncoder.frameAvailableSoon();
+        mRenderer.drawRectangle();
+        drawExtra(mFrameNum);
+        mEncodeThread.getHandler().sendFlush();
         mEncoderSurface.presentationTime(mRenderer.getTimestamp());
-            mEncoderSurface.swapBuffers();
-        //}
+        mEncoderSurface.swapBuffers();
 
         mFrameNum++;
     }
@@ -317,31 +333,30 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      * Used to handle camera preview "frame available" notifications, and implement the
      * blinking "recording" text.  Receives callback messages from the encoder thread.
      */
-    private static class MainHandler extends Handler implements CircularEncoder.Callback {
-        public static final int MSG_BLINK_TEXT = 0;
-        public static final int MSG_FRAME_AVAILABLE = 1;
-        public static final int MSG_FILE_SAVE_COMPLETE = 2;
-        public static final int MSG_BUFFER_STATUS = 3;
+    private static class MainHandler extends Handler implements SaveMovieThread.Callback,
+            EncodeThread.Callback {
+        static final int MSG_BLINK_TEXT = 0;
+        static final int MSG_FRAME_AVAILABLE = 1;
+        static final int MSG_FILE_SAVE_COMPLETE = 2;
+        static final int MSG_BUFFER_STATUS = 3;
 
         private final WeakReference<ContinuousCaptureActivity> mWeakActivity;
 
-        public MainHandler(ContinuousCaptureActivity activity) {
+        MainHandler(ContinuousCaptureActivity activity) {
             mWeakActivity = new WeakReference<>(activity);
         }
 
-        // CircularEncoder.Callback, called on encoder thread
         @Override
-        public void fileSaveComplete(int status) {
+        public void flushCompleted(EncodeThread thread) {
+            long duration = thread.getBufferContentsDuration();
+            sendMessage(obtainMessage(MSG_BUFFER_STATUS, (int) (duration >> 32), (int) duration));
+        }
+
+        @Override
+        public void saveCompleted(String filename, boolean success) {
+            int status = success ? 0 : 1;
             sendMessage(obtainMessage(MSG_FILE_SAVE_COMPLETE, status, 0, null));
         }
-
-        // CircularEncoder.Callback, called on encoder thread
-        @Override
-        public void bufferStatus(long totalTimeMsec) {
-            sendMessage(obtainMessage(MSG_BUFFER_STATUS,
-                    (int) (totalTimeMsec >> 32), (int) totalTimeMsec));
-        }
-
 
         @Override
         public void handleMessage(Message msg) {
