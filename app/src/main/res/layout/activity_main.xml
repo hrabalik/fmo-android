@@ -39,6 +39,14 @@
             android:layout_gravity="start|top"
             android:onClick="runContinuousCaptureActivity"
             android:text="Continuous capture activity" />
+
+        <Button
+            android:id="@+id/playRecordingActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:onClick="runRecordingActivity"
+            android:text="Recording activity" />
     </LinearLayout>
 
     <FrameLayout

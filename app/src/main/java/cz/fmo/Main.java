@@ -131,6 +131,10 @@ public class Main extends AppCompatActivity {
         startActivity(new Intent(this, com.android.grafika.ContinuousCaptureActivity.class));
     }
 
+    public void runRecordingActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, cz.fmo.recording.RecordingActivity.class));
+    }
+
     public void runPlayMovieSurfaceActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }

@@ -32,6 +32,7 @@
             android:name=".Main"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
+            android:screenOrientation="landscape"
             android:theme="@style/FullscreenTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -51,6 +52,13 @@
             android:name="com.android.grafika.ContinuousCaptureActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Continuous capture"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+
+        <activity
+            android:name="cz.fmo.recording.RecordingActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Recording"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
 
