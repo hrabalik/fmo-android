@@ -104,7 +104,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         getSurfaceHolder().addCallback(this);
 
         mHandler = new MainHandler(this);
-        mHandler.sendEmptyMessageDelayed(MainHandler.MSG_BLINK_TEXT, 1500);
+        mHandler.blinkText(1500);
 
         mOutputFile = mFileMan.open("continuous-capture.mp4");
         mSecondsOfVideo = 0.0f;
@@ -283,7 +283,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
 
     @Override   // Renderer.Callback; runs on arbitrary thread
     public void onFrameAvailable() {
-        mHandler.sendEmptyMessage(MainHandler.MSG_FRAME_AVAILABLE);
+        mHandler.frameAvailable();
     }
 
     /**
@@ -335,10 +335,10 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
      */
     private static class MainHandler extends Handler implements SaveMovieThread.Callback,
             EncodeThread.Callback {
-        static final int MSG_BLINK_TEXT = 0;
-        static final int MSG_FRAME_AVAILABLE = 1;
-        static final int MSG_FILE_SAVE_COMPLETE = 2;
-        static final int MSG_BUFFER_STATUS = 3;
+        private static final int BLINK_TEXT = 0;
+        private static final int FRAME_AVAILABLE = 1;
+        private static final int SAVE_COMPLETED = 2;
+        private static final int FLUSH_COMPLETED = 3;
 
         private final WeakReference<ContinuousCaptureActivity> mWeakActivity;
 
@@ -346,16 +346,24 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             mWeakActivity = new WeakReference<>(activity);
         }
 
+        void frameAvailable() {
+            sendEmptyMessage(MainHandler.FRAME_AVAILABLE);
+        }
+
+        void blinkText(long delayMs) {
+            sendEmptyMessageDelayed(BLINK_TEXT, delayMs);
+        }
+
         @Override
         public void flushCompleted(EncodeThread thread) {
             long duration = thread.getBufferContentsDuration();
-            sendMessage(obtainMessage(MSG_BUFFER_STATUS, (int) (duration >> 32), (int) duration));
+            sendMessage(obtainMessage(FLUSH_COMPLETED, (int) (duration >> 32), (int) duration));
         }
 
         @Override
         public void saveCompleted(String filename, boolean success) {
             int status = success ? 0 : 1;
-            sendMessage(obtainMessage(MSG_FILE_SAVE_COMPLETE, status, 0, null));
+            sendMessage(obtainMessage(SAVE_COMPLETED, status, 0, null));
         }
 
         @Override
@@ -367,7 +375,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
             }
 
             switch (msg.what) {
-                case MSG_BLINK_TEXT: {
+                case BLINK_TEXT: {
                     TextView tv = (TextView) activity.findViewById(R.id.recording_text);
 
                     // Attempting to make it blink by using setEnabled() doesn't work --
@@ -381,18 +389,18 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
                     tv.setVisibility(visibility);
 
                     int delay = (visibility == View.VISIBLE) ? 1000 : 200;
-                    sendEmptyMessageDelayed(MSG_BLINK_TEXT, delay);
+                    blinkText(delay);
                     break;
                 }
-                case MSG_FRAME_AVAILABLE: {
+                case FRAME_AVAILABLE: {
                     activity.processFrame();
                     break;
                 }
-                case MSG_FILE_SAVE_COMPLETE: {
+                case SAVE_COMPLETED: {
                     activity.fileSaveComplete(msg.arg1);
                     break;
                 }
-                case MSG_BUFFER_STATUS: {
+                case FLUSH_COMPLETED: {
                     long duration = (((long) msg.arg1) << 32) |
                             (((long) msg.arg2) & 0xffffffffL);
                     activity.updateBufferStatus(duration);
