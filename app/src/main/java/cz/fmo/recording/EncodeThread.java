@@ -13,14 +13,14 @@ import cz.fmo.util.GenericThread;
  * A separate thread to manage an encoder and save its output into a buffer.
  */
 public class EncodeThread extends GenericThread<EncodeThreadHandler> {
-    private final Buffer mBuf;
+    private final CyclicBuffer mBuf;
     private final Callback mCb;
     private final MediaCodec.BufferInfo mInfo;
     private final MediaCodec mCodec;
     private final Surface mInputSurface;
     private boolean mReleased = false;
 
-    public EncodeThread(MediaFormat format, Buffer buf, Callback cb) {
+    public EncodeThread(MediaFormat format, CyclicBuffer buf, Callback cb) {
         mBuf = buf;
         mCb = cb;
         mInfo = new MediaCodec.BufferInfo();

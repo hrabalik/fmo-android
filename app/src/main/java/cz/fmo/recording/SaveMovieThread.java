@@ -11,7 +11,7 @@ import cz.fmo.util.GenericThread;
 
 /**
  * Thread for saving videos from frames stored in a buffer. The buffer needs to be filled with
- * MPEG-4 frames and the exact format has to be specified using the Buffer.setFormat() method.
+ * MPEG-4 frames and the exact format has to be specified using the CyclicBuffer.setFormat() method.
  */
 public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
@@ -19,12 +19,12 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private static final long MOVIE_LENGTH = 3 * SECONDS;
     private static final long MOVIE_MIN_LENGTH = 2 * SECONDS;
     private static final long TIME_TO_SAVE = SECONDS;
-    private final Buffer mBuf;
+    private final CyclicBuffer mBuf;
     private final ByteBuffer mBufCache;
     private final MediaCodec.BufferInfo mInfoCache;
     private final Callback mCb;
 
-    public SaveMovieThread(Buffer buf, Callback cb) {
+    public SaveMovieThread(CyclicBuffer buf, Callback cb) {
         mBuf = buf;
         mBufCache = buf.getCache();
         mInfoCache = new MediaCodec.BufferInfo();

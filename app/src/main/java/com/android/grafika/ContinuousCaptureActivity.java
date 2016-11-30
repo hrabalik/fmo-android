@@ -34,7 +34,7 @@ import java.lang.ref.WeakReference;
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
-import cz.fmo.recording.Buffer;
+import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.CameraCapture;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;
@@ -143,7 +143,7 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         // TODO: adjust bit rate based on frame rate?
         // TODO: adjust video width/height based on what we're getting from the camera preview?
         //       (can we guarantee that camera preview size is compatible with AVC video encoder?)
-        Buffer buf = new Buffer(mCapture.getBitRate(), mCapture.getFrameRate(), BUFFER_SIZE_SEC);
+        CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(), BUFFER_SIZE_SEC);
         mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
         mEncodeThread.start();
         mSaveMovieThread = new SaveMovieThread(buf, mHandler);

@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
  * There are separate buffers for the data itself and metadata entries. New frames are added to the
  * back.
  */
-public class Buffer {
+public class CyclicBuffer {
     private final byte[] mData;
     private final BufferInfo[] mMeta;
     private int mHead = 0;
@@ -23,7 +23,7 @@ public class Buffer {
      * @param fps     expected frames per second
      * @param seconds approximate buffer length
      */
-    public Buffer(int bps, float fps, float seconds) {
+    public CyclicBuffer(int bps, float fps, float seconds) {
         // approximate the required buffer sizes
         float nFrames = fps * seconds;
         float nBytes = (bps * seconds) * (1 / 8.f);
@@ -40,7 +40,7 @@ public class Buffer {
         }
     }
 
-    public boolean empty() {
+    boolean empty() {
         return mHead == mTail;
     }
 
@@ -48,15 +48,15 @@ public class Buffer {
         return next(mTail) == mHead;
     }
 
-    public int next(int i) {
+    int next(int i) {
         return (i + 1) % mMeta.length;
     }
 
-    public int prev(int i) {
+    int prev(int i) {
         return (i + mMeta.length - 1) % mMeta.length;
     }
 
-    public int begin() {
+    int begin() {
         return mHead;
     }
 
@@ -87,7 +87,7 @@ public class Buffer {
      * @return a frame in the specified range that is the first or second closest in time to the
      * specified timestamp
      */
-    public int findByTime(int first, int last, long time) {
+    int findByTime(int first, int last, long time) {
         if (first == last) throw new RuntimeException("findByTime called on an empty range");
         int mid = midpoint(first, last);
         if (mid == first) return first;
@@ -106,7 +106,7 @@ public class Buffer {
      * @param index a valid index of a frame
      * @return the closest I-frame to the specified index, or index, if no I-frame is found
      */
-    public int findIFrame(int index) {
+    int findIFrame(int index) {
         if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         boolean backFail = false;
         boolean fwdFail = false;
@@ -146,7 +146,7 @@ public class Buffer {
      * @param last  end of range, index of the frame after the last frame (past-the-end index)
      * @return presentation time delta in microseconds
      */
-    public long getDuration(int first, int last) {
+    long getDuration(int first, int last) {
         if (first == last) return 0;
         return mMeta[prev(last)].presentationTimeUs - mMeta[first].presentationTimeUs;
     }
@@ -203,7 +203,7 @@ public class Buffer {
      * @param info   frame metadata, including location (offset) and length (size) of the data in
      *               source
      */
-    public void pushBack(ByteBuffer source, BufferInfo info) {
+    void pushBack(ByteBuffer source, BufferInfo info) {
         // allocate the new block, pop from front if necessary
         int offset = placeBlock(info.size);
         while (blockOverlapsFront(offset, info.size) || full()) popFront();
@@ -234,7 +234,7 @@ public class Buffer {
      *
      * @return cache to be used with the get() method
      */
-    public ByteBuffer getCache() {
+    ByteBuffer getCache() {
         return ByteBuffer.wrap(mData);
     }
 
@@ -245,7 +245,7 @@ public class Buffer {
      * @param cache object to be filled, obtained via getCache()
      * @param info  object to be filled
      */
-    public void get(int index, ByteBuffer cache, BufferInfo info) {
+    void get(int index, ByteBuffer cache, BufferInfo info) {
         if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         if (cache.array() != mData) throw new RuntimeException("Bad buffer");
         BufferInfo meta = mMeta[index];
@@ -262,7 +262,7 @@ public class Buffer {
      * @param index frame index
      * @return timestamp of frame at index, in microseconds
      */
-    public long getTime(int index) {
+    long getTime(int index) {
         if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         return mMeta[index].presentationTimeUs;
     }
@@ -271,7 +271,7 @@ public class Buffer {
      * @return the format of stored frames, specified previously via setFormat(). If setFormat() was
      * not called, the return value is null.
      */
-    public MediaFormat getFormat() {
+    MediaFormat getFormat() {
         return mFormat;
     }
 
@@ -282,7 +282,7 @@ public class Buffer {
      *
      * @param format format of stored frames
      */
-    public void setFormat(MediaFormat format) {
+    void setFormat(MediaFormat format) {
         mFormat = format;
     }
 }
