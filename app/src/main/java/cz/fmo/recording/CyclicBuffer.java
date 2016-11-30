@@ -9,7 +9,8 @@ import java.nio.ByteBuffer;
  * Holds encoded video data in a circular buffer.
  * <p>
  * There are separate buffers for the data itself and metadata entries. New frames are added to the
- * back.
+ * back. If there is not enough space for a new frame, one or more frames are removed from the
+ * front.
  */
 public class CyclicBuffer {
     private final byte[] mData;
