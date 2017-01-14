@@ -138,4 +138,6 @@ public class Main extends AppCompatActivity {
     public void runPlayMovieSurfaceActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }
+
+    native String getHelloString();
 }
