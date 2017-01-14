@@ -8,6 +8,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.TextView;
 
 public class Main extends AppCompatActivity {
     private static final boolean AUTO_HIDE = true;
@@ -74,7 +75,17 @@ public class Main extends AppCompatActivity {
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
+
+        TextView text = (TextView) findViewById(R.id.mainMenuTextView);
+        String toDisplay = getHelloString();
+        text.setText(toDisplay);
     }
+
+    static {
+        System.loadLibrary("test1");
+    }
+
+    native String getHelloString();
 
     @Override
     protected void onResume() {
@@ -138,6 +149,4 @@ public class Main extends AppCompatActivity {
     public void runPlayMovieSurfaceActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }
-
-    native String getHelloString();
 }

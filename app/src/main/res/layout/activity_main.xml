@@ -47,6 +47,14 @@
             android:layout_gravity="start|top"
             android:onClick="runRecordingActivity"
             android:text="Recording activity" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/mainMenuTextView"
+            android:paddingBottom="14sp"
+            android:paddingTop="14sp"
+            android:textAlignment="center" />
     </LinearLayout>
 
     <FrameLayout

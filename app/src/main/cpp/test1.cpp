@@ -10,12 +10,12 @@ int fac(std::vector<int> nums) {
 }
 
 namespace {
-    const char* const hello_str = "Hello from C++";
+    const char* const HELLO_STR = "Hello from C++";
     using env_t = JNIEnv*;
     using this_t = jobject;
 }
 
 extern "C"
 jstring Java_cz_fmo_Main_getHelloString(env_t env, this_t) {
-    return env->NewStringUTF(hello_str);
+    return env->NewStringUTF(HELLO_STR);
 }
