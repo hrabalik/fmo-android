@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.opengl.GLES20;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -20,17 +22,9 @@ import cz.fmo.util.FileManager;
 
 public class RecordingActivity extends Activity implements SurfaceHolder.Callback {
     private static final float BUFFER_SIZE_SEC = 7.f;
-
-    private enum Status {
-        STOPPED, RUNNING, DENIED
-    }
-    private enum SaveStatus {
-        NOT_SAVING, SAVING
-    }
-    private enum GUISurfaceStatus {
-        NOT_READY, READY
-    }
-
+    private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
+    private static final int REQUEST_ID = 45117588;
+    private static final long REQUEST_TIMEOUT_MS = 100;
     private final Handler mHandler = new Handler(this);
     private final FileManager mFileMan = new FileManager(this);
     private java.io.File mFile;
@@ -44,6 +38,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
+    private long mLastRequestTimeMs = 0;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -96,7 +91,12 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      * - surfaceCreated(), if GUI preview surface has just been created
      */
     private void initStep1() {
-        initStep2();
+        if (!compatHavePermissions()) {
+            compatRequestPermissions();
+        }
+        else {
+            initStep2();
+        }
     }
 
     /**
@@ -105,7 +105,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      * - onRequestPermissionsResult(), if camera permissions have just been granted or denied
      */
     private void initStep2() {
-        if (havePermissions()) {
+        if (compatHavePermissions()) {
             mEGL = new EGL();
             mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
             mDisplaySurface.makeCurrent();
@@ -125,9 +125,23 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         update();
     }
 
-    private boolean havePermissions() {
-        int response = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+    private boolean compatHavePermissions() {
+        int response = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
         return response == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void compatRequestPermissions() {
+        long timeMs = System.currentTimeMillis();
+        if (timeMs - mLastRequestTimeMs < REQUEST_TIMEOUT_MS) return;
+        mLastRequestTimeMs = timeMs;
+        ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, REQUEST_ID);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestID, @NonNull String[] permissionList,
+                                           @NonNull int[] grantedList) {
+        if (requestID != REQUEST_ID) return;
+        initStep2();
     }
 
     @Override
@@ -230,6 +244,18 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
         mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
+    }
+
+    private enum Status {
+        STOPPED, RUNNING, DENIED
+    }
+
+    private enum SaveStatus {
+        NOT_SAVING, SAVING
+    }
+
+    private enum GUISurfaceStatus {
+        NOT_READY, READY
     }
 
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
