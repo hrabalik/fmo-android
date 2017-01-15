@@ -16,5 +16,6 @@
     <string name="videoLength">%1$.1f seconds in buffer</string>
     <string name="savingVideo">Saving…</string>
     <string name="recordingStopped">Recording stopped</string>
+    <string name="cameraPermissionDenied">Camera permission denied</string>
     <string name="saveButton">Save</string>
 </resources>

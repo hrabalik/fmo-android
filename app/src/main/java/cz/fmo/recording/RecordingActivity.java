@@ -1,7 +1,10 @@
 package cz.fmo.recording;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.opengl.GLES20;
+import android.support.v4.content.ContextCompat;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
@@ -19,7 +22,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private static final float BUFFER_SIZE_SEC = 7.f;
 
     private enum Status {
-        STOPPED, RUNNING
+        STOPPED, RUNNING, DENIED
     }
     private enum SaveStatus {
         NOT_SAVING, SAVING
@@ -56,54 +59,75 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private void update() {
-        TextView status = (TextView) findViewById(R.id.status_text);
-        Button save = (Button) findViewById(R.id.save_button);
+        boolean enableSaveButton = false;
+        String statusString;
 
         if (mStatus == Status.STOPPED) {
-            save.setEnabled(false);
-            String text = getString(R.string.recordingStopped);
-            status.setText("-");
+            statusString = getString(R.string.recordingStopped);
+        }
+        else if (mStatus == Status.DENIED) {
+            statusString = getString(R.string.cameraPermissionDenied);
         }
         else if (mSaveStatus == SaveStatus.SAVING) {
-            save.setEnabled(false);
-            String text = getString(R.string.savingVideo);
-            status.setText(text);
+            statusString = getString(R.string.savingVideo);
         }
         else {
-            save.setEnabled(true);
+            enableSaveButton = true;
             long lengthUs = mEncodeThread.getBufferContentsDuration();
             float lengthSec = ((float) lengthUs) / 1000000.f;
-            String text = getString(R.string.videoLength, lengthSec);
-            status.setText(text);
+            statusString = getString(R.string.videoLength, lengthSec);
         }
+
+        TextView status = (TextView) findViewById(R.id.status_text);
+        status.setText(statusString);
+        Button saveButton = (Button) findViewById(R.id.save_button);
+        saveButton.setEnabled(enableSaveButton);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (mGUISurfaceStatus == GUISurfaceStatus.READY) start();
+        if (mGUISurfaceStatus == GUISurfaceStatus.READY) initStep1();
     }
 
     /**
-     * Last step of the initialization procedure. Called by:
-     * - surfaceCreated()
-     * - onResume(), if surface already exists
+     * Called by:
+     * - onResume(), if GUI preview surface already exists
+     * - surfaceCreated(), if GUI preview surface has just been created
      */
-    private void start() {
-        mEGL = new EGL();
-        mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
-        mDisplaySurface.makeCurrent();
-        mRenderer = new Renderer(mHandler);
-        mCapture = new CameraCapture(mRenderer.getInputTexture());
-        CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
-                BUFFER_SIZE_SEC);
-        mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
-        mSaveMovieThread = new SaveMovieThread(buf, mHandler);
-        mEncodeThread.start();
-        mSaveMovieThread.start();
-        mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
-        mStatus = Status.RUNNING;
+    private void initStep1() {
+        initStep2();
+    }
+
+    /**
+     * Called by:
+     * - initStep1(), if camera permissions already granted
+     * - onRequestPermissionsResult(), if camera permissions have just been granted or denied
+     */
+    private void initStep2() {
+        if (havePermissions()) {
+            mEGL = new EGL();
+            mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
+            mDisplaySurface.makeCurrent();
+            mRenderer = new Renderer(mHandler);
+            mCapture = new CameraCapture(mRenderer.getInputTexture());
+            CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
+                    BUFFER_SIZE_SEC);
+            mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
+            mSaveMovieThread = new SaveMovieThread(buf, mHandler);
+            mEncodeThread.start();
+            mSaveMovieThread.start();
+            mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
+            mStatus = Status.RUNNING;
+        } else {
+            mStatus = Status.DENIED;
+        }
         update();
+    }
+
+    private boolean havePermissions() {
+        int response = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        return response == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -114,16 +138,24 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             mEncoderSurface.release();
             mEncoderSurface = null;
         }
-        mEncodeThread.getHandler().sendKill();
-        mSaveMovieThread.getHandler().sendKill();
-        try {
-            mEncodeThread.join();
-            mSaveMovieThread.join();
-        } catch (InterruptedException ie) {
-            throw new RuntimeException("Interrupted");
+        if (mEncodeThread != null) {
+            mEncodeThread.getHandler().sendKill();
+            try {
+                mEncodeThread.join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException("Interrupted");
+            }
+            mEncodeThread = null;
         }
-        mEncodeThread = null;
-        mSaveMovieThread = null;
+        if (mSaveMovieThread != null) {
+            mSaveMovieThread.getHandler().sendKill();
+            try {
+                mSaveMovieThread.join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException("Interrupted");
+            }
+            mSaveMovieThread = null;
+        }
         if (mCapture != null) {
             mCapture.release();
             mCapture = null;
@@ -143,7 +175,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     public void clickSave(@SuppressWarnings("UnusedParameters") android.view.View unused) {
-        if (mSaveStatus == SaveStatus.SAVING) return;
+        if (mStatus != Status.RUNNING) return;
+        if (mSaveStatus != SaveStatus.NOT_SAVING) return;
         mSaveStatus = SaveStatus.SAVING;
         mSaveMovieThread.getHandler().sendSave(mFile);
         update();
@@ -162,7 +195,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private void frameAvailable() {
-        if (mStatus == Status.STOPPED) return;
+        if (mStatus != Status.RUNNING) return;
 
         // draw onto mDisplaySurface
         mDisplaySurface.makeCurrent();
@@ -187,7 +220,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         mGUISurfaceStatus = GUISurfaceStatus.READY;
-        start();
+        initStep1();
     }
 
     @Override
