@@ -13,7 +13,6 @@ import android.media.MediaFormat;
  * <p>
  * To stop receiving frames, call the release() method.
  */
-@SuppressWarnings("deprecation")
 public class CameraCapture {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
