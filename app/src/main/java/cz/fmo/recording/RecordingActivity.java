@@ -82,7 +82,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     @Override
     protected void onResume() {
         super.onResume();
-        if (mGUISurfaceStatus == GUISurfaceStatus.READY) initStep1();
+        // remove the not running check once multiple onResume calls stop occuring
+        if (mGUISurfaceStatus == GUISurfaceStatus.READY && mStatus != Status.RUNNING) initStep1();
     }
 
     /**
@@ -91,56 +92,50 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      * - surfaceCreated(), if GUI preview surface has just been created
      */
     private void initStep1() {
-        if (!compatHavePermissions()) {
-            compatRequestPermissions();
-        }
-        else {
+        int response = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
+        if (response == PackageManager.PERMISSION_GRANTED) {
             initStep2();
+        } else {
+            long timeMs = System.currentTimeMillis();
+            // remove the timing check once multiple onResume calls stop occuring
+            if (timeMs - mLastRequestTimeMs > REQUEST_TIMEOUT_MS) {
+                mLastRequestTimeMs = timeMs;
+                ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, REQUEST_ID);
+            }
+            mStatus = Status.DENIED;
+            update();
         }
     }
 
     /**
      * Called by:
      * - initStep1(), if camera permissions already granted
-     * - onRequestPermissionsResult(), if camera permissions have just been granted or denied
+     * - onRequestPermissionsResult(), if camera permissions have just been granted
      */
     private void initStep2() {
-        if (compatHavePermissions()) {
-            mEGL = new EGL();
-            mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
-            mDisplaySurface.makeCurrent();
-            mRenderer = new Renderer(mHandler);
-            mCapture = new CameraCapture(mRenderer.getInputTexture());
-            CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
-                    BUFFER_SIZE_SEC);
-            mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
-            mSaveMovieThread = new SaveMovieThread(buf, mHandler);
-            mEncodeThread.start();
-            mSaveMovieThread.start();
-            mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
-            mStatus = Status.RUNNING;
-        } else {
-            mStatus = Status.DENIED;
-        }
+        mEGL = new EGL();
+        mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
+        mDisplaySurface.makeCurrent();
+        mRenderer = new Renderer(mHandler);
+        mCapture = new CameraCapture(mRenderer.getInputTexture());
+        CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
+                BUFFER_SIZE_SEC);
+        mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
+        mSaveMovieThread = new SaveMovieThread(buf, mHandler);
+        mEncodeThread.start();
+        mSaveMovieThread.start();
+        mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
+        mStatus = Status.RUNNING;
         update();
-    }
-
-    private boolean compatHavePermissions() {
-        int response = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
-        return response == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private void compatRequestPermissions() {
-        long timeMs = System.currentTimeMillis();
-        if (timeMs - mLastRequestTimeMs < REQUEST_TIMEOUT_MS) return;
-        mLastRequestTimeMs = timeMs;
-        ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, REQUEST_ID);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestID, @NonNull String[] permissionList,
                                            @NonNull int[] grantedList) {
         if (requestID != REQUEST_ID) return;
+        if (permissionList.length < 1) return;
+        if (!permissionList[0].equals(CAMERA_PERMISSION)) return;
+        if (grantedList[0] != PackageManager.PERMISSION_GRANTED) return;
         initStep2();
     }
 
