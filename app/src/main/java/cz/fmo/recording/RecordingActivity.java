@@ -23,8 +23,6 @@ import cz.fmo.util.FileManager;
 public class RecordingActivity extends Activity implements SurfaceHolder.Callback {
     private static final float BUFFER_SIZE_SEC = 7.f;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
-    private static final int REQUEST_ID = 45117588;
-    private static final long REQUEST_TIMEOUT_MS = 100;
     private final Handler mHandler = new Handler(this);
     private final FileManager mFileMan = new FileManager(this);
     private java.io.File mFile;
@@ -38,7 +36,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
-    private long mLastRequestTimeMs = 0;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -53,66 +50,62 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         return (SurfaceView) findViewById(R.id.preview_surface);
     }
 
-    private void update() {
-        boolean enableSaveButton = false;
-        String statusString;
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        mGUISurfaceStatus = GUISurfaceStatus.READY;
+        init();
+    }
 
-        if (mStatus == Status.STOPPED) {
-            statusString = getString(R.string.recordingStopped);
-        }
-        else if (mStatus == Status.DENIED) {
-            statusString = getString(R.string.cameraPermissionDenied);
-        }
-        else if (mSaveStatus == SaveStatus.SAVING) {
-            statusString = getString(R.string.savingVideo);
-        }
-        else {
-            enableSaveButton = true;
-            long lengthUs = mEncodeThread.getBufferContentsDuration();
-            float lengthSec = ((float) lengthUs) / 1000000.f;
-            statusString = getString(R.string.videoLength, lengthSec);
-        }
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+    }
 
-        TextView status = (TextView) findViewById(R.id.status_text);
-        status.setText(statusString);
-        Button saveButton = (Button) findViewById(R.id.save_button);
-        saveButton.setEnabled(enableSaveButton);
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (permissionDenied()) {
+            ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, 0);
+        }
+    }
+
+    private boolean permissionDenied() {
+        int permissionStatus = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
+        return permissionStatus != PackageManager.PERMISSION_GRANTED;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestID, @NonNull String[] permissionList,
+                                           @NonNull int[] grantedList) {
+        init();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // remove the not running check once multiple onResume calls stop occuring
-        if (mGUISurfaceStatus == GUISurfaceStatus.READY && mStatus != Status.RUNNING) initStep1();
+        init();
     }
 
     /**
      * Called by:
-     * - onResume(), if GUI preview surface already exists
-     * - surfaceCreated(), if GUI preview surface has just been created
+     * - onResume()
+     * - surfaceCreated(), when GUI preview surface has just been created
+     * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
-    private void initStep1() {
-        int response = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
-        if (response == PackageManager.PERMISSION_GRANTED) {
-            initStep2();
-        } else {
-            long timeMs = System.currentTimeMillis();
-            // remove the timing check once multiple onResume calls stop occuring
-            if (timeMs - mLastRequestTimeMs > REQUEST_TIMEOUT_MS) {
-                mLastRequestTimeMs = timeMs;
-                ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, REQUEST_ID);
-            }
+    private void init() {
+        if (mStatus == Status.RUNNING) return;
+        if (mGUISurfaceStatus != GUISurfaceStatus.READY) return;
+
+        if (permissionDenied()) {
             mStatus = Status.DENIED;
             update();
+            return;
         }
-    }
 
-    /**
-     * Called by:
-     * - initStep1(), if camera permissions already granted
-     * - onRequestPermissionsResult(), if camera permissions have just been granted
-     */
-    private void initStep2() {
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();
@@ -129,14 +122,30 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         update();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestID, @NonNull String[] permissionList,
-                                           @NonNull int[] grantedList) {
-        if (requestID != REQUEST_ID) return;
-        if (permissionList.length < 1) return;
-        if (!permissionList[0].equals(CAMERA_PERMISSION)) return;
-        if (grantedList[0] != PackageManager.PERMISSION_GRANTED) return;
-        initStep2();
+    /**
+     * Updates all dynamic UI elements, such as labels and buttons.
+     */
+    private void update() {
+        boolean enableSaveButton = false;
+        String statusString;
+
+        if (mStatus == Status.STOPPED) {
+            statusString = getString(R.string.recordingStopped);
+        } else if (mStatus == Status.DENIED) {
+            statusString = getString(R.string.cameraPermissionDenied);
+        } else if (mSaveStatus == SaveStatus.SAVING) {
+            statusString = getString(R.string.savingVideo);
+        } else {
+            enableSaveButton = true;
+            long lengthUs = mEncodeThread.getBufferContentsDuration();
+            float lengthSec = ((float) lengthUs) / 1000000.f;
+            statusString = getString(R.string.videoLength, lengthSec);
+        }
+
+        TextView status = (TextView) findViewById(R.id.status_text);
+        status.setText(statusString);
+        Button saveButton = (Button) findViewById(R.id.save_button);
+        saveButton.setEnabled(enableSaveButton);
     }
 
     @Override
@@ -226,21 +235,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mEncoderSurface.swapBuffers();
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        mGUISurfaceStatus = GUISurfaceStatus.READY;
-        initStep1();
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
-    }
-
     private enum Status {
         STOPPED, RUNNING, DENIED
     }
@@ -289,7 +283,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                     activity.flushCompleted();
                     break;
                 case SAVE_COMPLETED:
-                    activity.saveCompleted((Boolean)msg.obj);
+                    activity.saveCompleted((Boolean) msg.obj);
                     break;
                 case FRAME_AVAILABLE:
                     activity.frameAvailable();
