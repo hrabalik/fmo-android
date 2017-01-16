@@ -42,20 +42,6 @@
         </activity>
 
         <activity
-            android:name="com.android.grafika.LiveCameraActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="Live camera"
-            android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-
-        <activity
-            android:name="com.android.grafika.ContinuousCaptureActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="Continuous capture"
-            android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
-
-        <activity
             android:name="cz.fmo.recording.RecordingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Recording"

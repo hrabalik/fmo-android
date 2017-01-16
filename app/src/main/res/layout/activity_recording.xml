@@ -1,6 +1,6 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.android.grafika.ContinuousCaptureActivity">
+    tools:context="cz.fmo.recording.RecordingActivity">
 
     <FrameLayout
         android:layout_width="match_parent"

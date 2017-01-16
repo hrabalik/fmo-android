@@ -17,7 +17,4 @@ class Log {
     public static void w(String msg) {
         android.util.Log.w(TAG, msg);
     }
-    public static void w(String msg, Exception e) {
-        android.util.Log.w(TAG, msg, e);
-    }
 }

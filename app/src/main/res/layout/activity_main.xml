@@ -33,14 +33,6 @@
             android:text="Play movie surface activity" />
 
         <Button
-            android:id="@+id/playContinuousCaptureActivityButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|top"
-            android:onClick="runContinuousCaptureActivity"
-            android:text="Continuous capture activity" />
-
-        <Button
             android:id="@+id/playRecordingActivityButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -49,41 +41,13 @@
             android:text="Recording activity" />
 
         <TextView
+            android:id="@+id/mainMenuTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/mainMenuTextView"
             android:paddingBottom="14sp"
             android:paddingTop="14sp"
             android:textAlignment="center" />
     </LinearLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fitsSystemWindows="true">
-
-        <LinearLayout
-            android:id="@+id/fullscreen_content_controls"
-            style="?metaButtonBarStyle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:background="@color/black_overlay"
-            android:orientation="horizontal"
-            tools:ignore="UselessParent">
-
-            <Button
-                android:id="@+id/dummy_button"
-                style="?metaButtonBarButtonStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="runLiveCameraActivity"
-                android:text="@string/dummy_button" />
-
-        </LinearLayout>
-
-    </FrameLayout>
 
     <!-- This FrameLayout insets its children based on system windows using
          android:fitsSystemWindows. -->
