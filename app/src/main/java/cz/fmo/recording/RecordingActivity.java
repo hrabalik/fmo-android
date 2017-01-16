@@ -124,8 +124,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();
-        mRenderer = new Renderer(mHandler);
-        mCapture.start(mRenderer.getInputTexture());
         CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
                 BUFFER_SIZE_SEC);
         mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
@@ -133,6 +131,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mEncodeThread.start();
         mSaveMovieThread.start();
         mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
+        mRenderer = new Renderer(mHandler);
+        mCapture.start(mRenderer.getInputTexture());
         mStatus = Status.RUNNING;
         update();
     }
