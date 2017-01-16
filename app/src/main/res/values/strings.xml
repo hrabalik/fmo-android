@@ -17,5 +17,6 @@
     <string name="savingVideo">Saving…</string>
     <string name="recordingStopped">Recording stopped</string>
     <string name="cameraPermissionDenied">Camera permission denied</string>
+    <string name="cameraInitializing">Waiting for camera…</string>
     <string name="saveButton">Save</string>
 </resources>

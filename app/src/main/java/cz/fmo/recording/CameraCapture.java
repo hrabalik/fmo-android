@@ -25,26 +25,41 @@ public class CameraCapture {
     private final Camera.Parameters mParams;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
+    private boolean mStarted = false;
     private boolean mReleased = false;
 
     /**
-     * Selects a suitable camera, and starts writing frames into the provided texture.
-     *
-     * @param outputTexture texture used as the target of camera capture
+     * Selects a suitable camera, and sets the callback to be called once the camera is ready.
+     * Do not call any methods before the callback is triggered.
      */
-    public CameraCapture(SurfaceTexture outputTexture) {
+    public CameraCapture(Callback cb) {
         int bestCam = selectCamera();
         mCamera = Camera.open(bestCam);
         if (mCamera == null) throw new RuntimeException("Failed to open camera");
         mParams = mCamera.getParameters();
         configureCamera();
+        cb.onCameraReady();
+    }
 
+    /**
+     * Starts writing frames into the provided target texture.
+     */
+    public void start(SurfaceTexture outputTexture) {
         try {
             mCamera.setPreviewTexture(outputTexture);
         } catch (java.io.IOException e) {
             throw new RuntimeException("setOutputTexture() failed");
         }
         mCamera.startPreview();
+        mStarted = true;
+    }
+
+    /**
+     * Stops writing frames.
+     */
+    private void stop() {
+        mCamera.stopPreview();
+        mStarted = false;
     }
 
     /**
@@ -54,8 +69,11 @@ public class CameraCapture {
         if (mReleased) return;
         mReleased = true;
 
+        if (mStarted) {
+            stop();
+        }
+
         if (mCamera != null) {
-            mCamera.stopPreview();
             mCamera.release();
         }
     }
@@ -167,5 +185,9 @@ public class CameraCapture {
 
     public float getFrameRate() {
         return mFrameRate;
+    }
+
+    public interface Callback {
+        void onCameraReady();
     }
 }

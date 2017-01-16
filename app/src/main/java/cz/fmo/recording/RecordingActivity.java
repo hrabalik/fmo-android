@@ -97,7 +97,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
     private void init() {
-        if (mStatus == Status.RUNNING) return;
+        if (mStatus != Status.STOPPED && mStatus != Status.DENIED) return;
         if (mGUISurfaceStatus != GUISurfaceStatus.READY) return;
 
         if (permissionDenied()) {
@@ -106,11 +106,26 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             return;
         }
 
+        mCapture = new CameraCapture(mHandler);
+        mStatus = Status.CAMERA_INIT;
+        update();
+    }
+
+    private void cameraReady() {
+        initStep2();
+    }
+
+    /**
+     * Called by:
+     * - cameraReady(), when the camera has just become ready
+     */
+    private void initStep2() {
+        if (mStatus != Status.CAMERA_INIT) return;
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();
         mRenderer = new Renderer(mHandler);
-        mCapture = new CameraCapture(mRenderer.getInputTexture());
+        mCapture.start(mRenderer.getInputTexture());
         CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
                 BUFFER_SIZE_SEC);
         mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
@@ -133,6 +148,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             statusString = getString(R.string.recordingStopped);
         } else if (mStatus == Status.DENIED) {
             statusString = getString(R.string.cameraPermissionDenied);
+        } else if (mStatus == Status.CAMERA_INIT) {
+            statusString = getString(R.string.cameraInitializing);
         } else if (mSaveStatus == SaveStatus.SAVING) {
             statusString = getString(R.string.savingVideo);
         } else {
@@ -236,7 +253,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private enum Status {
-        STOPPED, RUNNING, DENIED
+        STOPPED, RUNNING, DENIED, CAMERA_INIT
     }
 
     private enum SaveStatus {
@@ -248,10 +265,11 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Renderer.Callback {
+            EncodeThread.Callback, Renderer.Callback, CameraCapture.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
+        private static final int CAMERA_READY = 4;
         private final WeakReference<RecordingActivity> mActivity;
 
         Handler(RecordingActivity activity) {
@@ -274,6 +292,11 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         }
 
         @Override
+        public void onCameraReady() {
+            sendMessage(obtainMessage(CAMERA_READY));
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
@@ -287,6 +310,9 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                     break;
                 case FRAME_AVAILABLE:
                     activity.frameAvailable();
+                    break;
+                case CAMERA_READY:
+                    activity.cameraReady();
                     break;
                 default:
                     break;

@@ -138,7 +138,11 @@ public class ContinuousCaptureActivity extends Activity implements SurfaceHolder
         mDisplaySurface.makeCurrent();
 
         mRenderer = new Renderer(this);
-        mCapture = new CameraCapture(mRenderer.getInputTexture());
+        mCapture = new CameraCapture(new CameraCapture.Callback() {
+            public void onCameraReady() {
+            }
+        });
+        mCapture.start(mRenderer.getInputTexture());
 
         // TODO: adjust bit rate based on frame rate?
         // TODO: adjust video width/height based on what we're getting from the camera preview?
