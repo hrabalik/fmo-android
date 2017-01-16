@@ -6,19 +6,19 @@ import java.lang.ref.WeakReference;
 /**
  * Message handler for SaveMovieThread.
  */
-public class SaveMovieThreadHandler extends android.os.Handler {
+class SaveMovieThreadHandler extends android.os.Handler {
     private static final int KILL = 1;
     private static final int SAVE = 2;
     private final WeakReference<SaveMovieThread> mThreadRef;
 
-    public SaveMovieThreadHandler(SaveMovieThread thread) {
+    SaveMovieThreadHandler(SaveMovieThread thread) {
         mThreadRef = new WeakReference<>(thread);
     }
 
     /**
      * Send a command to end the execution of the thread as soon as possible.
      */
-    public void sendKill() {
+    void sendKill() {
         sendMessage(obtainMessage(KILL));
     }
 
@@ -27,7 +27,7 @@ public class SaveMovieThreadHandler extends android.os.Handler {
      *
      * @param file file to save to, should be writable and have a .mp4 extension
      */
-    public void sendSave(File file) {
+    void sendSave(File file) {
         sendMessage(obtainMessage(SAVE, file));
     }
 

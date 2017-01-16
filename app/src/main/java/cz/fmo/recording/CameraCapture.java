@@ -13,7 +13,7 @@ import android.media.MediaFormat;
  * <p>
  * To stop receiving frames, call the release() method.
  */
-public class CameraCapture {
+class CameraCapture {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
     private static final int PREFER_HEIGHT = 1080; // pixels
@@ -32,7 +32,7 @@ public class CameraCapture {
      * Selects a suitable camera, and sets the callback to be called once the camera is ready.
      * Do not call any methods before the callback is triggered.
      */
-    public CameraCapture(Callback cb) {
+    CameraCapture(Callback cb) {
         int bestCam = selectCamera();
         mCamera = Camera.open(bestCam);
         if (mCamera == null) throw new RuntimeException("Failed to open camera");
@@ -44,7 +44,7 @@ public class CameraCapture {
     /**
      * Starts writing frames into the provided target texture.
      */
-    public void start(SurfaceTexture outputTexture) {
+    void start(SurfaceTexture outputTexture) {
         try {
             mCamera.setPreviewTexture(outputTexture);
         } catch (java.io.IOException e) {
@@ -162,7 +162,7 @@ public class CameraCapture {
     /**
      * @return a MediaFormat object describing a video format compatible with the camera output
      */
-    public MediaFormat getMediaFormat() {
+    MediaFormat getMediaFormat() {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
         f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
@@ -171,23 +171,23 @@ public class CameraCapture {
         return f;
     }
 
-    public int getWidth() {
+    int getWidth() {
         return mSize.width;
     }
 
-    public int getHeight() {
+    int getHeight() {
         return mSize.height;
     }
 
-    public int getBitRate() {
+    int getBitRate() {
         return PREFER_BIT_RATE;
     }
 
-    public float getFrameRate() {
+    float getFrameRate() {
         return mFrameRate;
     }
 
-    public interface Callback {
+    interface Callback {
         void onCameraReady();
     }
 }
