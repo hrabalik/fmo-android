@@ -7,6 +7,7 @@ import android.opengl.GLES20;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
@@ -14,6 +15,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
 
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
@@ -32,7 +35,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private EGL mEGL;
     private EGL.Surface mDisplaySurface;
     private EGL.Surface mEncoderSurface;
-    private CameraCapture mCapture;
+    private CameraCapture2 mCapture2;
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
@@ -68,12 +71,12 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     @Override
     protected void onStart() {
         super.onStart();
-        if (permissionDenied()) {
+        if (isPermissionDenied()) {
             ActivityCompat.requestPermissions(this, new String[]{CAMERA_PERMISSION}, 0);
         }
     }
 
-    private boolean permissionDenied() {
+    private boolean isPermissionDenied() {
         int permissionStatus = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
         return permissionStatus != PackageManager.PERMISSION_GRANTED;
     }
@@ -97,31 +100,40 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
     private void init() {
-        if (mStatus != Status.STOPPED && mStatus != Status.DENIED) return;
+        if (mStatus != Status.STOPPED && mStatus != Status.ERROR) return;
         if (mGUISurfaceStatus != GUISurfaceStatus.READY) return;
 
-        if (permissionDenied()) {
-            mStatus = Status.DENIED;
+        if (isPermissionDenied()) {
+            mStatus = Status.ERROR;
             update();
             return;
         }
 
-        mCapture = new CameraCapture(mHandler);
+        mCapture2 = new CameraCapture2(this, mHandler);
         mStatus = Status.CAMERA_INIT;
         update();
     }
 
-    private void cameraReady() {
+    private void cameraError() {
+        mStatus = Status.ERROR; // TODO distinguish denied permissions and other camera errors
+        update();
+    }
+
+    private void cameraOpened() {
         initStep2();
     }
 
     /**
      * Called by:
-     * - cameraReady(), when the camera has just become ready
+     * - cameraOpened(), when the camera has just become ready
      */
     private void initStep2() {
         if (mStatus != Status.CAMERA_INIT) return;
-        mEGL = new EGL();
+        List<Surface> targets = new ArrayList<>();
+        targets.add(getGUISurfaceView().getHolder().getSurface());
+        mCapture2.start(targets);
+
+        /*mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();
         CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
@@ -132,7 +144,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mSaveMovieThread.start();
         mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
         mRenderer = new Renderer(mHandler);
-        mCapture.start(mRenderer.getInputTexture());
+        mCapture.start(mRenderer.getInputTexture());*/
+
         mStatus = Status.RUNNING;
         update();
     }
@@ -146,17 +159,18 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
 
         if (mStatus == Status.STOPPED) {
             statusString = getString(R.string.recordingStopped);
-        } else if (mStatus == Status.DENIED) {
+        } else if (mStatus == Status.ERROR) {
             statusString = getString(R.string.cameraPermissionDenied);
         } else if (mStatus == Status.CAMERA_INIT) {
             statusString = getString(R.string.cameraInitializing);
         } else if (mSaveStatus == SaveStatus.SAVING) {
             statusString = getString(R.string.savingVideo);
         } else {
-            enableSaveButton = true;
-            long lengthUs = mEncodeThread.getBufferContentsDuration();
-            float lengthSec = ((float) lengthUs) / 1000000.f;
-            statusString = getString(R.string.videoLength, lengthSec);
+            //enableSaveButton = true;
+            //long lengthUs = mEncodeThread.getBufferContentsDuration();
+            //float lengthSec = ((float) lengthUs) / 1000000.f;
+            //statusString = getString(R.string.videoLength, lengthSec);
+            statusString = getString(R.string.videoLength, 0.f);
         }
 
         TextView status = (TextView) findViewById(R.id.status_text);
@@ -191,9 +205,9 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             }
             mSaveMovieThread = null;
         }
-        if (mCapture != null) {
-            mCapture.release();
-            mCapture = null;
+        if (mCapture2 != null) {
+            mCapture2.release();
+            mCapture2 = null;
         }
         if (mRenderer != null) {
             mRenderer.release();
@@ -229,6 +243,12 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         update();
     }
 
+    private void cameraFrame() {
+        if (mStatus != Status.RUNNING) return;
+
+        // TODO
+    }
+
     private void frameAvailable() {
         if (mStatus != Status.RUNNING) return;
 
@@ -243,8 +263,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
 
         // draw onto mEncoderSurface
         mEncoderSurface.makeCurrent();
-        int encWidth = mCapture.getWidth();
-        int encHeight = mCapture.getHeight();
+        int encWidth = mCapture2.getWidth();
+        int encHeight = mCapture2.getHeight();
         GLES20.glViewport(0, 0, encWidth, encHeight);
         mRenderer.drawRectangle();
         mEncodeThread.getHandler().sendFlush();
@@ -253,7 +273,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private enum Status {
-        STOPPED, RUNNING, DENIED, CAMERA_INIT
+        STOPPED, RUNNING, ERROR, CAMERA_INIT
     }
 
     private enum SaveStatus {
@@ -265,11 +285,13 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Renderer.Callback, CameraCapture.Callback {
+            EncodeThread.Callback, Renderer.Callback, CameraCapture2.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
-        private static final int CAMERA_READY = 4;
+        private static final int CAMERA_ERROR = 4;
+        private static final int CAMERA_OPENED = 5;
+        private static final int CAMERA_FRAME = 6;
         private final WeakReference<RecordingActivity> mActivity;
 
         Handler(RecordingActivity activity) {
@@ -292,8 +314,18 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         }
 
         @Override
-        public void onCameraReady() {
-            sendMessage(obtainMessage(CAMERA_READY));
+        public void onCameraError() {
+            sendMessage(obtainMessage(CAMERA_ERROR));
+        }
+
+        @Override
+        public void onCameraOpened() {
+            sendMessage(obtainMessage(CAMERA_OPENED));
+        }
+
+        @Override
+        public void onCameraFrame() {
+            sendMessage(obtainMessage(CAMERA_FRAME));
         }
 
         @Override
@@ -311,8 +343,14 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                 case FRAME_AVAILABLE:
                     activity.frameAvailable();
                     break;
-                case CAMERA_READY:
-                    activity.cameraReady();
+                case CAMERA_ERROR:
+                    activity.cameraError();
+                    break;
+                case CAMERA_OPENED:
+                    activity.cameraOpened();
+                    break;
+                case CAMERA_FRAME:
+                    activity.cameraFrame();
                     break;
                 default:
                     break;
