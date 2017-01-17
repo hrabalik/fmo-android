@@ -3,7 +3,6 @@ package cz.fmo.recording;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.opengl.GLES20;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -19,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.fmo.R;
-import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
 import cz.fmo.util.FileManager;
 
@@ -32,9 +30,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private Status mStatus = Status.STOPPED;
     private SaveStatus mSaveStatus = SaveStatus.NOT_SAVING;
     private GUISurfaceStatus mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
-    private EGL mEGL;
-    private EGL.Surface mDisplaySurface;
-    private EGL.Surface mEncoderSurface;
     private CameraCapture2 mCapture2;
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
@@ -142,19 +137,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         targets.add(mEncodeThread.getInputSurface());
         mCapture2.start(targets);
 
-        /*mEGL = new EGL();
-        mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
-        mDisplaySurface.makeCurrent();
-        CyclicBuffer buf = new CyclicBuffer(mCapture.getBitRate(), mCapture.getFrameRate(),
-                BUFFER_SIZE_SEC);
-        mEncodeThread = new EncodeThread(mCapture.getMediaFormat(), buf, mHandler);
-        mSaveMovieThread = new SaveMovieThread(buf, mHandler);
-        mEncodeThread.start();
-        mSaveMovieThread.start();
-        mEncoderSurface = mEGL.makeSurface(mEncodeThread.getInputSurface());
-        mRenderer = new Renderer(mHandler);
-        mCapture.start(mRenderer.getInputTexture());*/
-
         mStatus = Status.RUNNING;
         update();
     }
@@ -195,10 +177,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             mCapture2.release();
             mCapture2 = null;
         }
-        if (mEncoderSurface != null) {
-            mEncoderSurface.release();
-            mEncoderSurface = null;
-        }
         if (mEncodeThread != null) {
             mEncodeThread.getHandler().sendKill();
             try {
@@ -220,14 +198,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         if (mRenderer != null) {
             mRenderer.release();
             mRenderer = null;
-        }
-        if (mDisplaySurface != null) {
-            mDisplaySurface.release();
-            mDisplaySurface = null;
-        }
-        if (mEGL != null) {
-            mEGL.release();
-            mEGL = null;
         }
     }
 
@@ -254,31 +224,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private void cameraFrame() {
         if (mStatus != Status.RUNNING) return;
         mEncodeThread.getHandler().sendFlush();
-        // TODO
     }
-
-    //private void frameAvailable() {
-    //    if (mStatus != Status.RUNNING) return;
-    //
-    //    // draw onto mDisplaySurface
-    //    mDisplaySurface.makeCurrent();
-    //    SurfaceView guiSurface = getGUISurfaceView();
-    //    int guiWidth = guiSurface.getWidth();
-    //    int guiHeight = guiSurface.getHeight();
-    //    GLES20.glViewport(0, 0, guiWidth, guiHeight);
-    //    mRenderer.drawRectangle();
-    //    mDisplaySurface.swapBuffers();
-    //
-    //    // draw onto mEncoderSurface
-    //    mEncoderSurface.makeCurrent();
-    //    int encWidth = mCapture2.getWidth();
-    //    int encHeight = mCapture2.getHeight();
-    //    GLES20.glViewport(0, 0, encWidth, encHeight);
-    //    mRenderer.drawRectangle();
-    //    mEncodeThread.getHandler().sendFlush();
-    //    mEncoderSurface.presentationTime(mRenderer.getTimestamp());
-    //    mEncoderSurface.swapBuffers();
-    //}
 
     private enum Status {
         STOPPED, RUNNING, ERROR, CAMERA_INIT
@@ -296,7 +242,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             EncodeThread.Callback, CameraCapture2.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
-        private static final int FRAME_AVAILABLE = 3;
         private static final int CAMERA_ERROR = 4;
         private static final int CAMERA_OPENED = 5;
         private static final int CAMERA_FRAME = 6;
@@ -315,11 +260,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         public void saveCompleted(String filename, boolean success) {
             sendMessage(obtainMessage(SAVE_COMPLETED, success));
         }
-
-        //@Override
-        //public void onFrameAvailable() {
-        //    sendMessage(obtainMessage(FRAME_AVAILABLE));
-        //}
 
         @Override
         public void onCameraError() {
@@ -348,9 +288,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                 case SAVE_COMPLETED:
                     activity.saveCompleted((Boolean) msg.obj);
                     break;
-                //case FRAME_AVAILABLE:
-                //    activity.frameAvailable();
-                //    break;
                 case CAMERA_ERROR:
                     activity.cameraError();
                     break;
