@@ -319,7 +319,7 @@ public class RecordingActivity extends Activity {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             mGUISurfaceStatus = GUISurfaceStatus.READY;
-            init();
+            RecordingActivity.this.init();
         }
 
         @Override
