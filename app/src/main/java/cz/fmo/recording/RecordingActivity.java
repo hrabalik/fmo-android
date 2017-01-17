@@ -21,7 +21,7 @@ import cz.fmo.R;
 import cz.fmo.graphics.Renderer;
 import cz.fmo.util.FileManager;
 
-public class RecordingActivity extends Activity implements SurfaceHolder.Callback {
+public class RecordingActivity extends Activity {
     private static final float BUFFER_SIZE_SEC = 7.f;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
     private final Handler mHandler = new Handler(this);
@@ -40,28 +40,8 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     protected void onCreate(android.os.Bundle savedBundle) {
         super.onCreate(savedBundle);
         mFile = mFileMan.open("continuous-capture.mp4");
-        getGUISurfaceView().getHolder().addCallback(this);
         mGUI.init();
         mGUI.update();
-    }
-
-    private SurfaceView getGUISurfaceView() {
-        return (SurfaceView) findViewById(R.id.preview_surface);
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        mGUISurfaceStatus = GUISurfaceStatus.READY;
-        init();
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
     }
 
     @Override
@@ -92,7 +72,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     /**
      * Called by:
      * - onResume()
-     * - surfaceCreated(), when GUI preview surface has just been created
+     * - GUI.surfaceCreated(), when GUI preview surface has just been created
      * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
     private void init() {
@@ -134,7 +114,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mSaveMovieThread.start();
 
         List<Surface> targets = new ArrayList<>();
-        targets.add(getGUISurfaceView().getHolder().getSurface());
+        targets.add(mGUI.getPreviewSurface());
         targets.add(mEncodeThread.getInputSurface());
         mCapture2.start(targets);
 
@@ -276,11 +256,12 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         }
     }
 
-    private class GUI {
+    private class GUI implements SurfaceHolder.Callback {
         private TextView mStatusText;
         private String mStatusTextLast;
         private Button mSaveButton;
         private boolean mSaveButtonLast;
+        private SurfaceView mPreview;
 
         /**
          * Prepares all static UI elements.
@@ -291,6 +272,15 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             mStatusTextLast = mStatusText.getText().toString();
             mSaveButton = (Button) findViewById(R.id.save_button);
             mSaveButtonLast = mSaveButton.isEnabled();
+            mPreview = (SurfaceView) findViewById(R.id.preview_surface);
+            mPreview.getHolder().addCallback(this);
+        }
+
+        /**
+         * Provides access to the preview, user-visible surface.
+         */
+        Surface getPreviewSurface() {
+            return mPreview.getHolder().getSurface();
         }
 
         /**
@@ -324,6 +314,22 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                 mSaveButton.setEnabled(enableSaveButton);
                 mSaveButtonLast = enableSaveButton;
             }
+        }
+
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            mGUISurfaceStatus = GUISurfaceStatus.READY;
+            init();
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+            mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
         }
     }
 }
