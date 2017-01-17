@@ -26,6 +26,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
     private final Handler mHandler = new Handler(this);
     private final FileManager mFileMan = new FileManager(this);
+    private final GUI mGUI = new GUI();
     private java.io.File mFile;
     private Status mStatus = Status.STOPPED;
     private SaveStatus mSaveStatus = SaveStatus.NOT_SAVING;
@@ -39,9 +40,9 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     protected void onCreate(android.os.Bundle savedBundle) {
         super.onCreate(savedBundle);
         mFile = mFileMan.open("continuous-capture.mp4");
-        setContentView(R.layout.activity_recording);
         getGUISurfaceView().getHolder().addCallback(this);
-        update();
+        mGUI.init();
+        mGUI.update();
     }
 
     private SurfaceView getGUISurfaceView() {
@@ -100,18 +101,18 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
 
         if (isPermissionDenied()) {
             mStatus = Status.ERROR;
-            update();
+            mGUI.update();
             return;
         }
 
         mCapture2 = new CameraCapture2(this, mHandler);
         mStatus = Status.CAMERA_INIT;
-        update();
+        mGUI.update();
     }
 
     private void cameraError() {
         mStatus = Status.ERROR; // TODO distinguish denied permissions and other camera errors
-        update();
+        mGUI.update();
     }
 
     private void cameraOpened() {
@@ -138,35 +139,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         mCapture2.start(targets);
 
         mStatus = Status.RUNNING;
-        update();
-    }
-
-    /**
-     * Updates all dynamic UI elements, such as labels and buttons.
-     */
-    private void update() {
-        boolean enableSaveButton = false;
-        String statusString;
-
-        if (mStatus == Status.STOPPED) {
-            statusString = getString(R.string.recordingStopped);
-        } else if (mStatus == Status.ERROR) {
-            statusString = getString(R.string.cameraPermissionDenied);
-        } else if (mStatus == Status.CAMERA_INIT) {
-            statusString = getString(R.string.cameraInitializing);
-        } else if (mSaveStatus == SaveStatus.SAVING) {
-            statusString = getString(R.string.savingVideo);
-        } else {
-            enableSaveButton = true;
-            long lengthUs = mEncodeThread.getBufferContentsDuration();
-            float lengthSec = ((float) lengthUs) / 1000000.f;
-            statusString = getString(R.string.videoLength, lengthSec);
-        }
-
-        TextView status = (TextView) findViewById(R.id.status_text);
-        status.setText(statusString);
-        Button saveButton = (Button) findViewById(R.id.save_button);
-        saveButton.setEnabled(enableSaveButton);
+        mGUI.update();
     }
 
     @Override
@@ -206,7 +179,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         if (mSaveStatus != SaveStatus.NOT_SAVING) return;
         mSaveStatus = SaveStatus.SAVING;
         mSaveMovieThread.getHandler().sendSave(mFile);
-        update();
+        mGUI.update();
     }
 
     private void saveCompleted(boolean success) {
@@ -214,11 +187,11 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         if (!success) {
             android.widget.Toast.makeText(this, "Failed to save video", Toast.LENGTH_SHORT).show();
         }
-        update();
+        mGUI.update();
     }
 
     private void flushCompleted() {
-        update();
+        mGUI.update();
     }
 
     private void cameraFrame() {
@@ -299,6 +272,57 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                     break;
                 default:
                     break;
+            }
+        }
+    }
+
+    private class GUI {
+        private TextView mStatusText;
+        private String mStatusTextLast;
+        private Button mSaveButton;
+        private boolean mSaveButtonLast;
+
+        /**
+         * Prepares all static UI elements.
+         */
+        void init() {
+            setContentView(R.layout.activity_recording);
+            mStatusText = (TextView) findViewById(R.id.status_text);
+            mStatusTextLast = mStatusText.getText().toString();
+            mSaveButton = (Button) findViewById(R.id.save_button);
+            mSaveButtonLast = mSaveButton.isEnabled();
+        }
+
+        /**
+         * Updates all dynamic UI elements, such as labels and buttons.
+         */
+        void update() {
+            boolean enableSaveButton = false;
+            String statusString;
+
+            if (mStatus == Status.STOPPED) {
+                statusString = getString(R.string.recordingStopped);
+            } else if (mStatus == Status.ERROR) {
+                statusString = getString(R.string.cameraPermissionDenied);
+            } else if (mStatus == Status.CAMERA_INIT) {
+                statusString = getString(R.string.cameraInitializing);
+            } else if (mSaveStatus == SaveStatus.SAVING) {
+                statusString = getString(R.string.savingVideo);
+            } else {
+                enableSaveButton = true;
+                long lengthUs = mEncodeThread.getBufferContentsDuration();
+                float lengthSec = ((float) lengthUs) / 1000000.f;
+                statusString = getString(R.string.videoLength, lengthSec);
+            }
+
+            if (!mStatusTextLast.equals(statusString)) {
+                mStatusText.setText(statusString);
+                mStatusTextLast = statusString;
+            }
+
+            if (mSaveButtonLast != enableSaveButton) {
+                mSaveButton.setEnabled(enableSaveButton);
+                mSaveButtonLast = enableSaveButton;
             }
         }
     }

@@ -13,7 +13,7 @@
     <string name="recordingFailed">Recording FAILED (err=%1$d)</string>
     <string name="secondsOfVideo">%1$.3f seconds of video</string>
 
-    <string name="videoLength">%1$.1f seconds in buffer</string>
+    <string name="videoLength">%1$.0f seconds in buffer</string>
     <string name="savingVideo">Saving…</string>
     <string name="recordingStopped">Recording stopped</string>
     <string name="cameraPermissionDenied">Camera permission denied</string>
