@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
+import android.graphics.PixelFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -11,10 +13,13 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.util.Range;
+import android.util.Size;
 import android.view.Surface;
 
 import java.util.List;
@@ -34,13 +39,11 @@ class CameraCapture2 {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1280; // pixels
     private static final int PREFER_HEIGHT = 720; // pixels
-    private static final float PREFER_FRAME_RATE = 30.f; // frames per second
+    private static final int PREFER_FRAME_RATE = 30; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
 
     private final Callback mCb;
-    private final CameraManager mManager;
-    private final DeviceCallback mDevCb = new DeviceCallback();
     private final SessionCallback mSessCb = new SessionCallback();
     private final CaptureCallback mCapCb = new CaptureCallback();
     private CameraDevice mDevice;
@@ -60,23 +63,101 @@ class CameraCapture2 {
             error();
         }
 
-        mManager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
-            String[] cameras = mManager.getCameraIdList();
-            String bestCam = "";
-            for (String id : cameras) {
-                CameraCharacteristics chars = mManager.getCameraCharacteristics(id);
-                Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    continue;
-                }
-                bestCam = id;
-            }
-            mManager.openCamera(bestCam, mDevCb, null);
+            CameraManager man = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
+            String bestCam = selectBestCamera(man);
+            DeviceCallback devCb = new DeviceCallback();
+            man.openCamera(bestCam, devCb, null);
         } catch (CameraAccessException | SecurityException e) {
             error();
         }
     }
+
+    private String selectBestCamera(CameraManager manager) throws CameraAccessException {
+        int bestScore = Integer.MAX_VALUE;
+        String bestCamera = null;
+        Range<Integer> bestFpsRange = null;
+        Size bestSize = null;
+
+        for (String camera : manager.getCameraIdList()) {
+            // fetch camera characteristics and configuration map
+            CameraCharacteristics chars = manager.getCameraCharacteristics(camera);
+            StreamConfigurationMap map;
+            map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            if (map == null) continue;
+
+            Size[] sizes1 = map.getOutputSizes(android.media.MediaCodec.class);
+            Size[] sizes2 = map.getOutputSizes(android.media.ImageReader.class);
+            Size[] sizes3 = map.getOutputSizes(android.view.SurfaceHolder.class);
+            Size[] sizes4 = map.getOutputSizes(android.graphics.SurfaceTexture.class);
+
+            /*
+            int facingFactor = getFacingFactor(chars.get(CameraCharacteristics.LENS_FACING));
+
+
+            for (Range<Integer> fpsRange : map.getHighSpeedVideoFpsRanges()) {
+                int fpsScore = getFpsScore(fpsRange);
+
+                for (Size size : map.getHighSpeedVideoSizesFor(fpsRange)) {
+                    int aspectFactor = getAspectFactor(size);
+                    int sizeScore = getSizeScore(size);
+
+                    int score = facingFactor * aspectFactor * (fpsScore + sizeScore);
+
+                    if (score < bestScore) {
+                        bestScore = score;
+                        bestCamera = camera;
+                        bestFpsRange = fpsRange;
+                        bestSize = size;
+                    }
+                }
+            }*/
+
+            int score = 0;
+            if (score < bestScore) {
+                bestScore = score;
+                bestCamera = camera;
+            }
+        }
+
+        if (bestCamera == null) {
+            throw new RuntimeException("No suitable camera found!");
+        }
+        return bestCamera;
+    }
+
+    /*private int getFacingFactor(Integer facing) {
+        if (facing == null) {
+            return 10;
+        }
+        else if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
+            return 3;
+        }
+        else {
+            return 4;
+        }
+    }*/
+
+    /*private int getAspectFactor(Size size) {
+        if (size.getHeight() < size.getWidth()) {
+            return 4;
+        }
+        else {
+            return 5;
+        }
+    }*/
+
+    /*private int getFpsScore(Range<Integer> range) {
+        int offset = Math.abs(range.getLower() - PREFER_FRAME_RATE);
+        int delta = Math.abs(range.getUpper() - range.getLower());
+        return 30000 * offset + 60000 * delta;
+    }*/
+
+    /*private int getSizeScore(Size size) {
+        int numPx = size.getWidth() * size.getHeight();
+        int idealPx = PREFER_WIDTH * PREFER_HEIGHT;
+        return Math.abs(numPx - idealPx);
+    }*/
 
     private void error() {
         release();
@@ -133,7 +214,7 @@ class CameraCapture2 {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, getWidth(), getHeight());
         f.setInteger(MediaFormat.KEY_BIT_RATE, getBitRate());
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        f.setFloat(MediaFormat.KEY_FRAME_RATE, getFrameRate());
+        f.setInteger(MediaFormat.KEY_FRAME_RATE, getFrameRate());
         f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, PREFER_I_FRAME_INTERVAL);
         return f;
     }
@@ -150,7 +231,7 @@ class CameraCapture2 {
         return PREFER_BIT_RATE;
     }
 
-    float getFrameRate() {
+    int getFrameRate() {
         return PREFER_FRAME_RATE; // TODO get from camera info
     }
 
