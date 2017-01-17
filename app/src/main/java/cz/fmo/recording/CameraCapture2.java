@@ -32,8 +32,8 @@ import java.util.List;
  */
 class CameraCapture2 {
     private static final String MIME_TYPE = "video/avc";
-    private static final int PREFER_WIDTH = 1920; // pixels
-    private static final int PREFER_HEIGHT = 1080; // pixels
+    private static final int PREFER_WIDTH = 1280; // pixels
+    private static final int PREFER_HEIGHT = 720; // pixels
     private static final float PREFER_FRAME_RATE = 30.f; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds

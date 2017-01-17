@@ -129,8 +129,17 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
      */
     private void initStep2() {
         if (mStatus != Status.CAMERA_INIT) return;
+
+        CyclicBuffer buf = new CyclicBuffer(mCapture2.getBitRate(), mCapture2.getFrameRate(),
+                BUFFER_SIZE_SEC);
+        mEncodeThread = new EncodeThread(mCapture2.getMediaFormat(), buf, mHandler);
+        mSaveMovieThread = new SaveMovieThread(buf, mHandler);
+        mEncodeThread.start();
+        mSaveMovieThread.start();
+
         List<Surface> targets = new ArrayList<>();
         targets.add(getGUISurfaceView().getHolder().getSurface());
+        targets.add(mEncodeThread.getInputSurface());
         mCapture2.start(targets);
 
         /*mEGL = new EGL();
@@ -166,11 +175,10 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
         } else if (mSaveStatus == SaveStatus.SAVING) {
             statusString = getString(R.string.savingVideo);
         } else {
-            //enableSaveButton = true;
-            //long lengthUs = mEncodeThread.getBufferContentsDuration();
-            //float lengthSec = ((float) lengthUs) / 1000000.f;
-            //statusString = getString(R.string.videoLength, lengthSec);
-            statusString = getString(R.string.videoLength, 0.f);
+            enableSaveButton = true;
+            long lengthUs = mEncodeThread.getBufferContentsDuration();
+            float lengthSec = ((float) lengthUs) / 1000000.f;
+            statusString = getString(R.string.videoLength, lengthSec);
         }
 
         TextView status = (TextView) findViewById(R.id.status_text);
@@ -183,6 +191,10 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     protected void onPause() {
         super.onPause();
         mStatus = Status.STOPPED;
+        if (mCapture2 != null) {
+            mCapture2.release();
+            mCapture2 = null;
+        }
         if (mEncoderSurface != null) {
             mEncoderSurface.release();
             mEncoderSurface = null;
@@ -204,10 +216,6 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                 throw new RuntimeException("Interrupted");
             }
             mSaveMovieThread = null;
-        }
-        if (mCapture2 != null) {
-            mCapture2.release();
-            mCapture2 = null;
         }
         if (mRenderer != null) {
             mRenderer.release();
@@ -245,32 +253,32 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
 
     private void cameraFrame() {
         if (mStatus != Status.RUNNING) return;
-
+        mEncodeThread.getHandler().sendFlush();
         // TODO
     }
 
-    private void frameAvailable() {
-        if (mStatus != Status.RUNNING) return;
-
-        // draw onto mDisplaySurface
-        mDisplaySurface.makeCurrent();
-        SurfaceView guiSurface = getGUISurfaceView();
-        int guiWidth = guiSurface.getWidth();
-        int guiHeight = guiSurface.getHeight();
-        GLES20.glViewport(0, 0, guiWidth, guiHeight);
-        mRenderer.drawRectangle();
-        mDisplaySurface.swapBuffers();
-
-        // draw onto mEncoderSurface
-        mEncoderSurface.makeCurrent();
-        int encWidth = mCapture2.getWidth();
-        int encHeight = mCapture2.getHeight();
-        GLES20.glViewport(0, 0, encWidth, encHeight);
-        mRenderer.drawRectangle();
-        mEncodeThread.getHandler().sendFlush();
-        mEncoderSurface.presentationTime(mRenderer.getTimestamp());
-        mEncoderSurface.swapBuffers();
-    }
+    //private void frameAvailable() {
+    //    if (mStatus != Status.RUNNING) return;
+    //
+    //    // draw onto mDisplaySurface
+    //    mDisplaySurface.makeCurrent();
+    //    SurfaceView guiSurface = getGUISurfaceView();
+    //    int guiWidth = guiSurface.getWidth();
+    //    int guiHeight = guiSurface.getHeight();
+    //    GLES20.glViewport(0, 0, guiWidth, guiHeight);
+    //    mRenderer.drawRectangle();
+    //    mDisplaySurface.swapBuffers();
+    //
+    //    // draw onto mEncoderSurface
+    //    mEncoderSurface.makeCurrent();
+    //    int encWidth = mCapture2.getWidth();
+    //    int encHeight = mCapture2.getHeight();
+    //    GLES20.glViewport(0, 0, encWidth, encHeight);
+    //    mRenderer.drawRectangle();
+    //    mEncodeThread.getHandler().sendFlush();
+    //    mEncoderSurface.presentationTime(mRenderer.getTimestamp());
+    //    mEncoderSurface.swapBuffers();
+    //}
 
     private enum Status {
         STOPPED, RUNNING, ERROR, CAMERA_INIT
@@ -285,7 +293,7 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
     }
 
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Renderer.Callback, CameraCapture2.Callback {
+            EncodeThread.Callback, CameraCapture2.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
@@ -308,10 +316,10 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
             sendMessage(obtainMessage(SAVE_COMPLETED, success));
         }
 
-        @Override
-        public void onFrameAvailable() {
-            sendMessage(obtainMessage(FRAME_AVAILABLE));
-        }
+        //@Override
+        //public void onFrameAvailable() {
+        //    sendMessage(obtainMessage(FRAME_AVAILABLE));
+        //}
 
         @Override
         public void onCameraError() {
@@ -340,9 +348,9 @@ public class RecordingActivity extends Activity implements SurfaceHolder.Callbac
                 case SAVE_COMPLETED:
                     activity.saveCompleted((Boolean) msg.obj);
                     break;
-                case FRAME_AVAILABLE:
-                    activity.frameAvailable();
-                    break;
+                //case FRAME_AVAILABLE:
+                //    activity.frameAvailable();
+                //    break;
                 case CAMERA_ERROR:
                     activity.cameraError();
                     break;
