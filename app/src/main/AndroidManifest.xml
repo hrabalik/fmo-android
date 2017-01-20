@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="cz.fmo">
+
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -26,14 +26,14 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/Main">
 
         <activity
             android:name=".Main"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
-            android:theme="@style/FullscreenTheme">
+            android:theme="@style/Main">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -46,13 +46,14 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Recording"
             android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+            android:theme="@style/Fullscreen" />
 
         <activity
             android:name="com.android.grafika.PlayMovieSurfaceActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Play movie"
             android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+            android:theme="@style/Fullscreen" />
     </application>
+
 </manifest>

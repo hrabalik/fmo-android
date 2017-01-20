@@ -165,7 +165,7 @@ public class RecordingActivity extends Activity {
     private void saveCompleted(boolean success) {
         mSaveStatus = SaveStatus.NOT_SAVING;
         if (!success) {
-            android.widget.Toast.makeText(this, "Failed to save video", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to save video", Toast.LENGTH_SHORT).show();
         }
         mGUI.update();
     }
