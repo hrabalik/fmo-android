@@ -56,6 +56,7 @@ class CameraCapture2 {
     private String mCamId;
     private Size mSize;
     private int mFrameRate;
+    private int mOrientation;
     private boolean mReleased = false;
 
     /**
@@ -80,11 +81,19 @@ class CameraCapture2 {
         }
     }
 
+    /**
+     * Selects a suitable camera based on resolution, aspect ratio, direction of facing, and the
+     * ability to produce data at the preferred frame rate.
+     *
+     * @param manager A CameraManager instance retrieved from activity.getSystemService.
+     * @throws CameraAccessException When retrieving camera information inexplicably fails.
+     */
     private void selectBestCamera(CameraManager manager) throws CameraAccessException {
         int bestScore = Integer.MAX_VALUE;
         String bestCamera = null;
         Size bestSize = null;
         long bestFrameTimeNs = 1;
+        int bestOrientation = 0;
 
         for (String camera : manager.getCameraIdList()) {
             // fetch camera characteristics and configuration map
@@ -138,7 +147,7 @@ class CameraCapture2 {
             }
             if (bestSizeInner == null) continue;
 
-            // query the camera facing
+            // consider the camera facing
             int facingScore = 0;
             Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
             if (facing == null || facing != CameraCharacteristics.LENS_FACING_FRONT) {
@@ -152,6 +161,10 @@ class CameraCapture2 {
                 bestCamera = camera;
                 bestSize = bestSizeInner;
                 bestFrameTimeNs = bestFrameTimeNsInner;
+
+                // query camera orientation
+                Integer orientation = chars.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                bestOrientation = (orientation == null) ? 0 : orientation;
             }
         }
 
@@ -159,14 +172,19 @@ class CameraCapture2 {
             mCamId = null;
             mSize = null;
             mFrameRate = 0;
+            mOrientation = 0;
             throw new RuntimeException("No suitable camera found!");
         }
 
         mCamId = bestCamera;
         mSize = bestSize;
         mFrameRate = (int) Math.round(1e9 / bestFrameTimeNs);
+        mOrientation = bestOrientation;
     }
 
+    /**
+     * Release all resources and report an error.
+     */
     private void error() {
         release();
         mCb.onCameraError();
