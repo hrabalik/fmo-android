@@ -4,8 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.ImageFormat;
-import android.graphics.PixelFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -14,14 +12,17 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.ImageReader;
+import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
-import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
+import android.view.SurfaceHolder;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -42,6 +43,9 @@ class CameraCapture2 {
     private static final int PREFER_FRAME_RATE = 30; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
+    private static final int PREFER_AREA = PREFER_WIDTH * PREFER_HEIGHT; // pixels^2
+    private static final double PREFER_ASPECT = PREFER_WIDTH / (double) PREFER_HEIGHT;
+    private static final long PREFER_FRAME_TIME = (long) (1e9 / PREFER_FRAME_RATE); // nanoseconds
 
     private final Callback mCb;
     private final SessionCallback mSessCb = new SessionCallback();
@@ -49,6 +53,9 @@ class CameraCapture2 {
     private CameraDevice mDevice;
     private CaptureRequest mRequest;
     private CameraCaptureSession mSession;
+    private String mCamId;
+    private Size mSize;
+    private int mFrameRate;
     private boolean mReleased = false;
 
     /**
@@ -65,19 +72,19 @@ class CameraCapture2 {
 
         try {
             CameraManager man = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
-            String bestCam = selectBestCamera(man);
+            selectBestCamera(man);
             DeviceCallback devCb = new DeviceCallback();
-            man.openCamera(bestCam, devCb, null);
+            man.openCamera(mCamId, devCb, null);
         } catch (CameraAccessException | SecurityException e) {
             error();
         }
     }
 
-    private String selectBestCamera(CameraManager manager) throws CameraAccessException {
+    private void selectBestCamera(CameraManager manager) throws CameraAccessException {
         int bestScore = Integer.MAX_VALUE;
         String bestCamera = null;
-        Range<Integer> bestFpsRange = null;
         Size bestSize = null;
+        long bestFrameTimeNs = 1;
 
         for (String camera : manager.getCameraIdList()) {
             // fetch camera characteristics and configuration map
@@ -86,78 +93,79 @@ class CameraCapture2 {
             map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             if (map == null) continue;
 
-            Size[] sizes1 = map.getOutputSizes(android.media.MediaCodec.class);
-            Size[] sizes2 = map.getOutputSizes(android.media.ImageReader.class);
-            Size[] sizes3 = map.getOutputSizes(android.view.SurfaceHolder.class);
-            Size[] sizes4 = map.getOutputSizes(android.graphics.SurfaceTexture.class);
+            // find sizes that work for all the desired kinds of output
+            Size[] sizes1 = map.getOutputSizes(MediaCodec.class);
+            Size[] sizes2 = map.getOutputSizes(ImageReader.class);
+            Size[] sizes3 = map.getOutputSizes(SurfaceHolder.class);
+            java.util.Set<Size> sizes = new java.util.HashSet<>();
+            sizes.addAll(Arrays.asList(sizes1));
+            sizes.retainAll(Arrays.asList(sizes2));
+            sizes.retainAll(Arrays.asList(sizes3));
 
-            /*
-            int facingFactor = getFacingFactor(chars.get(CameraCharacteristics.LENS_FACING));
+            // select a size that is the closest (in area and aspect ratio) to the preferred one,
+            // also consider the frame time
+            int bestSizeScore = Integer.MAX_VALUE;
+            long bestFrameTimeNsInner = 1;
+            Size bestSizeInner = null;
+            for (Size size : sizes) {
+                // consider area in pixels^2
+                int area = size.getWidth() * size.getHeight();
+                int areaPenalty = Math.abs(area - PREFER_AREA);
 
+                // consider aspect ratio
+                double aspect = size.getWidth() / (double) size.getHeight();
+                int aspectPenalty = (int) (PREFER_WIDTH * Math.abs(aspect - PREFER_ASPECT));
 
-            for (Range<Integer> fpsRange : map.getHighSpeedVideoFpsRanges()) {
-                int fpsScore = getFpsScore(fpsRange);
+                // consider frame lag in tens of nanoseconds
+                long time1Ns = map.getOutputMinFrameDuration(MediaCodec.class, size);
+                long time2Ns = map.getOutputMinFrameDuration(ImageReader.class, size);
+                long time3Ns = map.getOutputMinFrameDuration(SurfaceHolder.class, size);
+                long stall1Ns = map.getOutputStallDuration(MediaCodec.class, size);
+                long stall2Ns = map.getOutputStallDuration(ImageReader.class, size);
+                long stall3Ns = map.getOutputStallDuration(SurfaceHolder.class, size);
+                long timeNs = Math.max(time1Ns, Math.max(time2Ns, time3Ns));
+                long stallNs = Math.max(stall1Ns, Math.max(stall2Ns, stall3Ns));
+                long frameTimeNs = Math.max(timeNs + stallNs, PREFER_FRAME_TIME);
+                int frameTimePenalty = (int) ((PREFER_FRAME_TIME - frameTimeNs) / 10);
 
-                for (Size size : map.getHighSpeedVideoSizesFor(fpsRange)) {
-                    int aspectFactor = getAspectFactor(size);
-                    int sizeScore = getSizeScore(size);
-
-                    int score = facingFactor * aspectFactor * (fpsScore + sizeScore);
-
-                    if (score < bestScore) {
-                        bestScore = score;
-                        bestCamera = camera;
-                        bestFpsRange = fpsRange;
-                        bestSize = size;
-                    }
+                // merge into a single score value, pick the size with the best one
+                int sizeScore = aspectPenalty + areaPenalty + frameTimePenalty;
+                if (sizeScore < bestSizeScore) {
+                    bestSizeScore = sizeScore;
+                    bestSizeInner = size;
+                    bestFrameTimeNsInner = frameTimeNs;
                 }
-            }*/
+            }
+            if (bestSizeInner == null) continue;
 
-            int score = 0;
+            // query the camera facing
+            int facingScore = 0;
+            Integer facing = chars.get(CameraCharacteristics.LENS_FACING);
+            if (facing == null || facing != CameraCharacteristics.LENS_FACING_FRONT) {
+                facingScore = (int) 1e5;
+            }
+
+            // merge into a single score value, pick the size with the best one
+            int score = bestSizeScore + facingScore;
             if (score < bestScore) {
                 bestScore = score;
                 bestCamera = camera;
+                bestSize = bestSizeInner;
+                bestFrameTimeNs = bestFrameTimeNsInner;
             }
         }
 
         if (bestCamera == null) {
+            mCamId = null;
+            mSize = null;
+            mFrameRate = 0;
             throw new RuntimeException("No suitable camera found!");
         }
-        return bestCamera;
+
+        mCamId = bestCamera;
+        mSize = bestSize;
+        mFrameRate = (int) Math.round(1e9 / bestFrameTimeNs);
     }
-
-    /*private int getFacingFactor(Integer facing) {
-        if (facing == null) {
-            return 10;
-        }
-        else if (facing == CameraCharacteristics.LENS_FACING_FRONT) {
-            return 3;
-        }
-        else {
-            return 4;
-        }
-    }*/
-
-    /*private int getAspectFactor(Size size) {
-        if (size.getHeight() < size.getWidth()) {
-            return 4;
-        }
-        else {
-            return 5;
-        }
-    }*/
-
-    /*private int getFpsScore(Range<Integer> range) {
-        int offset = Math.abs(range.getLower() - PREFER_FRAME_RATE);
-        int delta = Math.abs(range.getUpper() - range.getLower());
-        return 30000 * offset + 60000 * delta;
-    }*/
-
-    /*private int getSizeScore(Size size) {
-        int numPx = size.getWidth() * size.getHeight();
-        int idealPx = PREFER_WIDTH * PREFER_HEIGHT;
-        return Math.abs(numPx - idealPx);
-    }*/
 
     private void error() {
         release();
@@ -220,11 +228,11 @@ class CameraCapture2 {
     }
 
     int getWidth() {
-        return PREFER_WIDTH; // TODO get from camera info
+        return mSize.getWidth();
     }
 
     int getHeight() {
-        return PREFER_HEIGHT; // TODO get from camera info
+        return mSize.getHeight();
     }
 
     int getBitRate() {
@@ -232,7 +240,7 @@ class CameraCapture2 {
     }
 
     int getFrameRate() {
-        return PREFER_FRAME_RATE; // TODO get from camera info
+        return mFrameRate;
     }
 
     interface Callback {
