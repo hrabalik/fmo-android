@@ -22,10 +22,6 @@ public class Main extends AppCompatActivity {
     private static final boolean AUTO_HIDE = true;
     private static final int UI_ANIMATION_DELAY = 300;
 
-    static {
-        System.loadLibrary("test1");
-    }
-
     private final Handler mHideHandler = new Handler();
     private final Runnable mShowPart2Runnable = new Runnable() {
         @Override
@@ -103,11 +99,9 @@ public class Main extends AppCompatActivity {
         });
 
         TextView text = (TextView) findViewById(R.id.mainMenuTextView);
-        String toDisplay = getHelloString();
+        String toDisplay = Lib.getHelloString();
         text.setText(toDisplay);
     }
-
-    native String getHelloString();
 
     @Override
     protected void onResume() {

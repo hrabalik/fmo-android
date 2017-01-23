@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-find_package(OpenCV REQUIRED core videoio)
+find_package(OpenCV REQUIRED core)
+include_directories(${OpenCV_INCLUDE_DIRS})
 find_library(lib-gles GLESv3)
 
 add_library(test1 SHARED test1.cpp)
