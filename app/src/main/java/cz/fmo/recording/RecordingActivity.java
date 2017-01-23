@@ -37,7 +37,7 @@ public class RecordingActivity extends Activity {
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
-    private ImageReader mReader;
+    private ProcessingThread mProcessingThread;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -113,23 +113,16 @@ public class RecordingActivity extends Activity {
                 BUFFER_SIZE_SEC);
         mEncodeThread = new EncodeThread(mCapture2.getMediaFormat(), buf, mHandler);
         mSaveMovieThread = new SaveMovieThread(buf, mHandler);
+        mProcessingThread = new ProcessingThread(mCapture2.getWidth(), mCapture2.getHeight(),
+                CameraCapture2.READABLE_FORMAT);
         mEncodeThread.start();
         mSaveMovieThread.start();
-
-        mReader = ImageReader.newInstance(mCapture2.getWidth(), mCapture2.getHeight(),
-                CameraCapture2.READABLE_FORMAT, 12);
-        mReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-            @Override
-            public void onImageAvailable(ImageReader reader) {
-                Image image = reader.acquireNextImage();
-                image.close();
-            }
-        }, null);
+        mProcessingThread.start();
 
         List<Surface> targets = new ArrayList<>();
         targets.add(mGUI.getPreviewSurface());
         targets.add(mEncodeThread.getInputSurface());
-        targets.add(mReader.getSurface());
+        targets.add(mProcessingThread.getInputSurface());
         mCapture2.start(targets);
 
         mStatus = Status.RUNNING;
@@ -149,7 +142,7 @@ public class RecordingActivity extends Activity {
             try {
                 mEncodeThread.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted");
+                throw new RuntimeException("Interrupted when closing EncodeThread");
             }
             mEncodeThread = null;
         }
@@ -158,13 +151,18 @@ public class RecordingActivity extends Activity {
             try {
                 mSaveMovieThread.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted");
+                throw new RuntimeException("Interrupted when closing SaveMovieThread");
             }
             mSaveMovieThread = null;
         }
-        if (mReader != null) {
-            mReader.close();
-            mReader = null;
+        if (mProcessingThread != null) {
+            mProcessingThread.getHandler().sendKill();
+            try {
+                mProcessingThread.join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException("Interrupted when closing ProcessingThread");
+            }
+            mProcessingThread = null;
         }
         if (mRenderer != null) {
             mRenderer.release();

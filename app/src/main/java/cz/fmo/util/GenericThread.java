@@ -21,8 +21,8 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     public final void run() {
         synchronized (mLock) {
             Looper.prepare();
-            setup();
             mHandler = makeHandler();
+            setup(mHandler);
             mLock.notify();
         }
         Looper.loop();
@@ -85,7 +85,7 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
      * Optional extension point. This method is called before the event loop is started. The method
      * runs in the same thread as the event loop.
      */
-    protected void setup() {
+    protected void setup(H handler) {
     }
 
     /**
