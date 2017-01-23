@@ -18,6 +18,12 @@ import java.lang.ref.WeakReference;
 import cz.fmo.R;
 import cz.fmo.util.FileManager;
 
+/**
+ * The main activity, facilitating video preview, encoding, saving, and passing images along to the
+ * fast object detector. The user sees a preview of the captured scene, while the images are being
+ * simultaneously encoded as video and sent to the FMO C++ library for processing. There are 3
+ * separate threads for video encoding, saving video files and image processing.
+ */
 public class RecordingActivity extends Activity {
     private static final float BUFFER_SIZE_SEC = 7.f;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
@@ -42,6 +48,12 @@ public class RecordingActivity extends Activity {
         mGUI.update();
     }
 
+    /**
+     * Responsible for querying and acquiring camera permissions. Whatever the response will be,
+     * the permission request could result in the application being paused and resumed. For that
+     * reason, requesting permissions at any later point, including in onResume(), might cause an
+     * infinite loop.
+     */
     @Override
     protected void onStart() {
         super.onStart();
@@ -50,11 +62,19 @@ public class RecordingActivity extends Activity {
         }
     }
 
+    /**
+     * Queries the camera permission status.
+     */
     private boolean isPermissionDenied() {
         int permissionStatus = ContextCompat.checkSelfPermission(this, CAMERA_PERMISSION);
         return permissionStatus != PackageManager.PERMISSION_GRANTED;
     }
 
+    /**
+     * Called when a decision has been made regarding the camera permission. Whatever the response
+     * is, the initialization procedure continues. If the permission is denied, the init() method
+     * will display a proper error message on the screen.
+     */
     @Override
     public void onRequestPermissionsResult(int requestID, @NonNull String[] permissionList,
                                            @NonNull int[] grantedList) {
@@ -68,6 +88,10 @@ public class RecordingActivity extends Activity {
     }
 
     /**
+     * The main initialization step. There are multiple callers of this method, but mechanisms are
+     * put into place so that the actual initialization happens exactly once. There is no need for
+     * a mutex, assuming that all entry points are run by the main thread.
+     * <p>
      * Called by:
      * - onResume()
      * - GUI.surfaceCreated(), when GUI preview surface has just been created
@@ -89,21 +113,12 @@ public class RecordingActivity extends Activity {
         mGUI.update();
     }
 
-    private void cameraError(CameraCapture2.Error error) {
-        mStatus = Status.CAMERA_ERROR;
-        mCameraError = error;
-        mGUI.update();
-    }
-
-    private void cameraOpened() {
-        initStep2();
-    }
-
     /**
-     * Called by:
-     * - cameraOpened(), when the camera has just become ready
+     * Called when the camera has just become ready. At this point, the camera component has
+     * selected and configured a suitable device. The decision about capture format and image size
+     * has been made.
      */
-    private void initStep2() {
+    private void cameraOpened() {
         if (mStatus != Status.CAMERA_INIT) return;
 
         CyclicBuffer buf = new CyclicBuffer(mCapture2.getBitRate(), mCapture2.getFrameRate(),
@@ -125,6 +140,22 @@ public class RecordingActivity extends Activity {
         mGUI.update();
     }
 
+    /**
+     * Called when there has been an error while opening or operating the camera device. From now
+     * on, the activity is in a state of unrecoverable error. The only way to recover is to pause
+     * and resume the activity.
+     *
+     * @param error Indicates the nature of the error.
+     */
+    private void cameraError(CameraCapture2.Error error) {
+        mStatus = Status.CAMERA_ERROR;
+        mCameraError = error;
+        mGUI.update();
+    }
+
+    /**
+     * Disposes of all resources, including the camera device and all the threads.
+     */
     @Override
     protected void onPause() {
         super.onPause();
@@ -199,6 +230,10 @@ public class RecordingActivity extends Activity {
         NOT_READY, READY
     }
 
+    /**
+     * A subclass that receives all relevant messages on an arbitrary thread and forwards them to
+     * the main thread.
+     */
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
             EncodeThread.Callback, CameraCapture2.Callback {
         private static final int FLUSH_COMPLETED = 1;
@@ -264,6 +299,9 @@ public class RecordingActivity extends Activity {
         }
     }
 
+    /**
+     * A subclass that handles visual elements -- buttons, labels, and suchlike.
+     */
     private class GUI implements SurfaceHolder.Callback {
         private TextView mStatusText;
         private String mStatusTextLast;
