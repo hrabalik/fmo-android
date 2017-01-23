@@ -3,8 +3,6 @@ package cz.fmo.recording;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.media.Image;
-import android.media.ImageReader;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -20,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import cz.fmo.R;
-import cz.fmo.graphics.Renderer;
 import cz.fmo.util.FileManager;
 
 public class RecordingActivity extends Activity {
@@ -34,7 +31,6 @@ public class RecordingActivity extends Activity {
     private SaveStatus mSaveStatus = SaveStatus.NOT_SAVING;
     private GUISurfaceStatus mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
     private CameraCapture2 mCapture2;
-    private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
     private ProcessingThread mProcessingThread;
@@ -163,10 +159,6 @@ public class RecordingActivity extends Activity {
                 throw new RuntimeException("Interrupted when closing ProcessingThread");
             }
             mProcessingThread = null;
-        }
-        if (mRenderer != null) {
-            mRenderer.release();
-            mRenderer = null;
         }
     }
 
