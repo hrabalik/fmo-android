@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -12,7 +13,6 @@ import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.ImageReader;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
@@ -37,6 +37,7 @@ import java.util.List;
  * To stop receiving frames, call the release() method.
  */
 class CameraCapture2 {
+    public static final int READABLE_FORMAT = ImageFormat.YUV_420_888;
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1280; // pixels
     private static final int PREFER_HEIGHT = 720; // pixels
@@ -101,10 +102,9 @@ class CameraCapture2 {
             StreamConfigurationMap map;
             map = chars.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             if (map == null) continue;
-
             // find sizes that work for all the desired kinds of output
             Size[] sizes1 = map.getOutputSizes(MediaCodec.class);
-            Size[] sizes2 = map.getOutputSizes(ImageReader.class);
+            Size[] sizes2 = map.getOutputSizes(READABLE_FORMAT);
             Size[] sizes3 = map.getOutputSizes(SurfaceHolder.class);
             java.util.Set<Size> sizes = new java.util.HashSet<>();
             sizes.addAll(Arrays.asList(sizes1));
@@ -127,10 +127,10 @@ class CameraCapture2 {
 
                 // consider frame lag in tens of nanoseconds
                 long time1Ns = map.getOutputMinFrameDuration(MediaCodec.class, size);
-                long time2Ns = map.getOutputMinFrameDuration(ImageReader.class, size);
+                long time2Ns = map.getOutputMinFrameDuration(READABLE_FORMAT, size);
                 long time3Ns = map.getOutputMinFrameDuration(SurfaceHolder.class, size);
                 long stall1Ns = map.getOutputStallDuration(MediaCodec.class, size);
-                long stall2Ns = map.getOutputStallDuration(ImageReader.class, size);
+                long stall2Ns = map.getOutputStallDuration(READABLE_FORMAT, size);
                 long stall3Ns = map.getOutputStallDuration(SurfaceHolder.class, size);
                 long timeNs = Math.max(time1Ns, Math.max(time2Ns, time3Ns));
                 long stallNs = Math.max(stall1Ns, Math.max(stall2Ns, stall3Ns));

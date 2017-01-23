@@ -3,6 +3,8 @@ package cz.fmo.recording;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.media.Image;
+import android.media.ImageReader;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -35,6 +37,7 @@ public class RecordingActivity extends Activity {
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
+    private ImageReader mReader;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -113,9 +116,20 @@ public class RecordingActivity extends Activity {
         mEncodeThread.start();
         mSaveMovieThread.start();
 
+        mReader = ImageReader.newInstance(mCapture2.getWidth(), mCapture2.getHeight(),
+                CameraCapture2.READABLE_FORMAT, 12);
+        mReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                Image image = reader.acquireNextImage();
+                image.close();
+            }
+        }, null);
+
         List<Surface> targets = new ArrayList<>();
         targets.add(mGUI.getPreviewSurface());
         targets.add(mEncodeThread.getInputSurface());
+        targets.add(mReader.getSurface());
         mCapture2.start(targets);
 
         mStatus = Status.RUNNING;
@@ -147,6 +161,10 @@ public class RecordingActivity extends Activity {
                 throw new RuntimeException("Interrupted");
             }
             mSaveMovieThread = null;
+        }
+        if (mReader != null) {
+            mReader.close();
+            mReader = null;
         }
         if (mRenderer != null) {
             mRenderer.release();
