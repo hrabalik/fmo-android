@@ -14,8 +14,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 
 import cz.fmo.R;
 import cz.fmo.util.FileManager;
@@ -28,6 +26,7 @@ public class RecordingActivity extends Activity {
     private final GUI mGUI = new GUI();
     private java.io.File mFile;
     private Status mStatus = Status.STOPPED;
+    private CameraCapture2.Error mCameraError;
     private SaveStatus mSaveStatus = SaveStatus.NOT_SAVING;
     private GUISurfaceStatus mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
     private CameraCapture2 mCapture2;
@@ -75,11 +74,12 @@ public class RecordingActivity extends Activity {
      * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
     private void init() {
-        if (mStatus != Status.STOPPED && mStatus != Status.ERROR) return;
+        if (mStatus != Status.STOPPED && mStatus != Status.CAMERA_ERROR) return;
         if (mGUISurfaceStatus != GUISurfaceStatus.READY) return;
 
         if (isPermissionDenied()) {
-            mStatus = Status.ERROR;
+            mStatus = Status.CAMERA_ERROR;
+            mCameraError = CameraCapture2.Error.PERMISSION_FAIL;
             mGUI.update();
             return;
         }
@@ -89,8 +89,9 @@ public class RecordingActivity extends Activity {
         mGUI.update();
     }
 
-    private void cameraError() {
-        mStatus = Status.ERROR; // TODO distinguish denied permissions and other camera errors
+    private void cameraError(CameraCapture2.Error error) {
+        mStatus = Status.CAMERA_ERROR;
+        mCameraError = error;
         mGUI.update();
     }
 
@@ -187,7 +188,7 @@ public class RecordingActivity extends Activity {
     }
 
     private enum Status {
-        STOPPED, RUNNING, ERROR, CAMERA_INIT
+        STOPPED, RUNNING, CAMERA_ERROR, CAMERA_INIT
     }
 
     private enum SaveStatus {
@@ -222,8 +223,8 @@ public class RecordingActivity extends Activity {
         }
 
         @Override
-        public void onCameraError() {
-            sendMessage(obtainMessage(CAMERA_ERROR));
+        public void onCameraError(CameraCapture2.Error error) {
+            sendMessage(obtainMessage(CAMERA_ERROR, error));
         }
 
         @Override
@@ -249,7 +250,7 @@ public class RecordingActivity extends Activity {
                     activity.saveCompleted((Boolean) msg.obj);
                     break;
                 case CAMERA_ERROR:
-                    activity.cameraError();
+                    activity.cameraError((CameraCapture2.Error) msg.obj);
                     break;
                 case CAMERA_OPENED:
                     activity.cameraOpened();
@@ -299,8 +300,24 @@ public class RecordingActivity extends Activity {
 
             if (mStatus == Status.STOPPED) {
                 statusString = getString(R.string.recordingStopped);
-            } else if (mStatus == Status.ERROR) {
-                statusString = getString(R.string.cameraPermissionDenied);
+            } else if (mStatus == Status.CAMERA_ERROR) {
+                switch (mCameraError) {
+                    case PERMISSION_FAIL:
+                        statusString = getString(R.string.errorPermissionFail);
+                        break;
+                    case CONFIGURE_FAIL:
+                        statusString = getString(R.string.errorConfigureFail);
+                        break;
+                    case INACCESSIBLE:
+                        statusString = getString(R.string.errorInaccessible);
+                        break;
+                    case DISCONNECTED:
+                        statusString = getString(R.string.errorDisconnected);
+                        break;
+                    default:
+                        statusString = getString(R.string.errorOther);
+                        break;
+                }
             } else if (mStatus == Status.CAMERA_INIT) {
                 statusString = getString(R.string.cameraInitializing);
             } else if (mSaveStatus == SaveStatus.SAVING) {

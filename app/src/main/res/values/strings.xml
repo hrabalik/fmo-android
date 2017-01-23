@@ -15,7 +15,11 @@
     <string name="videoLength">%1$.0f seconds in buffer</string>
     <string name="savingVideo">Saving…</string>
     <string name="recordingStopped">Recording stopped</string>
-    <string name="cameraPermissionDenied">Camera permission denied</string>
+    <string name="errorPermissionFail">Camera permission denied</string>
+    <string name="errorConfigureFail">Camera configuration failed</string>
+    <string name="errorInaccessible">Camera inaccessible</string>
+    <string name="errorDisconnected">Camera disconnected</string>
+    <string name="errorOther">Camera error</string>
     <string name="cameraInitializing">Waiting for camera…</string>
     <string name="saveButton">Save</string>
 </resources>

@@ -1,9 +1,7 @@
 package cz.fmo.recording;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -17,7 +15,6 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
 import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -38,6 +35,10 @@ import java.util.Arrays;
  * To stop receiving frames, call the release() method.
  */
 class CameraCapture2 {
+    enum Error {
+        PERMISSION_FAIL, CONFIGURE_FAIL, INACCESSIBLE, DISCONNECTED
+    }
+
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_FORMAT = ImageFormat.YUV_420_888;
     private static final int PREFER_WIDTH = 1280; // pixels
@@ -69,18 +70,15 @@ class CameraCapture2 {
     CameraCapture2(Activity activity, Callback cb) {
         mCb = cb;
 
-        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            error();
-        }
-
         try {
             CameraManager man = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
             selectBestCamera(man);
             DeviceCallback devCb = new DeviceCallback();
             man.openCamera(mCamId, devCb, null);
-        } catch (CameraAccessException | SecurityException e) {
-            error();
+        } catch (CameraAccessException e) {
+            error(Error.INACCESSIBLE);
+        } catch (SecurityException e) {
+            error(Error.PERMISSION_FAIL);
         }
     }
 
@@ -187,9 +185,9 @@ class CameraCapture2 {
     /**
      * Release all resources and report an error.
      */
-    private void error() {
+    private void error(Error error) {
         release();
-        mCb.onCameraError();
+        mCb.onCameraError(error);
     }
 
     /**
@@ -214,7 +212,7 @@ class CameraCapture2 {
 
             mDevice.createCaptureSession(mTargets, mSessCb, null);
         } catch (CameraAccessException e) {
-            error();
+            error(Error.DISCONNECTED);
         }
     }
 
@@ -225,7 +223,7 @@ class CameraCapture2 {
         try {
             mSession.setRepeatingRequest(mRequest, mCapCb, null);
         } catch (CameraAccessException e) {
-            error();
+            error(Error.DISCONNECTED);
         }
     }
 
@@ -286,7 +284,7 @@ class CameraCapture2 {
     }
 
     interface Callback {
-        void onCameraError();
+        void onCameraError(Error error);
 
         void onCameraOpened();
 
@@ -302,12 +300,12 @@ class CameraCapture2 {
 
         @Override
         public void onDisconnected(@NonNull CameraDevice device) {
-            error();
+            error(Error.DISCONNECTED);
         }
 
         @Override
         public void onError(@NonNull CameraDevice device, int error) {
-            error();
+            error(Error.DISCONNECTED);
         }
     }
 
@@ -320,7 +318,7 @@ class CameraCapture2 {
 
         @Override
         public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-            error();
+            error(Error.CONFIGURE_FAIL);
         }
     }
 
