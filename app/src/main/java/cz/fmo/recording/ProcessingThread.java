@@ -13,6 +13,7 @@ class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler
     private boolean mTornDown = false;
 
     ProcessingThread(int width, int height, int format) {
+        super("ProcessingThread");
         mReader = ImageReader.newInstance(width, height, format, 12);
     }
 

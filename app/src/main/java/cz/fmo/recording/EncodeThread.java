@@ -21,6 +21,7 @@ class EncodeThread extends GenericThread<EncodeThreadHandler> {
     private boolean mReleased = false;
 
     EncodeThread(MediaFormat format, CyclicBuffer buf, Callback cb) {
+        super("EncodeThread");
         mBuf = buf;
         mCb = cb;
         mInfo = new MediaCodec.BufferInfo();

@@ -25,6 +25,7 @@ class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private final Callback mCb;
 
     SaveMovieThread(CyclicBuffer buf, Callback cb) {
+        super("SaveMovieThread");
         mBuf = buf;
         mBufCache = buf.getCache();
         mInfoCache = new MediaCodec.BufferInfo();

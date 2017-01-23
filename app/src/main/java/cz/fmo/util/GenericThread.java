@@ -14,6 +14,13 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     private H mHandler = null;
 
     /**
+     * @param name Unique thread name (useful for profiling).
+     */
+    public GenericThread(String name) {
+        super(name);
+    }
+
+    /**
      * The main method of the thread. The statement Looper.Loop() blocks until the kill() method is
      * called.
      */
