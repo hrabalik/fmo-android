@@ -34,11 +34,7 @@ import java.util.Arrays;
  * <p>
  * To stop receiving frames, call the release() method.
  */
-class CameraCapture2 {
-    enum Error {
-        PERMISSION_FAIL, CONFIGURE_FAIL, INACCESSIBLE, DISCONNECTED
-    }
-
+class Camera {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_FORMAT = ImageFormat.YUV_420_888;
     private static final int PREFER_WIDTH = 1280; // pixels
@@ -49,7 +45,6 @@ class CameraCapture2 {
     private static final int PREFER_AREA = PREFER_WIDTH * PREFER_HEIGHT; // pixels^2
     private static final double PREFER_ASPECT = PREFER_WIDTH / (double) PREFER_HEIGHT;
     private static final long PREFER_FRAME_TIME = (long) (1e9 / PREFER_FRAME_RATE); // nanoseconds
-
     private final Callback mCb;
     private final SessionCallback mSessCb = new SessionCallback();
     private final CaptureCallback mCapCb = new CaptureCallback();
@@ -62,12 +57,11 @@ class CameraCapture2 {
     private int mFrameRate;
     private int mOrientation;
     private boolean mReleased = false;
-
     /**
      * Selects a suitable camera, and sets the callback to be called once the camera is ready.
      * Do not call any methods of this class before the callback is triggered.
      */
-    CameraCapture2(Activity activity, Callback cb) {
+    Camera(Activity activity, Callback cb) {
         mCb = cb;
 
         try {
@@ -281,6 +275,10 @@ class CameraCapture2 {
 
     int getOrientation() {
         return mOrientation;
+    }
+
+    enum Error {
+        PERMISSION_FAIL, CONFIGURE_FAIL, INACCESSIBLE, DISCONNECTED
     }
 
     interface Callback {

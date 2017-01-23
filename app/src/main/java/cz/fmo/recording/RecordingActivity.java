@@ -32,10 +32,10 @@ public class RecordingActivity extends Activity {
     private final GUI mGUI = new GUI();
     private java.io.File mFile;
     private Status mStatus = Status.STOPPED;
-    private CameraCapture2.Error mCameraError;
+    private Camera.Error mCameraError;
     private SaveStatus mSaveStatus = SaveStatus.NOT_SAVING;
     private GUISurfaceStatus mGUISurfaceStatus = GUISurfaceStatus.NOT_READY;
-    private CameraCapture2 mCapture2;
+    private Camera mCamera;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
     private ProcessingThread mProcessingThread;
@@ -103,12 +103,12 @@ public class RecordingActivity extends Activity {
 
         if (isPermissionDenied()) {
             mStatus = Status.CAMERA_ERROR;
-            mCameraError = CameraCapture2.Error.PERMISSION_FAIL;
+            mCameraError = Camera.Error.PERMISSION_FAIL;
             mGUI.update();
             return;
         }
 
-        mCapture2 = new CameraCapture2(this, mHandler);
+        mCamera = new Camera(this, mHandler);
         mStatus = Status.CAMERA_INIT;
         mGUI.update();
     }
@@ -121,20 +121,20 @@ public class RecordingActivity extends Activity {
     private void cameraOpened() {
         if (mStatus != Status.CAMERA_INIT) return;
 
-        CyclicBuffer buf = new CyclicBuffer(mCapture2.getBitRate(), mCapture2.getFrameRate(),
+        CyclicBuffer buf = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
                 BUFFER_SIZE_SEC);
-        mEncodeThread = new EncodeThread(mCapture2.getMediaFormat(), buf, mHandler);
+        mEncodeThread = new EncodeThread(mCamera.getMediaFormat(), buf, mHandler);
         mSaveMovieThread = new SaveMovieThread(buf, mHandler);
-        mProcessingThread = new ProcessingThread(mCapture2.getWidth(), mCapture2.getHeight(),
-                mCapture2.getFormat());
+        mProcessingThread = new ProcessingThread(mCamera.getWidth(), mCamera.getHeight(),
+                mCamera.getFormat());
         mEncodeThread.start();
         mSaveMovieThread.start();
         mProcessingThread.start();
 
-        mCapture2.addTarget(mGUI.getPreviewSurface());
-        mCapture2.addTarget(mEncodeThread.getInputSurface());
-        mCapture2.addTarget(mProcessingThread.getInputSurface());
-        mCapture2.start();
+        mCamera.addTarget(mGUI.getPreviewSurface());
+        mCamera.addTarget(mEncodeThread.getInputSurface());
+        mCamera.addTarget(mProcessingThread.getInputSurface());
+        mCamera.start();
 
         mStatus = Status.RUNNING;
         mGUI.update();
@@ -147,7 +147,7 @@ public class RecordingActivity extends Activity {
      *
      * @param error Indicates the nature of the error.
      */
-    private void cameraError(CameraCapture2.Error error) {
+    private void cameraError(Camera.Error error) {
         mStatus = Status.CAMERA_ERROR;
         mCameraError = error;
         mGUI.update();
@@ -160,9 +160,9 @@ public class RecordingActivity extends Activity {
     protected void onPause() {
         super.onPause();
         mStatus = Status.STOPPED;
-        if (mCapture2 != null) {
-            mCapture2.release();
-            mCapture2 = null;
+        if (mCamera != null) {
+            mCamera.release();
+            mCamera = null;
         }
         if (mEncodeThread != null) {
             mEncodeThread.getHandler().sendKill();
@@ -235,7 +235,7 @@ public class RecordingActivity extends Activity {
      * the main thread.
      */
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, CameraCapture2.Callback {
+            EncodeThread.Callback, Camera.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int CAMERA_ERROR = 4;
@@ -258,7 +258,7 @@ public class RecordingActivity extends Activity {
         }
 
         @Override
-        public void onCameraError(CameraCapture2.Error error) {
+        public void onCameraError(Camera.Error error) {
             sendMessage(obtainMessage(CAMERA_ERROR, error));
         }
 
@@ -285,7 +285,7 @@ public class RecordingActivity extends Activity {
                     activity.saveCompleted((Boolean) msg.obj);
                     break;
                 case CAMERA_ERROR:
-                    activity.cameraError((CameraCapture2.Error) msg.obj);
+                    activity.cameraError((Camera.Error) msg.obj);
                     break;
                 case CAMERA_OPENED:
                     activity.cameraOpened();
