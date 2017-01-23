@@ -110,16 +110,15 @@ public class RecordingActivity extends Activity {
         mEncodeThread = new EncodeThread(mCapture2.getMediaFormat(), buf, mHandler);
         mSaveMovieThread = new SaveMovieThread(buf, mHandler);
         mProcessingThread = new ProcessingThread(mCapture2.getWidth(), mCapture2.getHeight(),
-                CameraCapture2.READABLE_FORMAT);
+                mCapture2.getFormat());
         mEncodeThread.start();
         mSaveMovieThread.start();
         mProcessingThread.start();
 
-        List<Surface> targets = new ArrayList<>();
-        targets.add(mGUI.getPreviewSurface());
-        targets.add(mEncodeThread.getInputSurface());
-        targets.add(mProcessingThread.getInputSurface());
-        mCapture2.start(targets);
+        mCapture2.addTarget(mGUI.getPreviewSurface());
+        mCapture2.addTarget(mEncodeThread.getInputSurface());
+        mCapture2.addTarget(mProcessingThread.getInputSurface());
+        mCapture2.start();
 
         mStatus = Status.RUNNING;
         mGUI.update();

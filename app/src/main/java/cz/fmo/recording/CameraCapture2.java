@@ -22,8 +22,8 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * A class encapsulating android.hardware.camera2.
@@ -32,13 +32,14 @@ import java.util.List;
  * provided callback is called. Do not call any methods of this class before the callback is
  * triggered.
  * <p>
- * Use the start() method to start receiving frames into a given target surface texture.
+ * Use the addTarget() method to register output surfaces. Use the start() method to start receiving
+ * frames.
  * <p>
  * To stop receiving frames, call the release() method.
  */
 class CameraCapture2 {
-    public static final int READABLE_FORMAT = ImageFormat.YUV_420_888;
     private static final String MIME_TYPE = "video/avc";
+    private static final int PREFER_FORMAT = ImageFormat.YUV_420_888;
     private static final int PREFER_WIDTH = 1280; // pixels
     private static final int PREFER_HEIGHT = 720; // pixels
     private static final int PREFER_FRAME_RATE = 30; // frames per second
@@ -51,6 +52,7 @@ class CameraCapture2 {
     private final Callback mCb;
     private final SessionCallback mSessCb = new SessionCallback();
     private final CaptureCallback mCapCb = new CaptureCallback();
+    private final ArrayList<Surface> mTargets = new ArrayList<>(6);
     private CameraDevice mDevice;
     private CaptureRequest mRequest;
     private CameraCaptureSession mSession;
@@ -104,7 +106,7 @@ class CameraCapture2 {
             if (map == null) continue;
             // find sizes that work for all the desired kinds of output
             Size[] sizes1 = map.getOutputSizes(MediaCodec.class);
-            Size[] sizes2 = map.getOutputSizes(READABLE_FORMAT);
+            Size[] sizes2 = map.getOutputSizes(PREFER_FORMAT);
             Size[] sizes3 = map.getOutputSizes(SurfaceHolder.class);
             java.util.Set<Size> sizes = new java.util.HashSet<>();
             sizes.addAll(Arrays.asList(sizes1));
@@ -127,10 +129,10 @@ class CameraCapture2 {
 
                 // consider frame lag in tens of nanoseconds
                 long time1Ns = map.getOutputMinFrameDuration(MediaCodec.class, size);
-                long time2Ns = map.getOutputMinFrameDuration(READABLE_FORMAT, size);
+                long time2Ns = map.getOutputMinFrameDuration(PREFER_FORMAT, size);
                 long time3Ns = map.getOutputMinFrameDuration(SurfaceHolder.class, size);
                 long stall1Ns = map.getOutputStallDuration(MediaCodec.class, size);
-                long stall2Ns = map.getOutputStallDuration(READABLE_FORMAT, size);
+                long stall2Ns = map.getOutputStallDuration(PREFER_FORMAT, size);
                 long stall3Ns = map.getOutputStallDuration(SurfaceHolder.class, size);
                 long timeNs = Math.max(time1Ns, Math.max(time2Ns, time3Ns));
                 long stallNs = Math.max(stall1Ns, Math.max(stall2Ns, stall3Ns));
@@ -191,22 +193,34 @@ class CameraCapture2 {
     }
 
     /**
-     * Starts writing frames into the provided target surfaces.
+     * Registers an output surface. The surface will be used as one of the targets for video
+     * capture once start() is called.
      */
-    void start(List<Surface> outputSurfaces) {
+    void addTarget(Surface surface) {
+        mTargets.add(surface);
+    }
+
+    /**
+     * Starts writing frames into the target surfaces that have previously been registered with the
+     * addTarget() method.
+     */
+    void start() {
         try {
             CaptureRequest.Builder b = mDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
-            for (Surface surface : outputSurfaces) {
+            for (Surface surface : mTargets) {
                 b.addTarget(surface);
             }
             mRequest = b.build();
 
-            mDevice.createCaptureSession(outputSurfaces, mSessCb, null);
+            mDevice.createCaptureSession(mTargets, mSessCb, null);
         } catch (CameraAccessException e) {
             error();
         }
     }
 
+    /**
+     * Called by SessionCallback.onConfigured().
+     */
     private void sendCaptureRequest() {
         try {
             mSession.setRepeatingRequest(mRequest, mCapCb, null);
@@ -231,6 +245,8 @@ class CameraCapture2 {
             mDevice.close();
             mDevice = null;
         }
+
+        mTargets.clear();
     }
 
     /**
@@ -259,6 +275,14 @@ class CameraCapture2 {
 
     int getFrameRate() {
         return mFrameRate;
+    }
+
+    int getFormat() {
+        return PREFER_FORMAT;
+    }
+
+    int getOrientation() {
+        return mOrientation;
     }
 
     interface Callback {
@@ -304,7 +328,7 @@ class CameraCapture2 {
         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
-            mCb.onCameraFrame(); // TODO send metadata
+            mCb.onCameraFrame();
         }
     }
 }
