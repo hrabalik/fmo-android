@@ -3,7 +3,7 @@
 
 #include "java_classes.hpp"
 
-void ocvRecLoop(JNIEnv* env, jobject cbObj);
+void ocvRecStart(JNIEnv *env, jobject cbObj);
 
 void ocvRecStop();
 

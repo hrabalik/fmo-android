@@ -23,7 +23,6 @@ public final class OCVRecActivity extends Activity {
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
     private Status mStatus = Status.STOPPED;
-    private LibThread mLibThread;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -84,8 +83,7 @@ public final class OCVRecActivity extends Activity {
     private void init() {
         if (mStatus == Status.RUNNING) return;
         if (!mGUI.isPreviewReady()) return;
-        mLibThread = new LibThread();
-        mLibThread.start();
+        Lib.ocvRecStart(mHandler);
         mStatus = Status.RUNNING;
         mGUI.update();
     }
@@ -93,14 +91,7 @@ public final class OCVRecActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        mLibThread.setExit();
-
-        try {
-            mLibThread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted");
-        }
-
+        Lib.ocvRecStop();
         mStatus = Status.STOPPED;
     }
 
@@ -199,23 +190,6 @@ public final class OCVRecActivity extends Activity {
 
         boolean isPreviewReady() {
             return mPreviewReady;
-        }
-    }
-
-    private class LibThread extends Thread {
-        boolean mExit = false;
-
-        LibThread() {
-            super("OCVRec");
-        }
-
-        @Override
-        public void run() {
-            Lib.ocvRecLoop(mHandler);
-        }
-
-        void setExit() {
-            Lib.ocvRecStop();
         }
     }
 }

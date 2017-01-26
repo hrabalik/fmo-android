@@ -12,7 +12,7 @@ public final class Lib {
 
     public static native void onFrame(Image image, FrameCallback cb);
 
-    public static native void ocvRecLoop(FrameCallback cb);
+    public static native void ocvRecStart(FrameCallback cb);
 
     public static native void ocvRecStop();
 

@@ -25,10 +25,10 @@ JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
 
 /*
  * Class:     cz_fmo_Lib
- * Method:    ocvRecLoop
+ * Method:    ocvRecStart
  * Signature: (Lcz/fmo/Lib/FrameCallback;)V
  */
-JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecLoop
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecStart
   (JNIEnv *, jclass, jobject);
 
 /*
