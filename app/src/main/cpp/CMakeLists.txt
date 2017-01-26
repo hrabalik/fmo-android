@@ -4,5 +4,9 @@ find_package(OpenCV REQUIRED core)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_library(lib-gles GLESv3)
 
-add_library(test1 SHARED interface.hpp java_classes.cpp)
+add_library(test1 SHARED
+    java_interface.hpp
+    java_interface.cpp
+    java_classes.hpp
+    java_classes.cpp)
 target_link_libraries(test1 ${lib-gles} ${OpenCV_LIBS})
