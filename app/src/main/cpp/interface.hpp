@@ -13,16 +13,27 @@ extern "C" {
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_cz_fmo_Lib_getHelloString
-        (JNIEnv *, jclass);
+  (JNIEnv *, jclass);
 
 /*
  * Class:     cz_fmo_Lib
  * Method:    onFrame
- * Signature: (Lcz/fmo/Lib/FrameCallback;)V
+ * Signature: (Landroid/media/Image;Lcz/fmo/Lib/FrameCallback;)V
  */
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
-        (JNIEnv *, jclass, jobject);
+  (JNIEnv *, jclass, jobject, jobject);
 
+#ifdef __cplusplus
+}
+#endif
+#endif
+/* Header for class cz_fmo_Lib_FrameCallback */
+
+#ifndef _Included_cz_fmo_Lib_FrameCallback
+#define _Included_cz_fmo_Lib_FrameCallback
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef __cplusplus
 }
 #endif

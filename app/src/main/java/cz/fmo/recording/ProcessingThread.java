@@ -28,9 +28,14 @@ class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler
     void frame() {
         Image image = mReader.acquireLatestImage();
         if (image == null) return;
+        image.getPlanes();
+        //long timeNs = image.getTimestamp();
+        //Image.Plane plane = image.getPlanes()[0]; // use only the Y channel, i.e. black and white
+        //ByteBuffer data = plane.getBuffer();
+        //int pixelStride = plane.getPixelStride();
+        //int rowStride = plane.getRowStride();
 
-        Lib.onFrame(mCb);
-
+        Lib.onFrame(image, mCb);
         image.close();
     }
 
