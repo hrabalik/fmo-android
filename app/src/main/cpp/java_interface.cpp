@@ -4,6 +4,7 @@
 #include <opencv2/core.hpp>
 #include "java_interface.hpp"
 #include "java_classes.hpp"
+#include "ocvrec.hpp"
 
 int fac(std::vector<int> nums) {
     int result = 1;
@@ -59,4 +60,13 @@ void Java_cz_fmo_Lib_onFrame(JNIEnv *env, jclass, jobject imageObj, jobject cbOb
     //auto plane = image.getPlane(0);
     //Callback cb{env, cbObj};
     //cb.frameTimings(plane.pixelStride, plane.rowStride, image.getTimestamp());
+}
+
+void Java_cz_fmo_Lib_ocvRecStart(JNIEnv *env, jclass, jobject cbObj) {
+    Callback cb{env, cbObj};
+    ocvRecStart(cb);
+}
+
+void Java_cz_fmo_Lib_ocvRecStop(JNIEnv *, jclass) {
+    ocvRecStop();
 }

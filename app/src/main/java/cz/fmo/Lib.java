@@ -12,6 +12,10 @@ public final class Lib {
 
     public static native void onFrame(Image image, FrameCallback cb);
 
+    public static native void ocvRecStart(FrameCallback cb);
+
+    public static native void ocvRecStop();
+
     public interface FrameCallback {
         void frameTimings(float q50, float q95, float q99);
     }

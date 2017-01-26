@@ -23,6 +23,22 @@ JNIEXPORT jstring JNICALL Java_cz_fmo_Lib_getHelloString
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
   (JNIEnv *, jclass, jobject, jobject);
 
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    ocvRecStart
+ * Signature: (Lcz/fmo/Lib/FrameCallback;)V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecStart
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    ocvRecStop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecStop
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif
