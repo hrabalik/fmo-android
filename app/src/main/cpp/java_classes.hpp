@@ -3,6 +3,7 @@
 
 #include <jni.h>
 #include <cstdint>
+#include <algorithm>
 
 /**
  * Models java.lang.Object
@@ -55,9 +56,51 @@ struct Image : public Object {
  * Models cz.fmo.Lib$FrameCallback
  */
 struct Callback : public Object {
-    using Object::Object;
+    Callback(JNIEnv *, jobject);
 
     void frameTimings(float q50, float q95, float q99) const;
+
+private:
+    const jmethodID mFrameTimings;
+};
+
+/**
+ * Wraps other objects, extending their lifetime past the duration of the native function.
+ */
+template <typename T>
+struct Reference {
+    Reference(const Reference&) = delete;
+    Reference& operator=(const Reference&) = delete;
+
+    Reference() noexcept : mObj(nullptr) { }
+
+    Reference(Reference&& rhs) noexcept : Reference() {
+        std::swap(mObj, rhs.mObj);
+    }
+
+    Reference& operator=(Reference&& rhs) noexcept {
+        std::swap(mObj, rhs.mObj);
+        return *this;
+    }
+
+    Reference(JNIEnv *env, jobject obj) :
+            mObj(env->NewGlobalRef(obj)) { }
+
+    ~Reference() {
+        // TODO assert(mObj == nullptr)
+    }
+
+    void release(JNIEnv *env) {
+        env->DeleteGlobalRef(mObj);
+        mObj = nullptr;
+    }
+
+    T get(JNIEnv *env) {
+        return {env, mObj};
+    }
+
+private:
+    jobject mObj;
 };
 
 #endif //FMO_ANDROID_JAVA_CLASSES_HPP

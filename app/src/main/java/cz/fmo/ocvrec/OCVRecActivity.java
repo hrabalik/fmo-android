@@ -10,6 +10,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
+import java.lang.ref.WeakReference;
 import java.util.Locale;
 
 import cz.fmo.Lib;
@@ -19,9 +20,10 @@ import cz.fmo.R;
  * The main activity, facilitating video preview, encoding and saving.
  */
 public final class OCVRecActivity extends Activity {
-    private final Handler mHandler = new Handler();
+    private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
     private Status mStatus = Status.STOPPED;
+    private LibThread mLibThread;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -82,7 +84,8 @@ public final class OCVRecActivity extends Activity {
     private void init() {
         if (mStatus == Status.RUNNING) return;
         if (!mGUI.isPreviewReady()) return;
-        Lib.ocvRecStart(mHandler);
+        mLibThread = new LibThread();
+        mLibThread.start();
         mStatus = Status.RUNNING;
         mGUI.update();
     }
@@ -90,7 +93,14 @@ public final class OCVRecActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        Lib.ocvRecStop();
+        mLibThread.setExit();
+
+        try {
+            mLibThread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted");
+        }
+
         mStatus = Status.STOPPED;
     }
 
@@ -98,14 +108,43 @@ public final class OCVRecActivity extends Activity {
         STOPPED, RUNNING
     }
 
-    // TODO extends android.os.Handler
-    private class Handler implements Lib.FrameCallback {
+    private static class Timings {
+        float q50 = 0;
+        float q95 = 0;
+        float q99 = 0;
+    }
+
+    private static class Handler extends android.os.Handler implements Lib.FrameCallback {
+        private final WeakReference<OCVRecActivity> mActivity;
+        private static final int FRAME_TIMINGS = 1;
+
+        Handler(OCVRecActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
         @Override
         public void frameTimings(float q50, float q95, float q99) {
-            mGUI.q50 = q50;
-            mGUI.q95 = q95;
-            mGUI.q99 = q99;
-            mGUI.update();
+            Timings timings = new Timings();
+            timings.q50 = q50;
+            timings.q95 = q95;
+            timings.q99 = q99;
+            sendMessage(obtainMessage(FRAME_TIMINGS, timings));
+        }
+
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            OCVRecActivity activity = mActivity.get();
+            if (activity == null) return;
+
+            switch (msg.what) {
+                case FRAME_TIMINGS:
+                    Timings timings = (Timings)msg.obj;
+                    activity.mGUI.q50 = timings.q50;
+                    activity.mGUI.q95 = timings.q95;
+                    activity.mGUI.q99 = timings.q99;
+                    activity.mGUI.update();
+                    break;
+            }
         }
     }
 
@@ -160,6 +199,23 @@ public final class OCVRecActivity extends Activity {
 
         boolean isPreviewReady() {
             return mPreviewReady;
+        }
+    }
+
+    private class LibThread extends Thread {
+        boolean mExit = false;
+
+        LibThread() {
+            super("OCVRec");
+        }
+
+        @Override
+        public void run() {
+            Lib.ocvRecLoop(mHandler);
+        }
+
+        void setExit() {
+            Lib.ocvRecStop();
         }
     }
 }

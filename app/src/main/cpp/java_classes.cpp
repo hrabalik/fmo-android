@@ -36,7 +36,10 @@ Image::Plane::Plane(JNIEnv *env, jobject obj) : Object(env, obj) {
     data = (uint8_t *) mEnv->GetDirectBufferAddress(buffer);
 }
 
+Callback::Callback(JNIEnv *env, jobject obj) :
+        Object(env, obj),
+        mFrameTimings(env->GetMethodID(mClass, "frameTimings", "(FFF)V")) {}
+
 void Callback::frameTimings(float q50, float q95, float q99) const {
-    auto method = mEnv->GetMethodID(mClass, "frameTimings", "(FFF)V");
-    mEnv->CallVoidMethod(mObj, method, q50, q95, q99);
+    mEnv->CallVoidMethod(mObj, mFrameTimings, q50, q95, q99);
 }

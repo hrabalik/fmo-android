@@ -62,9 +62,8 @@ void Java_cz_fmo_Lib_onFrame(JNIEnv *env, jclass, jobject imageObj, jobject cbOb
     //cb.frameTimings(plane.pixelStride, plane.rowStride, image.getTimestamp());
 }
 
-void Java_cz_fmo_Lib_ocvRecStart(JNIEnv *env, jclass, jobject cbObj) {
-    Callback cb{env, cbObj};
-    ocvRecStart(cb);
+void Java_cz_fmo_Lib_ocvRecLoop(JNIEnv *env, jclass, jobject cbObj) {
+    ocvRecLoop(env, cbObj);
 }
 
 void Java_cz_fmo_Lib_ocvRecStop(JNIEnv *, jclass) {

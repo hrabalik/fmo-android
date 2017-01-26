@@ -3,7 +3,8 @@
 
 #include "java_classes.hpp"
 
-void ocvRecStart(const Callback& cb);
+void ocvRecLoop(JNIEnv* env, jobject cbObj);
+
 void ocvRecStop();
 
 #endif //FMO_ANDROID_OCVREC_H
