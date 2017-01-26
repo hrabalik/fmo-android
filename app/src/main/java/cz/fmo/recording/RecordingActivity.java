@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 
 import cz.fmo.R;
 import cz.fmo.util.FileManager;
@@ -126,7 +127,7 @@ public class RecordingActivity extends Activity {
         mEncodeThread = new EncodeThread(mCamera.getMediaFormat(), buf, mHandler);
         mSaveMovieThread = new SaveMovieThread(buf, mHandler);
         mProcessingThread = new ProcessingThread(mCamera.getWidth(), mCamera.getHeight(),
-                mCamera.getFormat());
+                mCamera.getFormat(), mHandler);
         mEncodeThread.start();
         mSaveMovieThread.start();
         mProcessingThread.start();
@@ -218,6 +219,13 @@ public class RecordingActivity extends Activity {
         mEncodeThread.getHandler().sendFlush();
     }
 
+    private void frameTimings(Timings timings) {
+        mGUI.mTimings.q50 = timings.q50;
+        mGUI.mTimings.q95 = timings.q95;
+        mGUI.mTimings.q99 = timings.q99;
+        mGUI.update();
+    }
+
     private enum Status {
         STOPPED, RUNNING, CAMERA_ERROR, CAMERA_INIT
     }
@@ -230,17 +238,24 @@ public class RecordingActivity extends Activity {
         NOT_READY, READY
     }
 
+    private static class Timings {
+        float q50 = 0;
+        float q95 = 0;
+        float q99 = 0;
+    }
+
     /**
      * A subclass that receives all relevant messages on an arbitrary thread and forwards them to
      * the main thread.
      */
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Camera.Callback {
+            EncodeThread.Callback, ProcessingThread.Callback, Camera.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int CAMERA_ERROR = 4;
         private static final int CAMERA_OPENED = 5;
         private static final int CAMERA_FRAME = 6;
+        private static final int FRAME_TIMINGS = 7;
         private final WeakReference<RecordingActivity> mActivity;
 
         Handler(RecordingActivity activity) {
@@ -273,6 +288,15 @@ public class RecordingActivity extends Activity {
         }
 
         @Override
+        public void frameTimings(float q50, float q95, float q99) {
+            Timings timings = new Timings();
+            timings.q50 = q50;
+            timings.q95 = q95;
+            timings.q99 = q99;
+            sendMessage(obtainMessage(FRAME_TIMINGS, timings));
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
@@ -293,6 +317,9 @@ public class RecordingActivity extends Activity {
                 case CAMERA_FRAME:
                     activity.cameraFrame();
                     break;
+                case FRAME_TIMINGS:
+                    activity.frameTimings((Timings) msg.obj);
+                    break;
                 default:
                     break;
             }
@@ -303,8 +330,11 @@ public class RecordingActivity extends Activity {
      * A subclass that handles visual elements -- buttons, labels, and suchlike.
      */
     private class GUI implements SurfaceHolder.Callback {
+        private final Timings mTimings = new Timings();
         private TextView mStatusText;
         private String mStatusTextLast;
+        private TextView mFpsStringText;
+        private String mFpsStringTextLast;
         private Button mSaveButton;
         private boolean mSaveButtonLast;
         private SurfaceView mPreview;
@@ -316,6 +346,8 @@ public class RecordingActivity extends Activity {
             setContentView(R.layout.activity_recording);
             mStatusText = (TextView) findViewById(R.id.status_text);
             mStatusTextLast = mStatusText.getText().toString();
+            mFpsStringText = (TextView) findViewById(R.id.fps_text);
+            mFpsStringTextLast = mFpsStringText.getText().toString();
             mSaveButton = (Button) findViewById(R.id.save_button);
             mSaveButtonLast = mSaveButton.isEnabled();
             mPreview = (SurfaceView) findViewById(R.id.preview_surface);
@@ -335,6 +367,7 @@ public class RecordingActivity extends Activity {
         void update() {
             boolean enableSaveButton = false;
             String statusString;
+            String fpsString = "";
 
             if (mStatus == Status.STOPPED) {
                 statusString = getString(R.string.recordingStopped);
@@ -365,11 +398,18 @@ public class RecordingActivity extends Activity {
                 long lengthUs = mEncodeThread.getBufferContentsDuration();
                 float lengthSec = ((float) lengthUs) / 1000000.f;
                 statusString = getString(R.string.videoLength, lengthSec);
+                fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", mTimings.q50,
+                        mTimings.q95, mTimings.q99);
             }
 
             if (!mStatusTextLast.equals(statusString)) {
                 mStatusText.setText(statusString);
                 mStatusTextLast = statusString;
+            }
+
+            if (!mFpsStringTextLast.equals(fpsString)) {
+                mFpsStringText.setText(fpsString);
+                mFpsStringTextLast = fpsString;
             }
 
             if (mSaveButtonLast != enableSaveButton) {

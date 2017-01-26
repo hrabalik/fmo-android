@@ -26,9 +26,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:layout_toEndOf="@+id/save_button"
-            android:text="@string/videoLength"
-            android:textAppearance="@android:style/TextAppearance.Large" />
+            android:text="@string/initializing"
+            android:textAppearance="@android:style/TextAppearance.Material.Large" />
+
+        <TextView
+            android:id="@+id/fps_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentBottom="true"
+            android:text="@string/initializing"
+            android:textAppearance="@android:style/TextAppearance.Material.Large" />
 
         <Button
             android:id="@+id/save_button"
@@ -38,7 +46,8 @@
             android:layout_alignParentTop="true"
             android:onClick="clickSave"
             android:text="@string/saveButton"
-            android:textAppearance="@android:style/TextAppearance.Large" />
+            android:textAppearance="@android:style/TextAppearance.Material.Large"
+            tools:ignore="RelativeOverlap" />
 
     </RelativeLayout>
 

@@ -13,7 +13,15 @@ extern "C" {
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_cz_fmo_Lib_getHelloString
-  (JNIEnv *, jclass);
+        (JNIEnv *, jclass);
+
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    onFrame
+ * Signature: (Lcz/fmo/Lib/FrameCallback;)V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
+        (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus
 }

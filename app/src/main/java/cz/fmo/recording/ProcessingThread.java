@@ -4,16 +4,20 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.view.Surface;
 
+import cz.fmo.Lib;
+
 /**
  * Receives image frames and applies FMO library processing to them. This is the entry point for the
  * C++ part of the application.
  */
 class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler> {
+    private final Callback mCb;
     private final ImageReader mReader;
     private boolean mTornDown = false;
 
-    ProcessingThread(int width, int height, int format) {
+    ProcessingThread(int width, int height, int format, Callback cb) {
         super("ProcessingThread");
+        mCb = cb;
         mReader = ImageReader.newInstance(width, height, format, 12);
     }
 
@@ -24,6 +28,8 @@ class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler
     void frame() {
         Image image = mReader.acquireLatestImage();
         if (image == null) return;
+
+        Lib.onFrame(mCb);
 
         image.close();
     }
@@ -58,5 +64,8 @@ class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler
     @Override
     protected ProcessingThreadHandler makeHandler() {
         return new ProcessingThreadHandler(this);
+    }
+
+    public interface Callback extends Lib.FrameCallback {
     }
 }

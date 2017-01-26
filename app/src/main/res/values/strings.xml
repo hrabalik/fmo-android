@@ -22,4 +22,5 @@
     <string name="errorOther">Camera error</string>
     <string name="cameraInitializing">Waiting for camera…</string>
     <string name="saveButton">Save</string>
+    <string name="initializing">Initializing...</string>
 </resources>
