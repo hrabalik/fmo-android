@@ -96,7 +96,7 @@ public final class OCVRecActivity extends Activity {
     }
 
     private enum Status {
-        STOPPED, RUNNING
+        STOPPED, RUNNING, CAMERA_ERROR
     }
 
     private static class Timings {
@@ -105,9 +105,10 @@ public final class OCVRecActivity extends Activity {
         float q99 = 0;
     }
 
-    private static class Handler extends android.os.Handler implements Lib.FrameCallback {
-        private final WeakReference<OCVRecActivity> mActivity;
+    private static class Handler extends android.os.Handler implements Lib.Callback {
         private static final int FRAME_TIMINGS = 1;
+        private static final int CAMERA_ERROR = 2;
+        private final WeakReference<OCVRecActivity> mActivity;
 
         Handler(OCVRecActivity activity) {
             mActivity = new WeakReference<>(activity);
@@ -123,6 +124,11 @@ public final class OCVRecActivity extends Activity {
         }
 
         @Override
+        public void cameraError() {
+            sendMessage(obtainMessage(CAMERA_ERROR));
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             OCVRecActivity activity = mActivity.get();
             if (activity == null) return;
@@ -135,6 +141,9 @@ public final class OCVRecActivity extends Activity {
                     activity.mGUI.q99 = timings.q99;
                     activity.mGUI.update();
                     break;
+                case CAMERA_ERROR:
+                    activity.mStatus = Status.CAMERA_ERROR;
+                    activity.mGUI.update();
             }
         }
     }
@@ -164,7 +173,12 @@ public final class OCVRecActivity extends Activity {
 
         void update() {
             if (mStatus == Status.STOPPED) return;
+
             String fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", q50, q95, q99);
+
+            if (mStatus == Status.CAMERA_ERROR) {
+                fpsString = getString(R.string.errorOther);
+            }
 
             if (!mFpsStringTextLast.equals(fpsString)) {
                 mFpsStringText.setText(fpsString);

@@ -43,3 +43,8 @@ Callback::Callback(JNIEnv *env, jobject obj) :
 void Callback::frameTimings(float q50, float q95, float q99) const {
     mEnv->CallVoidMethod(mObj, mFrameTimings, q50, q95, q99);
 }
+
+void Callback::cameraError() {
+    auto id = mEnv->GetMethodID(mClass, "cameraError", "()V");
+    mEnv->CallVoidMethod(mObj, id);
+}

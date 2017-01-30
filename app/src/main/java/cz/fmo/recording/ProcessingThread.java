@@ -71,6 +71,6 @@ class ProcessingThread extends cz.fmo.util.GenericThread<ProcessingThreadHandler
         return new ProcessingThreadHandler(this);
     }
 
-    public interface Callback extends Lib.FrameCallback {
+    public interface Callback extends Lib.Callback {
     }
 }

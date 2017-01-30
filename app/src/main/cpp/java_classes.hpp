@@ -61,6 +61,8 @@ struct Callback : public Object {
 
     void frameTimings(float q50, float q95, float q99) const;
 
+    void cameraError();
+
 private:
     const jmethodID mFrameTimings;
 };

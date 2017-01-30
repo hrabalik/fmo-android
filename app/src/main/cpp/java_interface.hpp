@@ -18,7 +18,7 @@ JNIEXPORT jstring JNICALL Java_cz_fmo_Lib_getHelloString
 /*
  * Class:     cz_fmo_Lib
  * Method:    onFrame
- * Signature: (Landroid/media/Image;Lcz/fmo/Lib/FrameCallback;)V
+ * Signature: (Landroid/media/Image;Lcz/fmo/Lib/Callback;)V
  */
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
   (JNIEnv *, jclass, jobject, jobject);
@@ -26,7 +26,7 @@ JNIEXPORT void JNICALL Java_cz_fmo_Lib_onFrame
 /*
  * Class:     cz_fmo_Lib
  * Method:    ocvRecStart
- * Signature: (Lcz/fmo/Lib/FrameCallback;)V
+ * Signature: (Lcz/fmo/Lib/Callback;)V
  */
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecStart
   (JNIEnv *, jclass, jobject);
@@ -43,10 +43,10 @@ JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRecStop
 }
 #endif
 #endif
-/* Header for class cz_fmo_Lib_FrameCallback */
+/* Header for class cz_fmo_Lib_Callback */
 
-#ifndef _Included_cz_fmo_Lib_FrameCallback
-#define _Included_cz_fmo_Lib_FrameCallback
+#ifndef _Included_cz_fmo_Lib_Callback
+#define _Included_cz_fmo_Lib_Callback
 #ifdef __cplusplus
 extern "C" {
 #endif

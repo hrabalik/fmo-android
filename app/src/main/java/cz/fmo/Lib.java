@@ -10,13 +10,15 @@ public final class Lib {
 
     public static native String getHelloString();
 
-    public static native void onFrame(Image image, FrameCallback cb);
+    public static native void onFrame(Image image, Callback cb);
 
-    public static native void ocvRecStart(FrameCallback cb);
+    public static native void ocvRecStart(Callback cb);
 
     public static native void ocvRecStop();
 
-    public interface FrameCallback {
+    public interface Callback {
         void frameTimings(float q50, float q95, float q99);
+
+        void cameraError();
     }
 }

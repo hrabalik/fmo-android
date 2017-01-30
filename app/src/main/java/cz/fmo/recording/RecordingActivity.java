@@ -297,6 +297,11 @@ public class RecordingActivity extends Activity {
         }
 
         @Override
+        public void cameraError() {
+
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
