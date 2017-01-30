@@ -5,6 +5,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 find_library(lib-gles GLESv3)
 
 add_library(test1 SHARED
+    assert.hpp
+    assert.cpp
     java_interface.hpp
     java_interface.cpp
     java_classes.hpp

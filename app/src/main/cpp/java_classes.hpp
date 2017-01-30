@@ -4,6 +4,7 @@
 #include <jni.h>
 #include <cstdint>
 #include <algorithm>
+#include "assert.hpp"
 
 /**
  * Models java.lang.Object
@@ -87,7 +88,7 @@ struct Reference {
             mObj(env->NewGlobalRef(obj)) { }
 
     ~Reference() {
-        // TODO assert(mObj == nullptr)
+        FMO_ASSERT(mObj == nullptr, "release() must be called before a Reference is destroyed");
     }
 
     void release(JNIEnv *env) {
