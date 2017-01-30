@@ -48,6 +48,14 @@
             android:onClick="runOCVRecActivity"
             android:text="OCVRec Activity" />
 
+        <Button
+            android:id="@+id/playOCVRec2ActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:onClick="runOCVRec2Activity"
+            android:text="OCVRec2 Activity"/>
+
         <TextView
             android:id="@+id/mainMenuTextView"
             android:layout_width="match_parent"

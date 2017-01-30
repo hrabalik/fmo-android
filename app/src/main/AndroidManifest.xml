@@ -49,6 +49,13 @@
             android:theme="@style/Fullscreen" />
 
         <activity
+            android:name=".ocvrec2.OcvRec2Activity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="OCVRec2"
+            android:screenOrientation="landscape"
+            android:theme="@style/Fullscreen"/>
+
+        <activity
             android:name="cz.fmo.recording.RecordingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Recording"
