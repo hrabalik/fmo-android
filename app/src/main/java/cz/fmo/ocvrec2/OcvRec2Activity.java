@@ -10,6 +10,8 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.TextView;
 
+import org.opencv.android.OpenCVLoader;
+
 import java.lang.ref.WeakReference;
 import java.util.Locale;
 
@@ -83,6 +85,20 @@ public final class OcvRec2Activity extends Activity {
     private void init() {
         if (mStatus == Status.RUNNING) return;
         if (!mGUI.isPreviewReady()) return;
+
+        if (isPermissionDenied()) {
+            mStatus = Status.PERMISSION_ERROR;
+            mGUI.update();
+            return;
+        }
+
+        boolean ocvInit = OpenCVLoader.initDebug();
+        if (!ocvInit) {
+            mStatus = Status.OPENCV_ERROR;
+            mGUI.update();
+            return;
+        }
+
         Lib.ocvRecStart(mHandler);
         mStatus = Status.RUNNING;
         mGUI.update();
@@ -96,7 +112,7 @@ public final class OcvRec2Activity extends Activity {
     }
 
     private enum Status {
-        STOPPED, RUNNING, CAMERA_ERROR
+        STOPPED, RUNNING, CAMERA_ERROR, PERMISSION_ERROR, OPENCV_ERROR
     }
 
     private static class Timings {
@@ -174,10 +190,15 @@ public final class OcvRec2Activity extends Activity {
         void update() {
             if (mStatus == Status.STOPPED) return;
 
-            String fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", q50, q95, q99);
-
+            String fpsString;
             if (mStatus == Status.CAMERA_ERROR) {
                 fpsString = getString(R.string.errorOther);
+            } else if (mStatus == Status.PERMISSION_ERROR) {
+                fpsString = getString(R.string.errorPermissionFail);
+            } else if (mStatus == Status.OPENCV_ERROR) {
+                fpsString = getString(R.string.errorOpenCVInitFail);
+            } else {
+                fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", q50, q95, q99);
             }
 
             if (!mFpsStringTextLast.equals(fpsString)) {

@@ -16,6 +16,7 @@
     <string name="savingVideo">Saving…</string>
     <string name="recordingStopped">Recording stopped</string>
     <string name="errorPermissionFail">Camera permission denied</string>
+    <string name="errorOpenCVInitFail">OpenCV failed to initialize</string>
     <string name="errorConfigureFail">Camera configuration failed</string>
     <string name="errorInaccessible">Camera inaccessible</string>
     <string name="errorDisconnected">Camera disconnected</string>
