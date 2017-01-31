@@ -12,5 +12,6 @@ add_library(test1 SHARED
     java_classes.hpp
     java_classes.cpp
     ocvrec.hpp
-    ocvrec.cpp)
+    ocvrec.cpp
+    ocvrec2.cpp)
 target_link_libraries(test1 ${lib-gles} ${OpenCV_LIBS})

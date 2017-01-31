@@ -118,20 +118,19 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
 
     @Override
     public void onCameraViewStarted(int width, int height) {
-        mGUI.q95 = width;
-        mGUI.q99 = height;
+        Lib.ocvRec2Start(width, height, mHandler);
     }
 
     @Override
     public void onCameraViewStopped() {
-
+        Lib.ocvRec2Stop();
     }
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mGUI.q50 += 1;
-        mHandler.frameTimings(mGUI.q50, mGUI.q95, mGUI.q99);
-        return inputFrame.gray();
+        Mat gray = inputFrame.gray();
+        Lib.ocvRec2Frame(gray.getNativeObjAddr());
+        return gray;
     }
 
     private enum Status {
@@ -223,7 +222,7 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
             } else if (mStatus == Status.OPENCV_ERROR) {
                 fpsString = getString(R.string.errorOpenCVInitFail);
             } else {
-                fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", q50, q95, q99);
+                fpsString = String.format(Locale.US, "%.2f / %.2f / %.2f", q50, q95, q99);
             }
 
             if (!mBottomTextLast.equals(fpsString)) {
