@@ -7,10 +7,12 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.widget.TextView;
 
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
 
 import java.lang.ref.WeakReference;
 import java.util.Locale;
@@ -21,7 +23,7 @@ import cz.fmo.R;
 /**
  * The main activity, facilitating video preview, encoding and saving.
  */
-public final class OcvRec2Activity extends Activity {
+public final class OcvRec2Activity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
     private Status mStatus = Status.STOPPED;
@@ -99,7 +101,8 @@ public final class OcvRec2Activity extends Activity {
             return;
         }
 
-        Lib.ocvRecStart(mHandler);
+        mGUI.startPreview();
+
         mStatus = Status.RUNNING;
         mGUI.update();
     }
@@ -107,8 +110,28 @@ public final class OcvRec2Activity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
-        Lib.ocvRecStop();
+
+        mGUI.stopPreview();
+
         mStatus = Status.STOPPED;
+    }
+
+    @Override
+    public void onCameraViewStarted(int width, int height) {
+        mGUI.q95 = width;
+        mGUI.q99 = height;
+    }
+
+    @Override
+    public void onCameraViewStopped() {
+
+    }
+
+    @Override
+    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        mGUI.q50 += 1;
+        mHandler.frameTimings(mGUI.q50, mGUI.q95, mGUI.q99);
+        return inputFrame.gray();
     }
 
     private enum Status {
@@ -171,20 +194,22 @@ public final class OcvRec2Activity extends Activity {
         float q50;
         float q95;
         float q99;
-        private SurfaceView mPreview;
+        private JavaCameraView mPreview;
         private boolean mPreviewReady = false;
-        private TextView mFpsStringText;
-        private String mFpsStringTextLast;
+        private TextView mBottomText;
+        private String mBottomTextLast;
 
         /**
          * Prepares all static UI elements.
          */
         void init() {
-            setContentView(R.layout.activity_recording);
-            mPreview = (SurfaceView) findViewById(R.id.preview_surface);
+            setContentView(R.layout.activity_ocvrec2);
+            mPreview = (JavaCameraView) findViewById(R.id.ocvrec2_preview);
+            mPreview.setVisibility(JavaCameraView.VISIBLE);
+            mPreview.setCvCameraViewListener(OcvRec2Activity.this);
             mPreview.getHolder().addCallback(this);
-            mFpsStringText = (TextView) findViewById(R.id.fps_text);
-            mFpsStringTextLast = mFpsStringText.getText().toString();
+            mBottomText = (TextView) findViewById(R.id.ocvrec2_bottom_text);
+            mBottomTextLast = mBottomText.getText().toString();
         }
 
         void update() {
@@ -201,9 +226,9 @@ public final class OcvRec2Activity extends Activity {
                 fpsString = String.format(Locale.US, "%.1f / %.1f / %.1f", q50, q95, q99);
             }
 
-            if (!mFpsStringTextLast.equals(fpsString)) {
-                mFpsStringText.setText(fpsString);
-                mFpsStringTextLast = fpsString;
+            if (!mBottomTextLast.equals(fpsString)) {
+                mBottomText.setText(fpsString);
+                mBottomTextLast = fpsString;
             }
         }
 
@@ -225,6 +250,14 @@ public final class OcvRec2Activity extends Activity {
 
         boolean isPreviewReady() {
             return mPreviewReady;
+        }
+
+        void startPreview() {
+            mPreview.enableView();
+        }
+
+        void stopPreview() {
+            mPreview.disableView();
         }
     }
 }
