@@ -5,7 +5,7 @@ import java.lang.ref.WeakReference;
 /**
  * Message handler for EncodeThread.
  */
-class EncodeThreadHandler extends android.os.Handler {
+public class EncodeThreadHandler extends android.os.Handler {
     private static final int KILL = 1;
     private static final int FLUSH = 2;
     private final WeakReference<EncodeThread> mThreadRef;
@@ -17,14 +17,14 @@ class EncodeThreadHandler extends android.os.Handler {
     /**
      * Send a command to end the execution of the thread as soon as possible.
      */
-    void sendKill() {
+    public void sendKill() {
         sendMessage(obtainMessage(KILL));
     }
 
     /**
      * Send a command to flush all currently available encoder output and save it into the buffer.
      */
-    void sendFlush() {
+    public void sendFlush() {
         sendMessage(obtainMessage(FLUSH));
     }
 

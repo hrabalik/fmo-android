@@ -12,7 +12,7 @@ import cz.fmo.util.GenericThread;
 /**
  * A separate thread to manage an encoder and save its output into a buffer.
  */
-class EncodeThread extends GenericThread<EncodeThreadHandler> {
+public class EncodeThread extends GenericThread<EncodeThreadHandler> {
     private final CyclicBuffer mBuf;
     private final Callback mCb;
     private final MediaCodec.BufferInfo mInfo;
@@ -20,7 +20,7 @@ class EncodeThread extends GenericThread<EncodeThreadHandler> {
     private final Surface mInputSurface;
     private boolean mReleased = false;
 
-    EncodeThread(MediaFormat format, CyclicBuffer buf, Callback cb) {
+    public EncodeThread(MediaFormat format, CyclicBuffer buf, Callback cb) {
         super("EncodeThread");
         mBuf = buf;
         mCb = cb;
@@ -83,11 +83,14 @@ class EncodeThread extends GenericThread<EncodeThreadHandler> {
         release();
     }
 
-    Surface getInputSurface() {
+    public Surface getInputSurface() {
         return mInputSurface;
     }
 
-    long getBufferContentsDuration() {
+    /**
+     * @return The timee between the first and the last stored frame, in microseconds.
+     */
+    public long getBufferContentsDuration() {
         long duration;
         synchronized (mBuf) {
             duration = mBuf.getDuration(mBuf.begin(), mBuf.end());
@@ -95,7 +98,7 @@ class EncodeThread extends GenericThread<EncodeThreadHandler> {
         return duration;
     }
 
-    interface Callback {
+    public interface Callback {
         void flushCompleted(EncodeThread thread);
     }
 }

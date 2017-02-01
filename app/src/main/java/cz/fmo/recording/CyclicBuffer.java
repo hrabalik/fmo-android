@@ -12,7 +12,7 @@ import java.nio.ByteBuffer;
  * back. If there is not enough space for a new frame, one or more frames are removed from the
  * front.
  */
-class CyclicBuffer {
+public class CyclicBuffer {
     private final byte[] mData;
     private final BufferInfo[] mMeta;
     private int mHead = 0;
@@ -24,7 +24,7 @@ class CyclicBuffer {
      * @param fps     expected frames per second
      * @param seconds approximate buffer length
      */
-    CyclicBuffer(int bps, float fps, float seconds) {
+    public CyclicBuffer(int bps, float fps, float seconds) {
         // approximate the required buffer sizes
         float nFrames = fps * seconds;
         float nBytes = (bps * seconds) * (1 / 8.f);
