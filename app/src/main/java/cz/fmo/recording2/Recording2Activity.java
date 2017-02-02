@@ -3,21 +3,14 @@ package cz.fmo.recording2;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.media.MediaCodecInfo;
-import android.media.MediaFormat;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.view.Surface;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
-
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.JavaCameraView;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Mat;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -33,21 +26,15 @@ import cz.fmo.util.FileManager;
 /**
  * The main activity, facilitating video preview, encoding and saving.
  */
-public final class Recording2Activity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
-    private static final int MAX_WIDTH = 1600;
-    private static final int MAX_HEIGHT = 900;
-    private static final int BIT_RATE = 6 * 1024 * 1024;
-    private static final int FRAME_RATE = 30;
-    private static final int I_FRAME_INTERVAL = 1;
-    private static final float BUFFER_SECONDS = 7;
-    private static final String VIDEO_MIME = MediaFormat.MIMETYPE_VIDEO_AVC;
+public final class Recording2Activity extends Activity {
+    private static final float BUFFER_SECONDS = 8;
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
     private Status mStatus = Status.STOPPED;
+    private CameraThread mCamera;
     private EncodeThread mEncode;
     private SaveMovieThread mSaveMovie;
-    private Bitmap mBitmap;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -119,70 +106,52 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
             return;
         }
 
-        // stop if OpenCV initialization fails
-        boolean ocvInit = OpenCVLoader.initDebug();
-        if (!ocvInit) {
-            mStatus = Status.OPENCV_ERROR;
-            mGUI.update();
-            return;
-        }
+        // create a dedicated camera input thread
+        mCamera = new CameraThread(mHandler);
 
-        // everything is ready, start sending frames (triggers onCameraViewStarted)
-        mGUI.startPreview();
+        // make a suitably-sized cyclic buffer
+        CyclicBuffer buffer = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
+                BUFFER_SECONDS);
+
+        // create dedicated encoding and video saving threads
+        mEncode = new EncodeThread(mCamera.getMediaFormat(), buffer, mHandler);
+        mSaveMovie = new SaveMovieThread(buffer, mHandler);
+
+        // add encoder and preview as camera targets
+        mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(), mCamera.getHeight());
+        mCamera.addTarget(mGUI.getPreviewSurface(), mGUI.getPreviewWidth(),
+                mGUI.getPreviewHeight());
+
+        // C++ initialization
+        Lib.ocvRec2Start(mCamera.getWidth(), mCamera.getHeight(), mHandler);
 
         // refresh GUI
         mStatus = Status.RUNNING;
         mGUI.update();
+
+        // start threads
+        mEncode.start();
+        mSaveMovie.start();
+        mCamera.start();
     }
 
+    /**
+     * Perform cleanup after the activity has been paused.
+     */
     @Override
     protected void onPause() {
         super.onPause();
 
-        mGUI.stopPreview();
-
-        mStatus = Status.STOPPED;
-    }
-
-    /**
-     * Prepare to receive camera frames (see onCameraFrame).
-     */
-    @Override
-    public void onCameraViewStarted(int width, int height) {
-        // make a suitably-sized cyclic buffer
-        CyclicBuffer buffer = new CyclicBuffer(BIT_RATE, FRAME_RATE, BUFFER_SECONDS);
-
-        // create and fill a MediaFormat instance
-        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
-        format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, I_FRAME_INTERVAL);
-
-        // create and start dedicated threads
-        mEncode = new EncodeThread(format, buffer, mHandler);
-        mEncode.start();
-        mSaveMovie = new SaveMovieThread(buffer, mHandler);
-        mSaveMovie.start();
-
-        // create a bitmap for caching
-        mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-
-        // C++ initialization
-        Lib.ocvRec2Start(width, height, mHandler);
-    }
-
-    /**
-     * Perform cleanup after the last camera frame (see onCameraFrame) has been received.
-     */
-    @Override
-    public void onCameraViewStopped() {
         Lib.ocvRec2Stop();
 
-        if (mBitmap != null) {
-            mBitmap.recycle();
-            mBitmap = null;
+        if (mCamera != null) {
+            mCamera.getHandler().sendKill();
+            try {
+                mCamera.join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException("Interrupted when closing CameraThread");
+            }
+            mCamera = null;
         }
 
         if (mSaveMovie != null) {
@@ -204,32 +173,8 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
             }
             mEncode = null;
         }
-    }
 
-    /**
-     * Process a frame.
-     *
-     * @return Image to be rendered on the screen.
-     */
-    @Override
-    public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        // get a timestamp that will represent the frame time
-        long timeNs = System.nanoTime();
-
-        // request that the output of the encoder is emptied
-        mEncode.getHandler().sendFlush();
-
-        // send the unmodified frame to the video encoder input
-        Mat rgba = inputFrame.rgba();
-        org.opencv.android.Utils.matToBitmap(rgba, mBitmap);
-        Canvas canvas = mEncode.getInputSurface().lockCanvas(null);
-        canvas.drawBitmap(mBitmap, 0, 0, null);
-        mEncode.getInputSurface().unlockCanvasAndPost(canvas);
-
-        // send the gray-scale version of the frame to C++
-        Mat gray = inputFrame.gray();
-        Lib.ocvRec2Frame(gray.getNativeObjAddr(), timeNs);
-        return gray;
+        mStatus = Status.STOPPED;
     }
 
     /**
@@ -254,7 +199,7 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
     }
 
     private enum Status {
-        STOPPED, RUNNING, SAVING, CAMERA_ERROR, PERMISSION_ERROR, OPENCV_ERROR
+        STOPPED, RUNNING, SAVING, CAMERA_ERROR, PERMISSION_ERROR
     }
 
     private static class Timings {
@@ -268,7 +213,7 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
      * the main thread.
      */
     private static class Handler extends android.os.Handler implements Lib.Callback,
-            EncodeThread.Callback, SaveMovieThread.Callback {
+            EncodeThread.Callback, SaveMovieThread.Callback, CameraThread.Callback {
         private static final int FRAME_TIMINGS = 1;
         private static final int CAMERA_ERROR = 2;
         private static final int ENCODER_FLUSHED = 3;
@@ -301,6 +246,21 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
         @Override
         public void saveCompleted(String filename, boolean success) {
             sendMessage(obtainMessage(SAVE_COMPLETED));
+        }
+
+        @Override
+        public void onCameraRender() {
+            // call C++ lib
+            Lib.ocvRec2Frame(0, System.nanoTime());
+
+            // send flush command to encoder thread
+            Recording2Activity activity = mActivity.get();
+            if (activity == null) return;
+            activity.mEncode.getHandler().sendFlush();
+        }
+
+        @Override
+        public void onCameraFrame(byte[] data) {
         }
 
         @Override
@@ -338,7 +298,7 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
         float q50;
         float q95;
         float q99;
-        private JavaCameraView mPreview;
+        private SurfaceView mPreview;
         private boolean mPreviewReady = false;
         private TextView mTopText;
         private String mTopTextLast;
@@ -350,9 +310,7 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
          */
         void init() {
             setContentView(R.layout.activity_ocvrec2);
-            mPreview = (JavaCameraView) findViewById(R.id.ocvrec2_preview);
-            mPreview.setVisibility(JavaCameraView.VISIBLE);
-            mPreview.setCvCameraViewListener(Recording2Activity.this);
+            mPreview = (SurfaceView) findViewById(R.id.ocvrec2_preview);
             mPreview.getHolder().addCallback(this);
             mBottomText = (TextView) findViewById(R.id.ocvrec2_bottom_text);
             mBottomTextLast = mBottomText.getText().toString();
@@ -380,8 +338,6 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
                 bottomText = getString(R.string.errorOther);
             } else if (mStatus == Status.PERMISSION_ERROR) {
                 bottomText = getString(R.string.errorPermissionFail);
-            } else if (mStatus == Status.OPENCV_ERROR) {
-                bottomText = getString(R.string.errorOpenCVInitFail);
             } else {
                 bottomText = String.format(Locale.US, "%.2f / %.2f / %.2f", q50, q95, q99);
             }
@@ -412,13 +368,16 @@ public final class Recording2Activity extends Activity implements CameraBridgeVi
             return mPreviewReady;
         }
 
-        void startPreview() {
-            mPreview.setMaxFrameSize(MAX_WIDTH, MAX_HEIGHT);
-            mPreview.enableView();
+        Surface getPreviewSurface() {
+            return mPreview.getHolder().getSurface();
         }
 
-        void stopPreview() {
-            mPreview.disableView();
+        int getPreviewWidth() {
+            return mPreview.getWidth();
+        }
+
+        int getPreviewHeight() {
+            return mPreview.getHeight();
         }
     }
 }

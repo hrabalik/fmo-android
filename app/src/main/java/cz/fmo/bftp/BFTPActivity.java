@@ -118,13 +118,8 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
             return;
         }
 
-        mCapture = new CameraCapture(mHandler);
         mStatus = Status.CAMERA_INIT;
         update();
-    }
-
-    private void cameraReady() {
-        initStep2();
     }
 
     /**
@@ -133,6 +128,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void initStep2() {
         if (mStatus != Status.CAMERA_INIT) return;
+        mCapture = new CameraCapture();
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();
@@ -296,7 +292,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Renderer.Callback, CameraCapture.Callback, Lib.Callback {
+            EncodeThread.Callback, Renderer.Callback, Lib.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
@@ -321,11 +317,6 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         @Override
         public void onFrameAvailable() {
             sendMessage(obtainMessage(FRAME_AVAILABLE));
-        }
-
-        @Override
-        public void onCameraReady() {
-            sendMessage(obtainMessage(CAMERA_READY));
         }
 
         @Override
@@ -355,9 +346,6 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
                     break;
                 case FRAME_AVAILABLE:
                     activity.frameAvailable();
-                    break;
-                case CAMERA_READY:
-                    activity.cameraReady();
                     break;
                 case FRAME_TIMINGS:
                     Timings timings = (Timings) msg.obj;

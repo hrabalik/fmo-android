@@ -14,7 +14,8 @@ import android.media.MediaFormat;
  * <p>
  * To stop receiving frames, call the release() method.
  */
-class CameraCapture implements Camera.PreviewCallback {
+@SuppressWarnings("deprecation")
+public class CameraCapture implements Camera.PreviewCallback {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
     private static final int PREFER_HEIGHT = 1080; // pixels
@@ -33,19 +34,18 @@ class CameraCapture implements Camera.PreviewCallback {
      * Selects a suitable camera, and sets the callback to be called once the camera is ready.
      * Do not call any methods before the callback is triggered.
      */
-    CameraCapture(Callback cb) {
+    public CameraCapture() {
         int bestCam = selectCamera();
         mCamera = Camera.open(bestCam);
         if (mCamera == null) throw new RuntimeException("Failed to open camera");
         mParams = mCamera.getParameters();
         configureCamera();
-        cb.onCameraReady();
     }
 
     /**
      * Starts writing frames into the provided target texture.
      */
-    void start(SurfaceTexture outputTexture) {
+    public void start(SurfaceTexture outputTexture) {
         try {
             mCamera.setPreviewTexture(outputTexture);
 
@@ -73,7 +73,7 @@ class CameraCapture implements Camera.PreviewCallback {
     /**
      * Stops writing frames.
      */
-    private void stop() {
+    public void stop() {
         mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mStarted = false;
@@ -179,7 +179,7 @@ class CameraCapture implements Camera.PreviewCallback {
     /**
      * @return a MediaFormat object describing a video format compatible with the camera output
      */
-    MediaFormat getMediaFormat() {
+    public MediaFormat getMediaFormat() {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
         f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
@@ -188,23 +188,19 @@ class CameraCapture implements Camera.PreviewCallback {
         return f;
     }
 
-    int getWidth() {
+    public int getWidth() {
         return mSize.width;
     }
 
-    int getHeight() {
+    public int getHeight() {
         return mSize.height;
     }
 
-    int getBitRate() {
+    public int getBitRate() {
         return PREFER_BIT_RATE;
     }
 
-    float getFrameRate() {
+    public float getFrameRate() {
         return mFrameRate;
-    }
-
-    interface Callback {
-        void onCameraReady();
     }
 }
