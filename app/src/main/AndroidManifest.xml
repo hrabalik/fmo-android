@@ -42,11 +42,18 @@
         </activity>
 
         <activity
+            android:name=".bftp.BFTPActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="BFTP"
+            android:screenOrientation="landscape"
+            android:theme="@style/Fullscreen" />
+
+        <activity
             android:name=".ocvrec.OCVRecActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="OCVRec"
             android:screenOrientation="landscape"
-            android:theme="@style/Fullscreen" />
+            android:theme="@style/Fullscreen"/>
 
         <activity
             android:name=".ocvrec2.OcvRec2Activity"

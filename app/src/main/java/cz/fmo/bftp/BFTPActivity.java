@@ -9,19 +9,24 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 
+import cz.fmo.Lib;
 import cz.fmo.R;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
+import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;
 import cz.fmo.util.FileManager;
 
+/**
+ * Blast from the past activity -- complicated, but works well.
+ */
 public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
     private static final float BUFFER_SIZE_SEC = 7.f;
     private static final String CAMERA_PERMISSION = Manifest.permission.CAMERA;
@@ -38,6 +43,11 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
     private Renderer mRenderer;
     private EncodeThread mEncodeThread;
     private SaveMovieThread mSaveMovieThread;
+    private float q50;
+    private float q95;
+    private float q99;
+    private String mStatusTextLast = "";
+    private String mFpsStringTextLast = "";
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -136,6 +146,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         mRenderer = new Renderer(mHandler);
         mCapture.start(mRenderer.getInputTexture());
         mStatus = Status.RUNNING;
+        Lib.ocvRec2Start(mCapture.getWidth(), mCapture.getHeight(), mHandler);
         update();
     }
 
@@ -143,33 +154,43 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
      * Updates all dynamic UI elements, such as labels and buttons.
      */
     private void update() {
-        boolean enableSaveButton = false;
         String statusString;
+        String fpsString = "";
 
         if (mStatus == Status.STOPPED) {
             statusString = getString(R.string.recordingStopped);
         } else if (mStatus == Status.DENIED) {
-            statusString = getString(R.string.cameraPermissionDenied);
+            statusString = getString(R.string.errorPermissionFail);
         } else if (mStatus == Status.CAMERA_INIT) {
             statusString = getString(R.string.cameraInitializing);
         } else if (mSaveStatus == SaveStatus.SAVING) {
             statusString = getString(R.string.savingVideo);
         } else {
-            enableSaveButton = true;
             long lengthUs = mEncodeThread.getBufferContentsDuration();
             float lengthSec = ((float) lengthUs) / 1000000.f;
             statusString = getString(R.string.videoLength, lengthSec);
+            fpsString = String.format(Locale.US, "%.2f / %.2f / %.2f", q50, q95, q99);
         }
 
-        TextView status = (TextView) findViewById(R.id.status_text);
-        status.setText(statusString);
-        Button saveButton = (Button) findViewById(R.id.save_button);
-        saveButton.setEnabled(enableSaveButton);
+        if (!mStatusTextLast.equals(statusString)) {
+            TextView status = (TextView) findViewById(R.id.status_text);
+            status.setText(statusString);
+            mStatusTextLast = statusString;
+        }
+
+        if (!mFpsStringTextLast.equals(fpsString)) {
+            TextView status = (TextView) findViewById(R.id.fps_text);
+            status.setText(fpsString);
+            mFpsStringTextLast = fpsString;
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+
+        Lib.ocvRec2Stop();
+
         mStatus = Status.STOPPED;
         if (mEncoderSurface != null) {
             mEncoderSurface.release();
@@ -252,6 +273,8 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         mEncodeThread.getHandler().sendFlush();
         mEncoderSurface.presentationTime(mRenderer.getTimestamp());
         mEncoderSurface.swapBuffers();
+
+        Lib.ocvRec2Frame(0, mRenderer.getTimestamp());
     }
 
     private enum Status {
@@ -266,12 +289,19 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         NOT_READY, READY
     }
 
+    private static class Timings {
+        float q50 = 0;
+        float q95 = 0;
+        float q99 = 0;
+    }
+
     private static class Handler extends android.os.Handler implements SaveMovieThread.Callback,
-            EncodeThread.Callback, Renderer.Callback, CameraCapture.Callback {
+            EncodeThread.Callback, Renderer.Callback, CameraCapture.Callback, Lib.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
         private static final int CAMERA_READY = 4;
+        private static final int FRAME_TIMINGS = 5;
         private final WeakReference<BFTPActivity> mActivity;
 
         Handler(BFTPActivity activity) {
@@ -299,6 +329,19 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         }
 
         @Override
+        public void frameTimings(float q50, float q95, float q99) {
+            Timings timings = new Timings();
+            timings.q50 = q50;
+            timings.q95 = q95;
+            timings.q99 = q99;
+            sendMessage(obtainMessage(FRAME_TIMINGS, timings));
+        }
+
+        @Override
+        public void cameraError() {
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             BFTPActivity activity = mActivity.get();
             if (activity == null) return;
@@ -316,6 +359,12 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
                 case CAMERA_READY:
                     activity.cameraReady();
                     break;
+                case FRAME_TIMINGS:
+                    Timings timings = (Timings) msg.obj;
+                    activity.q50 = timings.q50;
+                    activity.q95 = timings.q95;
+                    activity.q99 = timings.q99;
+                    activity.update();
                 default:
                     break;
             }

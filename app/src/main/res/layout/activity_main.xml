@@ -33,12 +33,20 @@
             android:text="Play movie surface activity" />
 
         <Button
+            android:id="@+id/plaBFTPActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:onClick="runBFTPActivity"
+            android:text="Blast from the past activity"/>
+
+        <Button
             android:id="@+id/playRecordingActivityButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="start|top"
             android:onClick="runRecordingActivity"
-            android:text="Recording activity" />
+            android:text="Recording activity"/>
 
         <Button
             android:id="@+id/playOCVRecActivityButton"

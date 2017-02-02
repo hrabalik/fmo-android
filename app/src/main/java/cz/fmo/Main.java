@@ -127,4 +127,8 @@ public class Main extends AppCompatActivity {
     public void runOCVRec2Activity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, cz.fmo.ocvrec2.OcvRec2Activity.class));
     }
+
+    public void runBFTPActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, cz.fmo.bftp.BFTPActivity.class));
+    }
 }
