@@ -34,6 +34,8 @@ import cz.fmo.util.FileManager;
  * The main activity, facilitating video preview, encoding and saving.
  */
 public final class OcvRec2Activity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
+    private static final int MAX_WIDTH = 1600;
+    private static final int MAX_HEIGHT = 900;
     private static final int BIT_RATE = 6 * 1024 * 1024;
     private static final int FRAME_RATE = 30;
     private static final int I_FRAME_INTERVAL = 1;
@@ -363,7 +365,7 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
 
             String topText;
             if (mStatus == Status.RUNNING) {
-                topText = getString(R.string.secondsOfVideo, timeInBuffer);
+                topText = getString(R.string.videoLength, timeInBuffer);
             } else {
                 topText = "";
             }
@@ -411,6 +413,7 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
         }
 
         void startPreview() {
+            mPreview.setMaxFrameSize(MAX_WIDTH, MAX_HEIGHT);
             mPreview.enableView();
         }
 
