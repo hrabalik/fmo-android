@@ -64,6 +64,14 @@
             android:onClick="runOCVRec2Activity"
             android:text="OCVRec2 Activity"/>
 
+        <Button
+            android:id="@+id/playRecording2ActivityButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|top"
+            android:onClick="runRecording2Activity"
+            android:text="Recording2 Activity"/>
+
         <TextView
             android:id="@+id/mainMenuTextView"
             android:layout_width="match_parent"

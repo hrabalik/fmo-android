@@ -131,4 +131,8 @@ public class Main extends AppCompatActivity {
     public void runBFTPActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, cz.fmo.bftp.BFTPActivity.class));
     }
+
+    public void runRecording2Activity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, cz.fmo.recording2.Recording2Activity.class));
+    }
 }

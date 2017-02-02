@@ -1,5 +1,6 @@
 package cz.fmo.bftp;
 
+import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -13,7 +14,7 @@ import android.media.MediaFormat;
  * <p>
  * To stop receiving frames, call the release() method.
  */
-class CameraCapture {
+class CameraCapture implements Camera.PreviewCallback {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
     private static final int PREFER_HEIGHT = 1080; // pixels
@@ -47,6 +48,15 @@ class CameraCapture {
     void start(SurfaceTexture outputTexture) {
         try {
             mCamera.setPreviewTexture(outputTexture);
+
+            // testing getting previews via callback
+            Camera.Size sz = mParams.getPreviewSize();
+            int bpp = ImageFormat.getBitsPerPixel(mParams.getPreviewFormat());
+            for (int i = 0; i < 4; i++) {
+                byte[] buffer = new byte[(sz.width * sz.height * bpp) / 8];
+                mCamera.addCallbackBuffer(buffer);
+            }
+            mCamera.setPreviewCallbackWithBuffer(this);
         } catch (java.io.IOException e) {
             throw new RuntimeException("setOutputTexture() failed");
         }
@@ -54,10 +64,17 @@ class CameraCapture {
         mStarted = true;
     }
 
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+        mCamera.getParameters();
+        mCamera.addCallbackBuffer(data);
+    }
+
     /**
      * Stops writing frames.
      */
     private void stop() {
+        mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mStarted = false;
     }

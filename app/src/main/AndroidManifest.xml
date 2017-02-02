@@ -70,6 +70,13 @@
             android:theme="@style/Fullscreen" />
 
         <activity
+            android:name="cz.fmo.recording2.Recording2Activity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Recording2"
+            android:screenOrientation="landscape"
+            android:theme="@style/Fullscreen"/>
+
+        <activity
             android:name="com.android.grafika.PlayMovieSurfaceActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Play movie"
