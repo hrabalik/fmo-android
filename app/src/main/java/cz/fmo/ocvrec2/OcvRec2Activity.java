@@ -34,6 +34,12 @@ import cz.fmo.util.FileManager;
  * The main activity, facilitating video preview, encoding and saving.
  */
 public final class OcvRec2Activity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
+    private static final int BIT_RATE = 6 * 1024 * 1024;
+    private static final int FRAME_RATE = 30;
+    private static final int I_FRAME_INTERVAL = 1;
+    private static final float BUFFER_SECONDS = 7;
+    private static final String VIDEO_MIME = MediaFormat.MIMETYPE_VIDEO_AVC;
+    private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
     private Status mStatus = Status.STOPPED;
@@ -98,15 +104,20 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
      * - onRequestPermissionsResult(), when camera permissions have just been granted
      */
     private void init() {
+        // reality check: don't initialize twice
         if (mStatus == Status.RUNNING) return;
+
+        // stop if the preview surface has not been created yet
         if (!mGUI.isPreviewReady()) return;
 
+        // stop if the camera permissions haven't been granted
         if (isPermissionDenied()) {
             mStatus = Status.PERMISSION_ERROR;
             mGUI.update();
             return;
         }
 
+        // stop if OpenCV initialization fails
         boolean ocvInit = OpenCVLoader.initDebug();
         if (!ocvInit) {
             mStatus = Status.OPENCV_ERROR;
@@ -114,8 +125,10 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
             return;
         }
 
+        // everything is ready, start sending frames (triggers onCameraViewStarted)
         mGUI.startPreview();
 
+        // refresh GUI
         mStatus = Status.RUNNING;
         mGUI.update();
     }
@@ -129,26 +142,38 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
         mStatus = Status.STOPPED;
     }
 
+    /**
+     * Prepare to receive camera frames (see onCameraFrame).
+     */
     @Override
     public void onCameraViewStarted(int width, int height) {
-        MediaFormat format = MediaFormat.createVideoFormat("video/avc", width, height);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, 6 * 1024 * 1024);
+        // make a suitably-sized cyclic buffer
+        CyclicBuffer buffer = new CyclicBuffer(BIT_RATE, FRAME_RATE, BUFFER_SECONDS);
+
+        // create and fill a MediaFormat instance
+        MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
-        format.setInteger(MediaFormat.KEY_FRAME_RATE, 30);
-        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1);
+        format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
+        format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, I_FRAME_INTERVAL);
 
-        CyclicBuffer buffer = new CyclicBuffer(6 * 1024 * 1024, 30, 7);
+        // create and start dedicated threads
         mEncode = new EncodeThread(format, buffer, mHandler);
         mEncode.start();
         mSaveMovie = new SaveMovieThread(buffer, mHandler);
         mSaveMovie.start();
 
+        // create a bitmap for caching
         mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
+        // C++ initialization
         Lib.ocvRec2Start(width, height, mHandler);
     }
 
+    /**
+     * Perform cleanup after the last camera frame (see onCameraFrame) has been received.
+     */
     @Override
     public void onCameraViewStopped() {
         Lib.ocvRec2Stop();
@@ -179,30 +204,45 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
         }
     }
 
+    /**
+     * Process a frame.
+     *
+     * @return Image to be rendered on the screen.
+     */
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        // get a timestamp that will represent the frame time
+        long timeNs = System.nanoTime();
+
+        // request that the output of the encoder is emptied
         mEncode.getHandler().sendFlush();
+
+        // send the unmodified frame to the video encoder input
         Mat rgba = inputFrame.rgba();
         org.opencv.android.Utils.matToBitmap(rgba, mBitmap);
         Canvas canvas = mEncode.getInputSurface().lockCanvas(null);
         canvas.drawBitmap(mBitmap, 0, 0, null);
         mEncode.getInputSurface().unlockCanvasAndPost(canvas);
 
+        // send the gray-scale version of the frame to C++
         Mat gray = inputFrame.gray();
-        Lib.ocvRec2Frame(gray.getNativeObjAddr());
+        Lib.ocvRec2Frame(gray.getNativeObjAddr(), timeNs);
         return gray;
     }
 
+    /**
+     * Called when the encoder output has been moved into the cyclic buffer.
+     */
     private void onEncoderFlushed() {
         mGUI.timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
         mGUI.update();
     }
 
-    public void onClickSave(View view) {
+    public void onClickSave(@SuppressWarnings("UnusedParameters") View view) {
         if (mStatus != Status.RUNNING) return;
         mStatus = Status.SAVING;
         FileManager fileMan = new FileManager(this);
-        File outFile = fileMan.open("video.mp4");
+        File outFile = fileMan.open(FILENAME);
         mSaveMovie.getHandler().sendSave(outFile);
     }
 
@@ -221,6 +261,10 @@ public final class OcvRec2Activity extends Activity implements CameraBridgeViewB
         float q99 = 0;
     }
 
+    /**
+     * A subclass that receives all relevant messages on an arbitrary thread and forwards them to
+     * the main thread.
+     */
     private static class Handler extends android.os.Handler implements Lib.Callback,
             EncodeThread.Callback, SaveMovieThread.Callback {
         private static final int FRAME_TIMINGS = 1;

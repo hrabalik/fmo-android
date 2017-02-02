@@ -50,10 +50,10 @@ JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRec2Start
 /*
  * Class:     cz_fmo_Lib
  * Method:    ocvRec2Frame
- * Signature: (J)V
+ * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRec2Frame
-        (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     cz_fmo_Lib

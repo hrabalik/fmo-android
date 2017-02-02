@@ -3,6 +3,10 @@
 #include <chrono>
 
 namespace {
+
+    template<typename T>
+    void makeUseOf(const T &) { }
+
     /**
      * Discard half of the elements in a partially sorted vector so that the statistics are not
      * affected.
@@ -46,7 +50,6 @@ namespace {
     struct {
         Reference<Callback> cbRef;
         std::vector<int64_t> timesVec;
-        std::chrono::high_resolution_clock clock;
     } global;
 }
 
@@ -54,20 +57,25 @@ void Java_cz_fmo_Lib_ocvRec2Start(JNIEnv *env, jclass, jint width, jint height, 
     global.cbRef = {env, cbObj};
     global.timesVec.clear();
     global.timesVec.reserve(MAX_TIMES);
+
+    makeUseOf(width);
+    makeUseOf(height);
 }
 
 void Java_cz_fmo_Lib_ocvRec2Stop(JNIEnv *env, jclass) {
     global.cbRef.release(env);
 }
 
-void Java_cz_fmo_Lib_ocvRec2Frame(JNIEnv *env, jclass, jlong matPtr) {
-    static std::chrono::high_resolution_clock::time_point lastTime = global.clock.now();
-    auto time = global.clock.now();
-    auto deltaNs = std::chrono::duration_cast<std::chrono::nanoseconds>(time - lastTime);
+void Java_cz_fmo_Lib_ocvRec2Frame(JNIEnv *env, jclass, jlong matPtr, jlong timeNs) {
+    static int64_t lastTime = timeNs;
+    int64_t time = timeNs;
+    auto deltaNs = time - lastTime;
     lastTime = time;
 
-    if (deltaNs.count() > 500000) {
+    if (deltaNs > 500000) {
         auto cb = global.cbRef.get(env);
-        timeStats(global.timesVec, deltaNs.count(), cb);
+        timeStats(global.timesVec, deltaNs, cb);
+
+        makeUseOf(matPtr);
     }
 }

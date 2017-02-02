@@ -18,7 +18,7 @@ public final class Lib {
 
     public static native void ocvRec2Start(int width, int height, Callback cb);
 
-    public static native void ocvRec2Frame(long matPtr);
+    public static native void ocvRec2Frame(long matPtr, long timeNs);
 
     public static native void ocvRec2Stop();
 
