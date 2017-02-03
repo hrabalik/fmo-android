@@ -7,6 +7,8 @@ find_library(lib-gles GLESv3)
 add_library(test1 SHARED
     assert.hpp
     assert.cpp
+    stats.hpp
+    stats.cpp
     java_interface.hpp
     java_interface.cpp
     java_classes.hpp
