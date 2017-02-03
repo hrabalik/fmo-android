@@ -118,16 +118,6 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
             return;
         }
 
-        mStatus = Status.CAMERA_INIT;
-        update();
-    }
-
-    /**
-     * Called by:
-     * - cameraReady(), when the camera has just become ready
-     */
-    private void initStep2() {
-        if (mStatus != Status.CAMERA_INIT) return;
         mCapture = new CameraCapture(null);
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
@@ -157,8 +147,8 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
             statusString = getString(R.string.recordingStopped);
         } else if (mStatus == Status.DENIED) {
             statusString = getString(R.string.errorPermissionFail);
-        } else if (mStatus == Status.CAMERA_INIT) {
-            statusString = getString(R.string.cameraInitializing);
+        } else if (mStatus == Status.CAMERA_ERROR) {
+            statusString = getString(R.string.errorOther);
         } else if (mSaveStatus == SaveStatus.SAVING) {
             statusString = getString(R.string.savingVideo);
         } else {
@@ -274,7 +264,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
     }
 
     private enum Status {
-        STOPPED, RUNNING, DENIED, CAMERA_INIT
+        STOPPED, RUNNING, DENIED, CAMERA_ERROR
     }
 
     private enum SaveStatus {
@@ -296,7 +286,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
         private static final int FLUSH_COMPLETED = 1;
         private static final int SAVE_COMPLETED = 2;
         private static final int FRAME_AVAILABLE = 3;
-        private static final int CAMERA_READY = 4;
+        private static final int CAMERA_ERROR = 4;
         private static final int FRAME_TIMINGS = 5;
         private final WeakReference<BFTPActivity> mActivity;
 
@@ -330,6 +320,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
 
         @Override
         public void cameraError() {
+            sendMessage(obtainMessage(CAMERA_ERROR));
         }
 
         @Override
@@ -346,6 +337,10 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
                     break;
                 case FRAME_AVAILABLE:
                     activity.frameAvailable();
+                    break;
+                case CAMERA_ERROR:
+                    activity.mStatus = Status.CAMERA_ERROR;
+                    activity.update();
                     break;
                 case FRAME_TIMINGS:
                     Timings timings = (Timings) msg.obj;

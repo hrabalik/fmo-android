@@ -262,6 +262,11 @@ public final class Recording2Activity extends Activity {
         }
 
         @Override
+        public void onCameraError() {
+            sendMessage(obtainMessage(CAMERA_ERROR));
+        }
+
+        @Override
         public void handleMessage(android.os.Message msg) {
             Recording2Activity activity = mActivity.get();
             if (activity == null) return;

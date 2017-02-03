@@ -11,8 +11,9 @@ import android.support.annotation.Nullable;
 /**
  * A class encapsulating android.hardware.Camera.
  * <p>
- * On construction, the best camera (according to preferred parameters) is selected. Your target
- * texture will immediately start receiving frames.
+ * On construction, the best camera (according to preferred parameters) is selected. Use the start()
+ * to start receiving frames into the provided SurfaceTexture. Additionally, raw data can be
+ * received using the onCameraFrame() method of the callback.
  * <p>
  * To stop receiving frames, call the release() method.
  */
@@ -24,32 +25,44 @@ public class CameraCapture implements Camera.PreviewCallback {
     private static final float PREFER_FRAME_RATE = 30.f; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
-
-    private final Camera mCamera;
-    private final Camera.Parameters mParams;
     private final Callback mCb;
+    private Camera mCamera;
+    private Camera.Parameters mParams;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
     private boolean mStarted = false;
     private boolean mReleased = false;
 
     /**
-     * Selects a suitable camera, and sets the callback to be called once the camera is ready.
-     * Do not call any methods before the callback is triggered.
+     * Selects a suitable camera and opens it. The provided callback is used to report errors and
+     * provide image data.
      */
     public CameraCapture(@Nullable Callback cb) {
         mCb = cb;
         int bestCam = selectCamera();
+
+        if (bestCam < 0) {
+            if (mCb != null) mCb.onCameraError();
+            return;
+        }
+
         mCamera = Camera.open(bestCam);
-        if (mCamera == null) throw new RuntimeException("Failed to open camera");
+
+        if (mCamera == null) {
+            if (mCb != null) mCb.onCameraError();
+            return;
+        }
+
         mParams = mCamera.getParameters();
         configureCamera();
     }
 
     /**
-     * Starts writing frames into the provided target texture.
+     * Starts writing frames into the provided target texture and sending raw data via the callback.
      */
     public void start(@NonNull SurfaceTexture outputTexture) {
+        if (mCamera == null) return;
+
         try {
             mCamera.setPreviewTexture(outputTexture);
 
@@ -63,7 +76,9 @@ public class CameraCapture implements Camera.PreviewCallback {
                 mCamera.setPreviewCallbackWithBuffer(this);
             }
         } catch (java.io.IOException e) {
-            throw new RuntimeException("setOutputTexture() failed");
+            if (mCb != null) mCb.onCameraError();
+            mCamera = null;
+            return;
         }
         mCamera.startPreview();
         mStarted = true;
@@ -82,6 +97,7 @@ public class CameraCapture implements Camera.PreviewCallback {
      * Stops writing frames.
      */
     public void stop() {
+        if (mCamera == null) return;
         mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mStarted = false;
@@ -100,6 +116,7 @@ public class CameraCapture implements Camera.PreviewCallback {
 
         if (mCamera != null) {
             mCamera.release();
+            mCamera = null;
         }
     }
 
@@ -108,7 +125,7 @@ public class CameraCapture implements Camera.PreviewCallback {
      */
     private int selectCamera() {
         int nCam = Camera.getNumberOfCameras();
-        if (nCam == 0) throw new RuntimeException("No camera");
+        if (nCam == 0) return -1;
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
 
         for (int i = 0; i < nCam; i++) {
@@ -153,9 +170,10 @@ public class CameraCapture implements Camera.PreviewCallback {
             }
         }
 
-        if (bestSize == null) throw new RuntimeException("No preview size");
-        mParams.setPreviewSize(bestSize.width, bestSize.height);
-        mSize = bestSize;
+        if (bestSize != null) {
+            mParams.setPreviewSize(bestSize.width, bestSize.height);
+            mSize = bestSize;
+        }
     }
 
     /**
@@ -179,9 +197,10 @@ public class CameraCapture implements Camera.PreviewCallback {
             }
         }
 
-        if (bestRange == null) throw new RuntimeException("No FPS range");
-        mParams.setPreviewFpsRange(bestRange[0], bestRange[1]);
-        mFrameRate = (float) (bestRange[0] + bestRange[1]) / (2 * 1000.f);
+        if (bestRange != null) {
+            mParams.setPreviewFpsRange(bestRange[0], bestRange[1]);
+            mFrameRate = (float) (bestRange[0] + bestRange[1]) / (2 * 1000.f);
+        }
     }
 
     /**
@@ -214,5 +233,7 @@ public class CameraCapture implements Camera.PreviewCallback {
 
     public interface Callback {
         void onCameraFrame(byte[] dataYUV420SP);
+
+        void onCameraError();
     }
 }
