@@ -22,25 +22,25 @@ namespace {
 
     template<typename T>
     struct Stats {
-        Stats(size_t storageSize, int sortPeriod, int warmUp, T defVal) :
-                mStorageSize(storageSize), mSortPeriod(sortPeriod), mWarmUp(warmUp),
-                mDefVal(defVal) {
+        Stats(const Stats &) = delete;
+
+        Stats &operator=(const Stats &) = delete;
+
+        Stats(size_t storageSize, int sortPeriod, int warmUpFrames) :
+                mStorageSize(storageSize), mSortPeriod(sortPeriod), mWarmUpFrames(warmUpFrames) {
             mVec.reserve(mStorageSize);
-            reset();
         }
 
-        void reset() {
+        void reset(T defVal) {
             mVec.clear();
             mWarmUpCounter = 0;
-            mQuantiles.q50 = mDefVal;
-            mQuantiles.q95 = mDefVal;
-            mQuantiles.q99 = mDefVal;
+            mQuantiles.q50 = mQuantiles.q95 = mQuantiles.q99 = defVal;
         }
 
-        void add(T deltaNs) {
-            if (mWarmUpCounter++ < mWarmUp) return;
-            mVec.push_back(deltaNs);
-            if (mVec.size() % mSortPeriod != 0) return;
+        bool add(T val) {
+            if (mWarmUpCounter++ < mWarmUpFrames) return false;
+            mVec.push_back(val);
+            if (mVec.size() % mSortPeriod != 0) return false;
 
             auto iter50 = begin(mVec) + ((50 * mVec.size()) / 100);
             auto iter95 = begin(mVec) + ((95 * mVec.size()) / 100);
@@ -55,14 +55,14 @@ namespace {
             mQuantiles.q99 = *iter99;
 
             if (mVec.size() >= mStorageSize) decimate(mVec);
+            return true;
         }
 
-        Quantiles<T> quantiles() {
+        const Quantiles<T> &quantiles() const {
             return mQuantiles;
         }
 
     private:
-
         /**
          * Discard half of the elements in a partially sorted vector so that the statistics are not
          * affected.
@@ -87,61 +87,63 @@ namespace {
 
         const size_t mStorageSize;
         const int mSortPeriod;
-        const int mWarmUp;
-        const T mDefVal;
+        const int mWarmUpFrames;
         std::vector<T> mVec;
         int mWarmUpCounter;
         Quantiles<T> mQuantiles;
     };
 
-    struct TimeStats {
-        TimeStats() : mStats(10000, SORT_PERIOD, 10, static_cast<int64_t>(1e9 / 30)) {
-            reset();
-        }
+    struct FrameStats {
+        FrameStats() : mStats(STORAGE_SIZE, SORT_PERIOD, WARM_UP_FRAMES) { }
 
-        void reset() {
-            mStats.reset();
+        void reset(float defaultFps) {
+            mStats.reset(toNs(defaultFps));
             mLastTimeNs = nanoTime();
-            mFrameNum = 0;
+            updateMyQuantiles();
         }
 
-        void tick(const Callback &callback) {
+        bool tick() {
             auto timeNs = nanoTime();
             auto deltaNs = timeNs - mLastTimeNs;
             mLastTimeNs = timeNs;
-            if (deltaNs < MIN_DELTA) return;
-            mStats.add(deltaNs);
-
-            if (mFrameNum++ % SORT_PERIOD != 0) return;
-            auto q = toFps(mStats.quantiles());
-            callback.frameTimings(q.q50, q.q95, q.q99);
+            if (deltaNs < MIN_DELTA) return false;
+            auto updated = mStats.add(deltaNs);
+            if (updated) updateMyQuantiles();
+            return updated;
         }
+
+        const Quantiles<float> &quantilesFps() const { return mQuantilesFps; }
 
     private:
-        static Quantiles<float> toFps(Quantiles<int64_t> ns) {
-            Quantiles<float> result;
-            result.q50 = static_cast<float>(1e9 / ns.q50);
-            result.q95 = static_cast<float>(1e9 / ns.q95);
-            result.q99 = static_cast<float>(1e9 / ns.q99);
-            return result;
+        void updateMyQuantiles() {
+            auto &quantiles = mStats.quantiles();
+            mQuantilesFps.q50 = toFps(quantiles.q50);
+            mQuantilesFps.q95 = toFps(quantiles.q95);
+            mQuantilesFps.q99 = toFps(quantiles.q99);
         }
 
-        static const int64_t MIN_DELTA = 500000; // 0.5 ms
+        static int64_t toNs(float fps) { return static_cast<uint64_t>(1e9 / fps); }
+
+        static float toFps(int64_t ns) { return static_cast<float>(1e9 / ns); }
+
+        static const size_t STORAGE_SIZE = 1000;
         static const int SORT_PERIOD = 100;
+        static const int WARM_UP_FRAMES = 10;
+        static const int64_t MIN_DELTA = 500000; // 500K ns, 0.5 ms
         int64_t mLastTimeNs;
         Stats<int64_t> mStats;
-        int mFrameNum;
+        Quantiles<float> mQuantilesFps;
     };
 
     struct {
         Reference<Callback> callbackRef;
-        TimeStats timeStats;
+        FrameStats frameStats;
     } global;
 }
 
 void Java_cz_fmo_Lib_recording2Start(JNIEnv *env, jclass, jint width, jint height, jobject cbObj) {
     global.callbackRef = {env, cbObj};
-    global.timeStats.reset();
+    global.frameStats.reset(30.f);
 
     makeUseOf(width);
     makeUseOf(height);
@@ -152,7 +154,10 @@ void Java_cz_fmo_Lib_recording2Stop(JNIEnv *env, jclass) {
 }
 
 void Java_cz_fmo_Lib_recording2Frame(JNIEnv *env, jclass, jbyteArray dataYUV420SP) {
-    auto callback = global.callbackRef.get(env);
-    global.timeStats.tick(callback);
+    if (global.frameStats.tick()) {
+        auto fps = global.frameStats.quantilesFps();
+        auto callback = global.callbackRef.get(env);
+        callback.frameTimings(fps.q50, fps.q95, fps.q99);
+    }
     makeUseOf(dataYUV420SP);
 }
