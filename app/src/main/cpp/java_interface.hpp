@@ -63,6 +63,30 @@ JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRec2Frame
 JNIEXPORT void JNICALL Java_cz_fmo_Lib_ocvRec2Stop
         (JNIEnv *, jclass);
 
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    recording2Start
+ * Signature: (IILcz/fmo/Lib/Callback;)V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_recording2Start
+        (JNIEnv *, jclass, jint, jint, jobject);
+
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    recording2Frame
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_recording2Frame
+        (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     cz_fmo_Lib
+ * Method:    recording2Stop
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_cz_fmo_Lib_recording2Stop
+        (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

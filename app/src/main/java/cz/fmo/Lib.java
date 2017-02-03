@@ -22,6 +22,12 @@ public final class Lib {
 
     public static native void ocvRec2Stop();
 
+    public static native void recording2Start(int width, int height, Callback cb);
+
+    public static native void recording2Frame(byte[] dataYUV420SP);
+
+    public static native void recording2Stop();
+
     public interface Callback {
         void frameTimings(float q50, float q95, float q99);
 

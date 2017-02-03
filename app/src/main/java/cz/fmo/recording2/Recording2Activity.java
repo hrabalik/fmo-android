@@ -123,7 +123,7 @@ public final class Recording2Activity extends Activity {
                 mGUI.getPreviewHeight());
 
         // C++ initialization
-        Lib.ocvRec2Start(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+        Lib.recording2Start(mCamera.getWidth(), mCamera.getHeight(), mHandler);
 
         // refresh GUI
         mStatus = Status.RUNNING;
@@ -142,7 +142,7 @@ public final class Recording2Activity extends Activity {
     protected void onPause() {
         super.onPause();
 
-        Lib.ocvRec2Stop();
+        Lib.recording2Stop();
 
         if (mCamera != null) {
             mCamera.getHandler().sendKill();
@@ -250,9 +250,6 @@ public final class Recording2Activity extends Activity {
 
         @Override
         public void onCameraRender() {
-            // call C++ lib
-            Lib.ocvRec2Frame(0, System.nanoTime());
-
             // send flush command to encoder thread
             Recording2Activity activity = mActivity.get();
             if (activity == null) return;
@@ -260,7 +257,8 @@ public final class Recording2Activity extends Activity {
         }
 
         @Override
-        public void onCameraFrame(byte[] data) {
+        public void onCameraFrame(byte[] dataYUV420SP) {
+            Lib.recording2Frame(dataYUV420SP);
         }
 
         @Override

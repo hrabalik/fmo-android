@@ -5,6 +5,8 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 /**
  * A class encapsulating android.hardware.Camera.
@@ -25,6 +27,7 @@ public class CameraCapture implements Camera.PreviewCallback {
 
     private final Camera mCamera;
     private final Camera.Parameters mParams;
+    private final Callback mCb;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
     private boolean mStarted = false;
@@ -34,7 +37,8 @@ public class CameraCapture implements Camera.PreviewCallback {
      * Selects a suitable camera, and sets the callback to be called once the camera is ready.
      * Do not call any methods before the callback is triggered.
      */
-    public CameraCapture() {
+    public CameraCapture(@Nullable Callback cb) {
+        mCb = cb;
         int bestCam = selectCamera();
         mCamera = Camera.open(bestCam);
         if (mCamera == null) throw new RuntimeException("Failed to open camera");
@@ -45,18 +49,19 @@ public class CameraCapture implements Camera.PreviewCallback {
     /**
      * Starts writing frames into the provided target texture.
      */
-    public void start(SurfaceTexture outputTexture) {
+    public void start(@NonNull SurfaceTexture outputTexture) {
         try {
             mCamera.setPreviewTexture(outputTexture);
 
-            // testing getting previews via callback
-            Camera.Size sz = mParams.getPreviewSize();
-            int bpp = ImageFormat.getBitsPerPixel(mParams.getPreviewFormat());
-            for (int i = 0; i < 4; i++) {
-                byte[] buffer = new byte[(sz.width * sz.height * bpp) / 8];
-                mCamera.addCallbackBuffer(buffer);
+            if (mCb != null) {
+                Camera.Size sz = mParams.getPreviewSize();
+                int bpp = ImageFormat.getBitsPerPixel(mParams.getPreviewFormat());
+                for (int i = 0; i < 4; i++) {
+                    byte[] buffer = new byte[(sz.width * sz.height * bpp) / 8];
+                    mCamera.addCallbackBuffer(buffer);
+                }
+                mCamera.setPreviewCallbackWithBuffer(this);
             }
-            mCamera.setPreviewCallbackWithBuffer(this);
         } catch (java.io.IOException e) {
             throw new RuntimeException("setOutputTexture() failed");
         }
@@ -64,10 +69,13 @@ public class CameraCapture implements Camera.PreviewCallback {
         mStarted = true;
     }
 
+    /**
+     * Receives frame from the camera as raw, YUV 4:2:0 single plane data.
+     */
     @Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
-        mCamera.getParameters();
-        mCamera.addCallbackBuffer(data);
+    public void onPreviewFrame(byte[] dataYUV420SP, Camera camera) {
+        mCb.onCameraFrame(dataYUV420SP);
+        mCamera.addCallbackBuffer(dataYUV420SP);
     }
 
     /**
@@ -202,5 +210,9 @@ public class CameraCapture implements Camera.PreviewCallback {
 
     public float getFrameRate() {
         return mFrameRate;
+    }
+
+    public interface Callback {
+        void onCameraFrame(byte[] dataYUV420SP);
     }
 }

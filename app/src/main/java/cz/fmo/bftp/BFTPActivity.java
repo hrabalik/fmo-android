@@ -128,7 +128,7 @@ public class BFTPActivity extends Activity implements SurfaceHolder.Callback {
      */
     private void initStep2() {
         if (mStatus != Status.CAMERA_INIT) return;
-        mCapture = new CameraCapture();
+        mCapture = new CameraCapture(null);
         mEGL = new EGL();
         mDisplaySurface = mEGL.makeSurface(getGUISurfaceView().getHolder().getSurface());
         mDisplaySurface.makeCurrent();

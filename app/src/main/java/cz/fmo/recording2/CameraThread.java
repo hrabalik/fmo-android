@@ -19,7 +19,7 @@ class CameraThread extends GenericThread<CameraThreadHandler> {
     CameraThread(Callback cb) {
         super("CameraThread");
         mCb = cb;
-        mCapture = new CameraCapture();
+        mCapture = new CameraCapture(mCb);
     }
 
     void addTarget(Surface surface, int width, int height) {
@@ -97,10 +97,8 @@ class CameraThread extends GenericThread<CameraThreadHandler> {
         return mCapture.getFrameRate();
     }
 
-    interface Callback {
+    interface Callback extends CameraCapture.Callback {
         void onCameraRender();
-
-        void onCameraFrame(byte[] data);
     }
 
     private static class Target {
