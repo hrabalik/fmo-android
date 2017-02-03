@@ -209,8 +209,8 @@ public final class Recording2Activity extends Activity {
     }
 
     /**
-     * A subclass that receives all relevant messages on an arbitrary thread and forwards them to
-     * the main thread.
+     * A subclass that receives all relevant messages on an arbitrary thread and reacts to them,
+     * typically by forwarding them to the main (GUI) thread.
      */
     private static class Handler extends android.os.Handler implements Lib.Callback,
             EncodeThread.Callback, SaveMovieThread.Callback, CameraThread.Callback {
@@ -321,6 +321,9 @@ public final class Recording2Activity extends Activity {
             mTopTextLast = mTopText.getText().toString();
         }
 
+        /**
+         * Updates all dynamic UI elements, such as labels and buttons.
+         */
         void update() {
             if (mStatus == Status.STOPPED) return;
 
