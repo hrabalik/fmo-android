@@ -8,9 +8,9 @@ namespace {
     const int STATS_WARM_UP_FRAMES = 10;
     const int64_t FRAME_STATS_MIN_DELTA = 500000; // 0.5 ms
 
-    int64_t toNs(float fps) { return static_cast<uint64_t>(1e9 / fps); }
+    int64_t toNs(float hz) { return static_cast<uint64_t>(1e9 / hz); }
 
-    float toFps(int64_t ns) { return static_cast<float>(1e9 / ns); }
+    float toHz(int64_t ns) { return static_cast<float>(1e9 / ns); }
 
     float toMs(int64_t ns) { return static_cast<float>(ns / 1e6); }
 
@@ -28,7 +28,8 @@ namespace fmo {
     }
 
     Stats::Stats(size_t storageSize, int sortPeriod, int warmUpFrames) :
-            mStorageSize(storageSize), mSortPeriod(sortPeriod), mWarmUpFrames(warmUpFrames) {
+            mStorageSize(storageSize), mSortPeriod(sortPeriod), mWarmUpFrames(warmUpFrames),
+            mVec(), mWarmUpCounter(0), mQuantiles(0, 0, 0) {
         mVec.reserve(mStorageSize);
     }
 
@@ -78,10 +79,11 @@ namespace fmo {
     }
 
     FrameStats::FrameStats() :
-            mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES) { }
+            mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES), mLastTimeNs(0),
+            mQuantilesHz(0, 0, 0) { }
 
-    void FrameStats::reset(float defaultFps) {
-        mStats.reset(toNs(defaultFps));
+    void FrameStats::reset(float defaultHz) {
+        mStats.reset(toNs(defaultHz));
         mLastTimeNs = nanoTime();
         updateMyQuantiles();
     }
@@ -98,13 +100,13 @@ namespace fmo {
 
     void FrameStats::updateMyQuantiles() {
         auto &quantiles = mStats.quantiles();
-        mQuantilesFps.q50 = toFps(quantiles.q50);
-        mQuantilesFps.q95 = toFps(quantiles.q95);
-        mQuantilesFps.q99 = toFps(quantiles.q99);
+        mQuantilesHz.q50 = toHz(quantiles.q50);
+        mQuantilesHz.q95 = toHz(quantiles.q95);
+        mQuantilesHz.q99 = toHz(quantiles.q99);
     }
 
-    SectionStats::SectionStats() :
-            mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES) { }
+    SectionStats::SectionStats() : mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES),
+                                   mStartTimeNs(0), mQuantilesMs(0, 0, 0) { }
 
     void SectionStats::reset() {
         mStats.reset(0);
