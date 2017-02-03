@@ -3,14 +3,16 @@
 #include <algorithm>
 
 namespace {
-    const size_t FRAME_STATS_STORAGE = 1000;
-    const int FRAME_STATS_SORT_PERIOD = 100;
-    const int FRAME_STATS_WARM_UP_FRAMES = 10;
+    const size_t STATS_STORAGE = 1000;
+    const int STATS_SORT_PERIOD = 100;
+    const int STATS_WARM_UP_FRAMES = 10;
     const int64_t FRAME_STATS_MIN_DELTA = 500000; // 0.5 ms
 
     int64_t toNs(float fps) { return static_cast<uint64_t>(1e9 / fps); }
 
     float toFps(int64_t ns) { return static_cast<float>(1e9 / ns); }
+
+    float toMs(int64_t ns) { return static_cast<float>(ns / 1e6); }
 
     using Clock = std::chrono::high_resolution_clock;
 
@@ -76,7 +78,7 @@ namespace fmo {
     }
 
     FrameStats::FrameStats() :
-            mStats(FRAME_STATS_STORAGE, FRAME_STATS_SORT_PERIOD, FRAME_STATS_WARM_UP_FRAMES) { }
+            mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES) { }
 
     void FrameStats::reset(float defaultFps) {
         mStats.reset(toNs(defaultFps));
@@ -89,7 +91,7 @@ namespace fmo {
         auto deltaNs = timeNs - mLastTimeNs;
         mLastTimeNs = timeNs;
         if (deltaNs < FRAME_STATS_MIN_DELTA) return false;
-        auto updated = mStats.add(deltaNs);
+        bool updated = mStats.add(deltaNs);
         if (updated) updateMyQuantiles();
         return updated;
     }
@@ -99,5 +101,31 @@ namespace fmo {
         mQuantilesFps.q50 = toFps(quantiles.q50);
         mQuantilesFps.q95 = toFps(quantiles.q95);
         mQuantilesFps.q99 = toFps(quantiles.q99);
+    }
+
+    SectionStats::SectionStats() :
+            mStats(STATS_STORAGE, STATS_SORT_PERIOD, STATS_WARM_UP_FRAMES) { }
+
+    void SectionStats::reset() {
+        mStats.reset(0);
+        updateMyQuantiles();
+    }
+
+    void SectionStats::start() {
+        mStartTimeNs = nanoTime();
+    }
+
+    bool SectionStats::stop() {
+        auto deltaNs = nanoTime() - mStartTimeNs;
+        bool updated = mStats.add(deltaNs);
+        if (updated) updateMyQuantiles();
+        return updated;
+    }
+
+    void SectionStats::updateMyQuantiles() {
+        auto &quantiles = mStats.quantiles();
+        mQuantilesMs.q50 = toMs(quantiles.q50);
+        mQuantilesMs.q95 = toMs(quantiles.q95);
+        mQuantilesMs.q99 = toMs(quantiles.q99);
     }
 }

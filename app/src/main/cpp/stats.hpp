@@ -56,6 +56,25 @@ namespace fmo {
         Stats mStats;
         Quantiles<float> mQuantilesFps;
     };
+
+    struct SectionStats {
+        SectionStats();
+
+        void reset();
+
+        void start();
+
+        bool stop();
+
+        const Quantiles<float> &quantilesMs() const { return mQuantilesMs; }
+
+    private:
+        void updateMyQuantiles();
+
+        int64_t mStartTimeNs;
+        Stats mStats;
+        Quantiles<float> mQuantilesMs;
+    };
 }
 
 #endif //FMO_ANDROID_STATS_HPP
