@@ -25,9 +25,10 @@ public class CameraCapture implements Camera.PreviewCallback {
     private static final float PREFER_FRAME_RATE = 30.f; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
+    private static final int IMAGE_FORMAT = ImageFormat.NV21;
+    private static final int BITS_PER_PIXEL = ImageFormat.getBitsPerPixel(IMAGE_FORMAT);
     private final Callback mCb;
     private Camera mCamera;
-    private Camera.Parameters mParams;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
     private boolean mStarted = false;
@@ -53,8 +54,88 @@ public class CameraCapture implements Camera.PreviewCallback {
             return;
         }
 
-        mParams = mCamera.getParameters();
         configureCamera();
+    }
+
+    /**
+     * Modifies and updates camera parameters according to preferences.
+     */
+    private void configureCamera() {
+        Camera.Parameters params = mCamera.getParameters();
+
+        configureSize(params);
+        configureFrameRate(params);
+        configureOther(params);
+
+        mCamera.setParameters(params);
+    }
+
+    /**
+     * Modifies camera width and height parameters. Lists all supported sizes and chooses the size
+     * that is closest to PREFER_WIDTH x PREFER_HEIGHT.
+     */
+    private void configureSize(Camera.Parameters params) {
+        Camera.Size bestSize = null;
+        int bestScore = Integer.MAX_VALUE;
+
+        for (Camera.Size size : params.getSupportedPreviewSizes()) {
+            int dWidth = Math.abs(size.width - PREFER_WIDTH);
+            int dHeight = Math.abs(size.height - PREFER_HEIGHT);
+            int score = dWidth + dHeight;
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestSize = size;
+            }
+        }
+
+        if (bestSize != null) {
+            params.setPreviewSize(bestSize.width, bestSize.height);
+            mSize = bestSize;
+        }
+    }
+
+    /**
+     * Modifies camera minimum and maximum frames per second parameters. Lists all supported frame
+     * rate ranges and chooses the one closest to PREFER_FRAME_RATE.
+     */
+    private void configureFrameRate(Camera.Parameters params) {
+        int[] bestRange = null;
+        int bestScore = Integer.MAX_VALUE;
+        int preferFp1000s = Math.round(PREFER_FRAME_RATE * 1000.f);
+
+        for (int[] range : params.getSupportedPreviewFpsRange()) {
+            int dLow = Math.abs(range[0] - preferFp1000s);
+            int dHigh = Math.abs(range[1] - preferFp1000s);
+            int dApart = Math.abs(range[1] - range[0]);
+            int score = dLow + dHigh + 4 * dApart; // strongly prefer fixed frame rate
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestRange = range;
+            }
+        }
+
+        if (bestRange != null) {
+            params.setPreviewFpsRange(bestRange[0], bestRange[1]);
+            mFrameRate = (float) (bestRange[0] + bestRange[1]) / (2 * 1000.f);
+        }
+    }
+
+    /**
+     * Does camera configuration other than size or frame rate, including setting up the format and
+     * focus mode.
+     */
+    private void configureOther(Camera.Parameters params) {
+        params.setRecordingHint(true);
+        params.setPreviewFormat(IMAGE_FORMAT);
+
+        // focus mode: set to "continuous-video" if available
+        for (String mode : params.getSupportedFocusModes()) {
+            if (mode.equals(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                params.setFocusMode(mode);
+            }
+        }
     }
 
     /**
@@ -67,10 +148,8 @@ public class CameraCapture implements Camera.PreviewCallback {
             mCamera.setPreviewTexture(outputTexture);
 
             if (mCb != null) {
-                Camera.Size sz = mParams.getPreviewSize();
-                int bpp = ImageFormat.getBitsPerPixel(mParams.getPreviewFormat());
                 for (int i = 0; i < 4; i++) {
-                    byte[] buffer = new byte[(sz.width * sz.height * bpp) / 8];
+                    byte[] buffer = new byte[(mSize.width * mSize.height * BITS_PER_PIXEL) / 8];
                     mCamera.addCallbackBuffer(buffer);
                 }
                 mCamera.setPreviewCallbackWithBuffer(this);
@@ -138,69 +217,6 @@ public class CameraCapture implements Camera.PreviewCallback {
         }
 
         return 0;
-    }
-
-    /**
-     * Modifies and updates camera parameters according to preferences.
-     */
-    private void configureCamera() {
-        configureSize();
-        configureFrameRate();
-        mParams.setRecordingHint(true);
-        mCamera.setParameters(mParams);
-    }
-
-    /**
-     * Modifies camera width and height parameters. Lists all supported sizes and chooses the size
-     * that is closest to PREFER_WIDTH x PREFER_HEIGHT.
-     */
-    private void configureSize() {
-        Camera.Size bestSize = null;
-        int bestScore = Integer.MAX_VALUE;
-
-        for (Camera.Size size : mParams.getSupportedPreviewSizes()) {
-            if (size.width % 16 != 0 || size.height % 16 != 0) continue;
-            int dWidth = Math.abs(size.width - PREFER_WIDTH);
-            int dHeight = Math.abs(size.height - PREFER_HEIGHT);
-            int score = dWidth + dHeight;
-
-            if (score < bestScore) {
-                bestScore = score;
-                bestSize = size;
-            }
-        }
-
-        if (bestSize != null) {
-            mParams.setPreviewSize(bestSize.width, bestSize.height);
-            mSize = bestSize;
-        }
-    }
-
-    /**
-     * Modifies camera minimum and maximum frames per second parameters. Lists all supported frame
-     * rate ranges and chooses the one closest to PREFER_FRAME_RATE.
-     */
-    private void configureFrameRate() {
-        int[] bestRange = null;
-        int bestScore = Integer.MAX_VALUE;
-        int preferFp1000s = Math.round(PREFER_FRAME_RATE * 1000.f);
-
-        for (int[] range : mParams.getSupportedPreviewFpsRange()) {
-            int dLow = Math.abs(range[0] - preferFp1000s);
-            int dHigh = Math.abs(range[1] - preferFp1000s);
-            int dApart = Math.abs(range[1] - range[0]);
-            int score = dLow + dHigh + 4 * dApart; // strongly prefer fixed frame rate
-
-            if (score < bestScore) {
-                bestScore = score;
-                bestRange = range;
-            }
-        }
-
-        if (bestRange != null) {
-            mParams.setPreviewFpsRange(bestRange[0], bestRange[1]);
-            mFrameRate = (float) (bestRange[0] + bestRange[1]) / (2 * 1000.f);
-        }
     }
 
     /**

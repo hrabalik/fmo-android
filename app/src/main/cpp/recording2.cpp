@@ -32,12 +32,11 @@ void Java_cz_fmo_Lib_recording2Stop(JNIEnv *env, jclass) {
 
 void Java_cz_fmo_Lib_recording2Frame(JNIEnv *env, jclass, jbyteArray dataYUV420SP) {
     if (global.statsUpdated) {
-        //auto hz = global.frameStats.quantilesHz();
-        auto ms = global.sectionStats.quantilesMs();
-        auto callback = global.callbackRef.get(env);
-        //callback.frameTimings(hz.q50, hz.q95, hz.q99);
-        callback.frameTimings(ms.q50, ms.q95, ms.q99);
         global.statsUpdated = false;
+        auto q = global.frameStats.quantilesHz();
+        //auto q = global.sectionStats.quantilesMs();
+        auto callback = global.callbackRef.get(env);
+        callback.frameTimings(q.q50, q.q95, q.q99);
     }
 
     global.frameStats.tick();
