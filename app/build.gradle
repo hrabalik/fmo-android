@@ -18,8 +18,11 @@ android {
                 cppFlags "-std=c++14"
                 cppFlags "-frtti"
                 cppFlags "-fexceptions"
+                cppFlags "-Wall"
+                cppFlags "-Werror"
                 arguments "-DANDROID_ARM_NEON=TRUE"
                 arguments "-DOpenCV_DIR=" + projectDir.getPath() + "/../OpenCV-android-sdk/sdk/native/jni"
+                arguments "-DCMAKE_BUILD_TYPE=RelWithDebInfo"
             }
         }
         ndk {

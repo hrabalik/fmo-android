@@ -17,7 +17,7 @@ namespace {
 
         Env(const char *threadName) {
             JavaVMAttachArgs args = {JNI_VERSION_1_6, threadName, nullptr};
-            jint result = global.vm->AttachCurrentThread(&mPtr, nullptr);
+            jint result = global.vm->AttachCurrentThread(&mPtr, &args);
             FMO_ASSERT(result == JNI_OK, "AttachCurrentThread failed");
         }
 
