@@ -39,7 +39,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            path 'src/main/cpp/CMakeLists.txt'
+            path projectDir.getPath() + "/../fmo-cpp/android/CMakeLists.txt"
         }
     }
 }

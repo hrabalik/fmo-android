@@ -5,16 +5,12 @@ import android.media.Image;
 public final class Lib {
 
     static {
-        System.loadLibrary("test1");
+        System.loadLibrary("fmo-android");
     }
 
     public static native String getHelloString();
 
     public static native void onFrame(Image image, Callback cb);
-
-    public static native void ocvRecStart(Callback cb);
-
-    public static native void ocvRecStop();
 
     public static native void ocvRec2Start(int width, int height, Callback cb);
 
