@@ -1,0 +1,3 @@
+[submodule "fmo-cpp"]
+	path = fmo-cpp
+	url = git@gitlab.fel.cvut.cz:hrabaale/fmo-cpp.git
