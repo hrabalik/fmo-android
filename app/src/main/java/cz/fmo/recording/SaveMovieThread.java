@@ -87,6 +87,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         return win;
     }
 
+    @SuppressWarnings("UnusedParameters")
     public interface Callback {
         void saveCompleted(String filename, boolean success);
     }

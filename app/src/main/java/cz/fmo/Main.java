@@ -10,7 +10,6 @@ import android.view.View;
 import android.widget.TextView;
 
 public class Main extends AppCompatActivity {
-    private static final String TAG = "FMO";
     private static final boolean AUTO_HIDE = true;
     private static final int UI_ANIMATION_DELAY = 300;
 
@@ -69,7 +68,7 @@ public class Main extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        delayedHide(100);
+        delayedHide();
     }
 
     private void toggle() {
@@ -105,27 +104,15 @@ public class Main extends AppCompatActivity {
         mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    private void delayedHide(int delayMillis) {
+    private void delayedHide() {
         if (AUTO_HIDE) {
             mHideHandler.removeCallbacks(mHideRunnable);
-            mHideHandler.postDelayed(mHideRunnable, delayMillis);
+            mHideHandler.postDelayed(mHideRunnable, 100);
         }
-    }
-
-    public void runRecordingActivity(@SuppressWarnings("UnusedParameters") View view) {
-        startActivity(new Intent(this, cz.fmo.recording.RecordingActivity.class));
     }
 
     public void runPlayMovieSurfaceActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
-    }
-
-    public void runOCVRec2Activity(@SuppressWarnings("UnusedParameters") View view) {
-        startActivity(new Intent(this, cz.fmo.ocvrec2.OcvRec2Activity.class));
-    }
-
-    public void runBFTPActivity(@SuppressWarnings("UnusedParameters") View view) {
-        startActivity(new Intent(this, cz.fmo.bftp.BFTPActivity.class));
     }
 
     public void runRecording2Activity(@SuppressWarnings("UnusedParameters") View view) {

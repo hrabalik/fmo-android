@@ -16,7 +16,7 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
     /**
      * @param name Unique thread name (useful for profiling).
      */
-    public GenericThread(String name) {
+    protected GenericThread(String name) {
         super(name);
     }
 

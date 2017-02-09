@@ -29,6 +29,7 @@ package com.android.grafika;
  * Thread restrictions are noted in the method descriptions.  The FrameCallback overrides should
  * only be called from the MoviePlayer.
  */
+@SuppressWarnings("EmptyCatchBlock")
 class SpeedControlCallback implements MoviePlayer.FrameCallback {
     private static final boolean CHECK_SLEEP_TIME = false;
 

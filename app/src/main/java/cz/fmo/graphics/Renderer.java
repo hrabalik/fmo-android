@@ -119,6 +119,7 @@ public class Renderer implements SurfaceTexture.OnFrameAvailableListener {
     /**
      * @return timestamp of last input frame, in nanoseconds
      */
+    @SuppressWarnings("unused")
     public long getTimestamp() {
         return mInputTex.getTimestamp();
     }

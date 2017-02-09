@@ -3,25 +3,14 @@
 
     <string name="dummy_content">DUMMY\nCONTENT</string>
 
-    <string name="capture">Capture</string>
-    <string name="nowRecording">" [RECORDING]"</string>
-    <string name="nowSaving">" [SAVING]"</string>
     <string name="play_button_text">Play</string>
     <string name="stop_button_text">Stop</string>
-    <string name="recordingSucceeded">Recording succeeded</string>
-    <string name="recordingFailed">Recording FAILED (err=%1$d)</string>
-    <string name="secondsOfVideo">%1$.3f seconds of video</string>
 
     <string name="videoLength">%1$.0f seconds in buffer</string>
-    <string name="savingVideo">Saving…</string>
-    <string name="recordingStopped">Recording stopped</string>
     <string name="errorPermissionFail">Camera permission denied</string>
-    <string name="errorOpenCVInitFail">OpenCV failed to initialize</string>
-    <string name="errorConfigureFail">Camera configuration failed</string>
-    <string name="errorInaccessible">Camera inaccessible</string>
-    <string name="errorDisconnected">Camera disconnected</string>
     <string name="errorOther">Camera error</string>
-    <string name="cameraInitializing">Waiting for camera…</string>
     <string name="saveButton">Save</string>
-    <string name="initializing">Initializing...</string>
+    <string name="initializing">Initializing…</string>
+    <string name="mainMenuPlayMovieString">Play movie activity</string>
+    <string name="mainMenuRecordingString">Recording activity</string>
 </resources>

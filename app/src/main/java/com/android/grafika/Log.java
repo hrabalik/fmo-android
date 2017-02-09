@@ -1,5 +1,6 @@
 package com.android.grafika;
 
+@SuppressWarnings("SameParameterValue")
 class Log {
     private static final String TAG = "Grafika";
 

@@ -312,7 +312,7 @@ public final class Recording2Activity extends Activity {
          * Prepares all static UI elements.
          */
         void init() {
-            setContentView(R.layout.activity_ocvrec2);
+            setContentView(R.layout.activity_recording2);
             mPreview = (SurfaceView) findViewById(R.id.ocvrec2_preview);
             mPreview.getHolder().addCallback(this);
             mBottomText = (TextView) findViewById(R.id.ocvrec2_bottom_text);

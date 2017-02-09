@@ -34,6 +34,7 @@ import java.nio.ByteBuffer;
  * <p>
  * TODO: needs more advanced shuttle controls (pause/resume, skip)
  */
+@SuppressWarnings({"FieldCanBeLocal", "deprecation", "ConstantConditions", "UnusedAssignment"})
 class MoviePlayer {
     private static final boolean VERBOSE = false;
     private final FrameCallback mFrameCallback;
@@ -383,6 +384,7 @@ class MoviePlayer {
      * The PlayerFeedback callbacks will execute on the thread that creates the object,
      * assuming that thread has a looper.  Otherwise, they will execute on the main looper.
      */
+    @SuppressWarnings("SameParameterValue")
     public static class PlayTask implements Runnable {
         private static final int MSG_PLAY_STOPPED = 0;
         private final Object mStopLock = new Object();

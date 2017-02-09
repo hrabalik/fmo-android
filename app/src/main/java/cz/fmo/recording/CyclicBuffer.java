@@ -24,7 +24,7 @@ public class CyclicBuffer {
      * @param fps     expected frames per second
      * @param seconds approximate buffer length
      */
-    public CyclicBuffer(int bps, float fps, float seconds) {
+    public CyclicBuffer(int bps, float fps, @SuppressWarnings("SameParameterValue") float seconds) {
         // approximate the required buffer sizes
         float nFrames = fps * seconds;
         float nBytes = (bps * seconds) * (1 / 8.f);

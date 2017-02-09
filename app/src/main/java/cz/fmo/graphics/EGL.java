@@ -118,6 +118,7 @@ public final class EGL {
          *
          * @param ns time in nanoseconds
          */
+        @SuppressWarnings("unused")
         public void presentationTime(long ns) {
             EGLExt.eglPresentationTimeANDROID(mEGL.mDisplay, mEGLSurface, ns);
         }
