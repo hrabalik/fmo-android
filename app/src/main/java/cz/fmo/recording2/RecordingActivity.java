@@ -26,7 +26,7 @@ import cz.fmo.util.FileManager;
 /**
  * The main activity, facilitating video preview, encoding and saving.
  */
-public final class Recording2Activity extends Activity {
+public final class RecordingActivity extends Activity {
     private static final float BUFFER_SECONDS = 8;
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
@@ -218,9 +218,9 @@ public final class Recording2Activity extends Activity {
         private static final int CAMERA_ERROR = 2;
         private static final int ENCODER_FLUSHED = 3;
         private static final int SAVE_COMPLETED = 4;
-        private final WeakReference<Recording2Activity> mActivity;
+        private final WeakReference<RecordingActivity> mActivity;
 
-        Handler(Recording2Activity activity) {
+        Handler(RecordingActivity activity) {
             mActivity = new WeakReference<>(activity);
         }
 
@@ -251,7 +251,7 @@ public final class Recording2Activity extends Activity {
         @Override
         public void onCameraRender() {
             // send flush command to encoder thread
-            Recording2Activity activity = mActivity.get();
+            RecordingActivity activity = mActivity.get();
             if (activity == null) return;
             activity.mEncode.getHandler().sendFlush();
         }
@@ -268,7 +268,7 @@ public final class Recording2Activity extends Activity {
 
         @Override
         public void handleMessage(android.os.Message msg) {
-            Recording2Activity activity = mActivity.get();
+            RecordingActivity activity = mActivity.get();
             if (activity == null) return;
 
             switch (msg.what) {
@@ -312,12 +312,12 @@ public final class Recording2Activity extends Activity {
          * Prepares all static UI elements.
          */
         void init() {
-            setContentView(R.layout.activity_recording2);
-            mPreview = (SurfaceView) findViewById(R.id.ocvrec2_preview);
+            setContentView(R.layout.activity_recording);
+            mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
-            mBottomText = (TextView) findViewById(R.id.ocvrec2_bottom_text);
+            mBottomText = (TextView) findViewById(R.id.recording_bottom_text);
             mBottomTextLast = mBottomText.getText().toString();
-            mTopText = (TextView) findViewById(R.id.ocvrec2_top_text);
+            mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
         }
 
@@ -357,7 +357,7 @@ public final class Recording2Activity extends Activity {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
             mPreviewReady = true;
-            Recording2Activity.this.init();
+            RecordingActivity.this.init();
         }
 
         @Override

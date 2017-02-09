@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
+import cz.fmo.recording2.RecordingActivity;
+
 public class Main extends AppCompatActivity {
     private static final boolean AUTO_HIDE = true;
     private static final int UI_ANIMATION_DELAY = 300;
@@ -115,7 +117,7 @@ public class Main extends AppCompatActivity {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }
 
-    public void runRecording2Activity(@SuppressWarnings("UnusedParameters") View view) {
-        startActivity(new Intent(this, cz.fmo.recording2.Recording2Activity.class));
+    public void runRecordingActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, RecordingActivity.class));
     }
 }

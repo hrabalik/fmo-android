@@ -1,13 +1,13 @@
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
        xmlns:tools="http://schemas.android.com/tools"
-       tools:context="cz.fmo.recording2.Recording2Activity">
+       tools:context="cz.fmo.recording2.RecordingActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <SurfaceView
-            android:id="@+id/ocvrec2_preview"
+            android:id="@+id/recording_preview"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"/>
     </LinearLayout>
@@ -21,7 +21,7 @@
         android:paddingTop="16dp">
 
         <TextView
-            android:id="@+id/ocvrec2_top_text"
+            android:id="@+id/recording_top_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
@@ -29,7 +29,7 @@
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
 
         <TextView
-            android:id="@+id/ocvrec2_bottom_text"
+            android:id="@+id/recording_bottom_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
