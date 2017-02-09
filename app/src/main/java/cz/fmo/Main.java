@@ -9,8 +9,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.TextView;
 
-import cz.fmo.recording2.RecordingActivity;
-
 public class Main extends AppCompatActivity {
     private static final boolean AUTO_HIDE = true;
     private static final int UI_ANIMATION_DELAY = 300;

@@ -1,4 +1,4 @@
-package cz.fmo.recording2;
+package cz.fmo;
 
 import android.Manifest;
 import android.app.Activity;
@@ -16,8 +16,7 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Locale;
 
-import cz.fmo.Lib;
-import cz.fmo.R;
+import cz.fmo.camera.CameraThread;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;

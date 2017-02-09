@@ -88,7 +88,7 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
     }
 
     /**
-     * @return The timee between the first and the last stored frame, in microseconds.
+     * @return The time between the first and the last stored frame, in microseconds.
      */
     public long getBufferContentsDuration() {
         long duration;

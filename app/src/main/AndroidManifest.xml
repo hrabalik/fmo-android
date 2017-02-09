@@ -43,7 +43,7 @@
         </activity>
 
         <activity
-            android:name="cz.fmo.recording2.RecordingActivity"
+            android:name="cz.fmo.RecordingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Recording2"
             android:screenOrientation="landscape"

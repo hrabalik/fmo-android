@@ -1,4 +1,4 @@
-package cz.fmo.bftp;
+package cz.fmo.camera;
 
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -18,7 +18,7 @@ import android.support.annotation.Nullable;
  * To stop receiving frames, call the release() method.
  */
 @SuppressWarnings("deprecation")
-public class CameraCapture implements Camera.PreviewCallback {
+class CameraCapture implements Camera.PreviewCallback {
     private static final String MIME_TYPE = "video/avc";
     private static final int PREFER_WIDTH = 1920; // pixels
     private static final int PREFER_HEIGHT = 1080; // pixels
@@ -38,7 +38,7 @@ public class CameraCapture implements Camera.PreviewCallback {
      * Selects a suitable camera and opens it. The provided callback is used to report errors and
      * provide image data.
      */
-    public CameraCapture(@Nullable Callback cb) {
+    CameraCapture(@Nullable Callback cb) {
         mCb = cb;
         int bestCam = selectCamera();
 
@@ -222,7 +222,7 @@ public class CameraCapture implements Camera.PreviewCallback {
     /**
      * @return a MediaFormat object describing a video format compatible with the camera output
      */
-    public MediaFormat getMediaFormat() {
+    MediaFormat getMediaFormat() {
         MediaFormat f = MediaFormat.createVideoFormat(MIME_TYPE, mSize.width, mSize.height);
         f.setInteger(MediaFormat.KEY_BIT_RATE, PREFER_BIT_RATE);
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, CodecCapabilities.COLOR_FormatSurface);
@@ -231,19 +231,19 @@ public class CameraCapture implements Camera.PreviewCallback {
         return f;
     }
 
-    public int getWidth() {
+    int getWidth() {
         return mSize.width;
     }
 
-    public int getHeight() {
+    int getHeight() {
         return mSize.height;
     }
 
-    public int getBitRate() {
+    int getBitRate() {
         return PREFER_BIT_RATE;
     }
 
-    public float getFrameRate() {
+    float getFrameRate() {
         return mFrameRate;
     }
 

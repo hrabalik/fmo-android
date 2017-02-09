@@ -1,4 +1,4 @@
-package cz.fmo.recording2;
+package cz.fmo.camera;
 
 import java.lang.ref.WeakReference;
 
@@ -7,7 +7,7 @@ import cz.fmo.graphics.Renderer;
 /**
  * Message handler for CameraThread.
  */
-class CameraThreadHandler extends android.os.Handler implements Renderer.Callback {
+public class CameraThreadHandler extends android.os.Handler implements Renderer.Callback {
     private static final int KILL = 1;
     private static final int RENDERER_FRAME = 2;
     private final WeakReference<CameraThread> mThreadRef;
@@ -24,7 +24,7 @@ class CameraThreadHandler extends android.os.Handler implements Renderer.Callbac
     /**
      * Send a command to end the execution of the thread as soon as possible.
      */
-    void sendKill() {
+    public void sendKill() {
         sendMessage(obtainMessage(KILL));
     }
 

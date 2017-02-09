@@ -1,11 +1,10 @@
-package cz.fmo.recording2;
+package cz.fmo.camera;
 
 import android.media.MediaFormat;
 import android.opengl.GLES20;
 import android.support.annotation.Nullable;
 import android.view.Surface;
 
-import cz.fmo.bftp.CameraCapture;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.Renderer;
 import cz.fmo.util.GenericThread;
@@ -16,7 +15,7 @@ import cz.fmo.util.GenericThread;
  * be drawn on using OpenGL. Secondly, one can implement the onCameraFrame() callback, which will
  * receive the captured frames as a byte array.
  */
-class CameraThread extends GenericThread<CameraThreadHandler> {
+public class CameraThread extends GenericThread<CameraThreadHandler> {
     private final Callback mCb;
     private final java.util.ArrayList<Target> mTargets = new java.util.ArrayList<>();
     private EGL mEGL;
@@ -28,7 +27,7 @@ class CameraThread extends GenericThread<CameraThreadHandler> {
      * Precondition: camera permission must be granted, otherwise the camera initialization will
      * fail.
      */
-    CameraThread(@Nullable Callback cb) {
+    public CameraThread(@Nullable Callback cb) {
         super("CameraThread");
         mCb = cb;
         mCapture = new CameraCapture(mCb);
@@ -38,7 +37,7 @@ class CameraThread extends GenericThread<CameraThreadHandler> {
      * Adds a surface that the thread will draw onto using OpenGL. Multiple surfaces can be added.
      * Call this method before the start() method has been called.
      */
-    void addTarget(Surface surface, int width, int height) {
+    public void addTarget(Surface surface, int width, int height) {
         mTargets.add(new Target(surface, width, height));
     }
 
@@ -107,27 +106,27 @@ class CameraThread extends GenericThread<CameraThreadHandler> {
         return new CameraThreadHandler(this);
     }
 
-    MediaFormat getMediaFormat() {
+    public MediaFormat getMediaFormat() {
         return mCapture.getMediaFormat();
     }
 
-    int getWidth() {
+    public int getWidth() {
         return mCapture.getWidth();
     }
 
-    int getHeight() {
+    public int getHeight() {
         return mCapture.getHeight();
     }
 
-    int getBitRate() {
+    public int getBitRate() {
         return mCapture.getBitRate();
     }
 
-    float getFrameRate() {
+    public float getFrameRate() {
         return mCapture.getFrameRate();
     }
 
-    interface Callback extends CameraCapture.Callback {
+    public interface Callback extends CameraCapture.Callback {
         void onCameraRender();
     }
 
