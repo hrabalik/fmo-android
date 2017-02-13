@@ -344,7 +344,7 @@ public final class RecordingActivity extends Activity {
             } else if (mStatus == Status.PERMISSION_ERROR) {
                 bottomText = getString(R.string.errorPermissionFail);
             } else {
-                bottomText = String.format(Locale.US, "%.2f / %.2f / %.2f", q50, q95, q99);
+                bottomText = String.format(Locale.US, "%.2f / %.1f / %.0f", q50, q95, q99);
             }
 
             if (!mBottomTextLast.equals(bottomText)) {
