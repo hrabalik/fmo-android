@@ -12,5 +12,6 @@
     <string name="saveButton">Save</string>
     <string name="initializing">Initializing…</string>
     <string name="mainMenuPlayMovieString">Play movie activity</string>
+    <string name="mainMenuBenchmarkingString">Benchmarking activity</string>
     <string name="mainMenuRecordingString">Recording activity</string>
 </resources>

@@ -8,4 +8,6 @@
 
     <style name="Fullscreen" parent="@android:style/Theme.NoTitleBar.Fullscreen"/>
 
+    <style name="Benchmarking" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
+
 </resources>

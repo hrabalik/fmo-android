@@ -50,6 +50,13 @@
             android:theme="@style/Fullscreen"/>
 
         <activity
+            android:name="cz.fmo.BenchmarkingActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Benchmarking"
+            android:screenOrientation="landscape"
+            android:theme="@style/Benchmarking"/>
+
+        <activity
             android:name="com.android.grafika.PlayMovieSurfaceActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Play movie"

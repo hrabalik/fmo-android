@@ -115,6 +115,10 @@ public class Main extends AppCompatActivity {
         startActivity(new Intent(this, com.android.grafika.PlayMovieSurfaceActivity.class));
     }
 
+    public void runBenchmarkingActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, BenchmarkingActivity.class));
+    }
+
     public void runRecordingActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, RecordingActivity.class));
     }
