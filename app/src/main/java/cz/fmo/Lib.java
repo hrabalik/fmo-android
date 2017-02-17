@@ -14,8 +14,14 @@ public final class Lib {
 
     public static native void recordingStop();
 
+    public static native void benchmarkingStart(Callback cb);
+
+    public static native void benchmarkingStop();
+
     @SuppressWarnings("unused")
     public interface Callback {
         void frameTimings(float q50, float q95, float q99);
+
+        void log(String message);
     }
 }

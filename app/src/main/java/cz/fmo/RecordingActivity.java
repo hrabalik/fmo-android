@@ -233,6 +233,11 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
+        public void log(String message) {
+            // ignored
+        }
+
+        @Override
         public void flushCompleted(EncodeThread thread) {
             sendMessage(obtainMessage(ENCODER_FLUSHED, thread));
         }

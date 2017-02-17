@@ -3,6 +3,9 @@ package cz.fmo;
 import android.app.Activity;
 import android.widget.TextView;
 
+/**
+ * Runs the benchmarks and displays the result on screen.
+ */
 public final class BenchmarkingActivity extends Activity {
     private final GUI mGUI = new GUI();
 
@@ -15,16 +18,16 @@ public final class BenchmarkingActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        mGUI.log("resumed");
+        Lib.benchmarkingStart(mGUI);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mGUI.log("paused");
+        Lib.benchmarkingStop();
     }
 
-    private class GUI {
+    private class GUI implements Lib.Callback {
         private TextView mLog;
 
         /**
@@ -35,12 +38,17 @@ public final class BenchmarkingActivity extends Activity {
             mLog = (TextView) findViewById(R.id.benchmarking_log);
         }
 
+        @Override
+        public void frameTimings(float q50, float q95, float q99) {
+            // ignored
+        }
+
         /**
-         * Writes an extra line to log.
+         * Writes a string to the screen.
          */
-        void log(String line) {
+        @Override
+        public void log(String line) {
             mLog.append(line);
-            mLog.append("\n");
         }
     }
 }
