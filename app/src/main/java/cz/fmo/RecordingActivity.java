@@ -122,7 +122,7 @@ public final class RecordingActivity extends Activity {
                 mGUI.getPreviewHeight());
 
         // C++ initialization
-        Lib.recording2Start(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+        Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
 
         // refresh GUI
         mStatus = Status.RUNNING;
@@ -141,7 +141,7 @@ public final class RecordingActivity extends Activity {
     protected void onPause() {
         super.onPause();
 
-        Lib.recording2Stop();
+        Lib.recordingStop();
 
         if (mCamera != null) {
             mCamera.getHandler().sendKill();
@@ -233,11 +233,6 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
-        public void cameraError() {
-            sendMessage(obtainMessage(CAMERA_ERROR));
-        }
-
-        @Override
         public void flushCompleted(EncodeThread thread) {
             sendMessage(obtainMessage(ENCODER_FLUSHED, thread));
         }
@@ -257,7 +252,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void onCameraFrame(byte[] dataYUV420SP) {
-            Lib.recording2Frame(dataYUV420SP);
+            Lib.recordingFrame(dataYUV420SP);
         }
 
         @Override

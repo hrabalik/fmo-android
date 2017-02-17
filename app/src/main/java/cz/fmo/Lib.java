@@ -8,16 +8,14 @@ public final class Lib {
 
     public static native String getHelloString();
 
-    public static native void recording2Start(int width, int height, Callback cb);
+    public static native void recordingStart(int width, int height, Callback cb);
 
-    public static native void recording2Frame(byte[] dataYUV420SP);
+    public static native void recordingFrame(byte[] dataYUV420SP);
 
-    public static native void recording2Stop();
+    public static native void recordingStop();
 
     @SuppressWarnings("unused")
     public interface Callback {
         void frameTimings(float q50, float q95, float q99);
-
-        void cameraError();
     }
 }
