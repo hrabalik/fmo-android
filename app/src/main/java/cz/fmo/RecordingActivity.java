@@ -180,6 +180,7 @@ public final class RecordingActivity extends Activity {
      * Called when the encoder output has been moved into the cyclic buffer.
      */
     private void onEncoderFlushed() {
+        if (mEncode == null) return;
         mGUI.timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
         mGUI.update();
     }
@@ -255,6 +256,7 @@ public final class RecordingActivity extends Activity {
             // send flush command to encoder thread
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
+            if (activity.mEncode == null) return;
             activity.mEncode.getHandler().sendFlush();
         }
 
