@@ -18,6 +18,7 @@ public class CameraThreadHandler extends android.os.Handler implements Renderer.
 
     @Override
     public void onFrameAvailable() {
+        if (hasMessages(RENDERER_FRAME)) return;
         sendMessage(obtainMessage(RENDERER_FRAME));
     }
 
@@ -25,6 +26,7 @@ public class CameraThreadHandler extends android.os.Handler implements Renderer.
      * Send a command to end the execution of the thread as soon as possible.
      */
     public void sendKill() {
+        if (hasMessages(KILL)) return;
         sendMessage(obtainMessage(KILL));
     }
 

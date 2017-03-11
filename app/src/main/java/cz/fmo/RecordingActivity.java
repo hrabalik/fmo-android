@@ -229,6 +229,7 @@ public final class RecordingActivity extends Activity {
             timings.q50 = q50;
             timings.q95 = q95;
             timings.q99 = q99;
+            removeMessages(FRAME_TIMINGS);
             sendMessage(obtainMessage(FRAME_TIMINGS, timings));
         }
 
@@ -239,11 +240,13 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void flushCompleted(EncodeThread thread) {
-            sendMessage(obtainMessage(ENCODER_FLUSHED, thread));
+            if (hasMessages(ENCODER_FLUSHED)) return;
+            sendMessage(obtainMessage(ENCODER_FLUSHED));
         }
 
         @Override
         public void saveCompleted(String filename, boolean success) {
+            if (hasMessages(SAVE_COMPLETED)) return;
             sendMessage(obtainMessage(SAVE_COMPLETED));
         }
 
@@ -262,6 +265,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void onCameraError() {
+            if (hasMessages(CAMERA_ERROR)) return;
             sendMessage(obtainMessage(CAMERA_ERROR));
         }
 

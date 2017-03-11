@@ -18,6 +18,7 @@ public class EncodeThreadHandler extends android.os.Handler {
      * Send a command to end the execution of the thread as soon as possible.
      */
     public void sendKill() {
+        if (hasMessages(KILL)) return;
         sendMessage(obtainMessage(KILL));
     }
 
@@ -25,6 +26,7 @@ public class EncodeThreadHandler extends android.os.Handler {
      * Send a command to flush all currently available encoder output and save it into the buffer.
      */
     public void sendFlush() {
+        if (hasMessages(FLUSH)) return;
         sendMessage(obtainMessage(FLUSH));
     }
 

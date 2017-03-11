@@ -19,6 +19,7 @@ public class SaveMovieThreadHandler extends android.os.Handler {
      * Send a command to end the execution of the thread as soon as possible.
      */
     public void sendKill() {
+        if (hasMessages(KILL)) return;
         sendMessage(obtainMessage(KILL));
     }
 
