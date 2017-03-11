@@ -57,6 +57,13 @@
             android:theme="@style/Benchmarking"/>
 
         <activity
+            android:name="cz.fmo.PlaybackActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="Playback"
+            android:screenOrientation="landscape"
+            android:theme="@style/Playback"/>
+
+        <activity
             android:name="com.android.grafika.PlayMovieSurfaceActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Play movie"

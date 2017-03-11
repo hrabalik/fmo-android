@@ -122,4 +122,8 @@ public class Main extends AppCompatActivity {
     public void runRecordingActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, RecordingActivity.class));
     }
+
+    public void runPlaybackActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, PlaybackActivity.class));
+    }
 }

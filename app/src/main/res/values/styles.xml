@@ -10,4 +10,6 @@
 
     <style name="Benchmarking" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
 
+    <style name="Playback" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
+
 </resources>
