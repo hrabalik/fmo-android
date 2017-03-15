@@ -22,35 +22,45 @@ public final class FileManager {
         mContext = context;
     }
 
-    private File dir() {
+    private File publicDir() {
         String state = Environment.getExternalStorageState();
 
         if (!state.equals(Environment.MEDIA_MOUNTED)) {
-            return fallbackDir();
+            return fallbackPublicDir();
         }
 
         File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
 
         if (!path.exists()) {
             if (!path.mkdirs()) {
-                return fallbackDir();
+                return fallbackPublicDir();
             }
         }
 
         return path;
     }
 
-    private File fallbackDir() {
+    private File fallbackPublicDir() {
+        return privateDir();
+    }
+
+    private File privateDir() {
         return mContext.getFilesDir();
     }
 
     /**
-     * @return File object representing a new or existing file in the primary output directory.
+     * @return File object representing a new or existing file in the public storage directory.
      */
     public File open(String name) {
-        return new File(dir(), name);
+        return new File(publicDir(), name);
     }
 
+    /**
+     * @return File object representing a new or existing file in the private storage directory.
+     */
+    public File privateOpen(String name) {
+        return new File(privateDir(), name);
+    }
 
     /**
      * Updates the system catalog so that the new media file shows in compatible apps.
@@ -61,7 +71,7 @@ public final class FileManager {
 
     public String[] listMP4() {
         final Pattern p = Pattern.compile(".*\\.mp4");
-        String[] out = dir().list(new FilenameFilter() {
+        String[] out = publicDir().list(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return p.matcher(name).matches();

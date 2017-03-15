@@ -47,6 +47,29 @@
             android:textAppearance="@android:style/TextAppearance.Material.Large"
             tools:ignore="RelativeOverlap"/>
 
-    </RelativeLayout>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true">
 
+            <ToggleButton
+                android:id="@+id/recording_record_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textOn="@string/recordToggleOn"
+                android:textOff="@string/recordToggleOff"
+                android:onClick="onRecordToggle"/>
+
+            <ToggleButton
+                android:id="@+id/recording_detect_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textOn="@string/detectToggleOn"
+                android:textOff="@string/detectToggleOff"
+                android:onClick="onDetectToggle"/>
+        </LinearLayout>
+    </RelativeLayout>
 </merge>

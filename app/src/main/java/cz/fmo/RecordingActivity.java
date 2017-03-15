@@ -11,6 +11,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.ToggleButton;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -20,6 +21,7 @@ import cz.fmo.camera.CameraThread;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.SaveMovieThread;
+import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
 
 /**
@@ -30,16 +32,18 @@ public final class RecordingActivity extends Activity {
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
+    private final FileManager mFileMan = new FileManager(this);
+    private Config mConfig;
     private Status mStatus = Status.STOPPED;
     private CameraThread mCamera;
     private EncodeThread mEncode;
     private SaveMovieThread mSaveMovie;
-    private FileManager mFileMan = new FileManager(this);
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
         super.onCreate(savedBundle);
-        mGUI.init();
+        mConfig = new Config(this);
+        mGUI.init(mConfig);
         mGUI.update();
     }
 
@@ -126,29 +130,35 @@ public final class RecordingActivity extends Activity {
         // create a dedicated camera input thread
         mCamera = new CameraThread(mHandler);
 
-        // make a suitably-sized cyclic buffer
-        CyclicBuffer buffer = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
-                BUFFER_SECONDS);
-
-        // create dedicated encoding and video saving threads
-        mEncode = new EncodeThread(mCamera.getMediaFormat(), buffer, mHandler);
-        mSaveMovie = new SaveMovieThread(buffer, mHandler);
-
-        // add encoder and preview as camera targets
-        mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(), mCamera.getHeight());
+        // add preview as camera target
         mCamera.addTarget(mGUI.getPreviewSurface(), mGUI.getPreviewWidth(),
                 mGUI.getPreviewHeight());
 
-        // C++ initialization
-        Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+        if (mConfig.record) {
+            // make a suitably-sized cyclic buffer
+            CyclicBuffer buffer = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
+                    BUFFER_SECONDS);
+
+            // create dedicated encoding and video saving threads
+            mEncode = new EncodeThread(mCamera.getMediaFormat(), buffer, mHandler);
+            mSaveMovie = new SaveMovieThread(buffer, mHandler);
+
+            // add encoder as camera target
+            mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(), mCamera.getHeight());
+        }
+
+        if (mConfig.detect) {
+            // C++ initialization
+            Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+        }
 
         // refresh GUI
         mStatus = Status.RUNNING;
         mGUI.update();
 
         // start threads
-        mEncode.start();
-        mSaveMovie.start();
+        if (mEncode != null) mEncode.start();
+        if (mSaveMovie != null) mSaveMovie.start();
         mCamera.start();
     }
 
@@ -214,6 +224,24 @@ public final class RecordingActivity extends Activity {
         if (mStatus != Status.SAVING) return;
         mStatus = Status.RUNNING;
         mFileMan.newMedia(file);
+    }
+
+    /**
+     * When configuration changes, the configuration object is saved and the activity restarts.
+     */
+    private void onConfigChanged() {
+        mConfig.save();
+        recreate();
+    }
+
+    public void onRecordToggle(View toggle) {
+        mConfig.record = ((ToggleButton) toggle).isChecked();
+        onConfigChanged();
+    }
+
+    public void onDetectToggle(View toggle) {
+        mConfig.detect = ((ToggleButton) toggle).isChecked();
+        onConfigChanged();
     }
 
     private enum Status {
@@ -333,7 +361,7 @@ public final class RecordingActivity extends Activity {
         /**
          * Prepares all static UI elements.
          */
-        void init() {
+        void init(Config config) {
             setContentView(R.layout.activity_recording);
             mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
@@ -341,6 +369,8 @@ public final class RecordingActivity extends Activity {
             mBottomTextLast = mBottomText.getText().toString();
             mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
+            ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
+            ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
         }
 
         /**

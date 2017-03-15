@@ -17,4 +17,8 @@
     <string name="mainMenuBenchmarkingString">Benchmarking activity</string>
     <string name="mainMenuRecordingString">Recording activity</string>
     <string name="playbackPickVideo">Open video</string>
+    <string name="recordToggleOn">recording</string>
+    <string name="recordToggleOff">not recording</string>
+    <string name="detectToggleOn">detecting</string>
+    <string name="detectToggleOff">not detecting</string>
 </resources>
