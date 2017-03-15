@@ -29,6 +29,8 @@ import cz.fmo.util.FileManager;
  */
 public final class RecordingActivity extends Activity {
     private static final float BUFFER_SECONDS = 8;
+    private static final float AUTOMATIC_LEN = 4;
+    private static final float AUTOMATIC_WAIT = 2;
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
@@ -214,16 +216,17 @@ public final class RecordingActivity extends Activity {
     }
 
     public void onClickSave(@SuppressWarnings("UnusedParameters") View view) {
+        if (mSaveMovie == null) return;
         if (mStatus != Status.RUNNING) return;
-        mStatus = Status.SAVING;
         File outFile = mFileMan.open(FILENAME);
-        mSaveMovie.getHandler().sendSave(outFile);
+        new SaveMovieThread.AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN, outFile,
+                mSaveMovie);
     }
 
-    private void onSaveCompleted(File file) {
-        if (mStatus != Status.SAVING) return;
-        mStatus = Status.RUNNING;
-        mFileMan.newMedia(file);
+    private void onSaveCompleted(File file, boolean success) {
+        if (success) {
+            mFileMan.newMedia(file);
+        }
     }
 
     /**
@@ -245,7 +248,7 @@ public final class RecordingActivity extends Activity {
     }
 
     private enum Status {
-        STOPPED, RUNNING, SAVING, CAMERA_ERROR, CAMERA_PERMISSION_ERROR, STORAGE_PERMISSION_ERROR
+        STOPPED, RUNNING, CAMERA_ERROR, CAMERA_PERMISSION_ERROR, STORAGE_PERMISSION_ERROR
     }
 
     private static class Timings {
@@ -293,7 +296,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void saveCompleted(File file, boolean success) {
-            sendMessage(obtainMessage(SAVE_COMPLETED, file));
+            sendMessage(obtainMessage(SAVE_COMPLETED, success ? 1 : 0, 0, file));
         }
 
         @Override
@@ -337,7 +340,7 @@ public final class RecordingActivity extends Activity {
                     activity.onEncoderFlushed();
                     break;
                 case SAVE_COMPLETED:
-                    activity.onSaveCompleted((File) msg.obj);
+                    activity.onSaveCompleted((File) msg.obj, msg.arg1 == 1);
                     break;
             }
         }

@@ -8,7 +8,7 @@ import java.lang.ref.WeakReference;
  */
 public class SaveMovieThreadHandler extends android.os.Handler {
     private static final int KILL = 1;
-    private static final int SAVE = 2;
+    private static final int TASK = 3;
     private final WeakReference<SaveMovieThread> mThreadRef;
 
     SaveMovieThreadHandler(SaveMovieThread thread) {
@@ -24,12 +24,28 @@ public class SaveMovieThreadHandler extends android.os.Handler {
     }
 
     /**
-     * Send a command to save a movie.
-     *
-     * @param file file to save to, should be writable and have a .mp4 extension
+     * Schedule a task and perform it as soon as possible. This should not be called explicitly
+     * by user code; tasks schedule themselves in their constructors.
      */
-    public void sendSave(File file) {
-        sendMessage(obtainMessage(SAVE, file));
+    public void sendTask(SaveMovieThread.Task task) {
+        sendMessage(obtainMessage(TASK, task));
+    }
+
+    /**
+     * Schedule a task and perform it with a delay. This should not be called explicitly by user
+     * code; tasks schedule themselves in their constructors.
+     *
+     * @param ms the number of milliseconds to wait before performing the task.
+     */
+    public void sendTask(SaveMovieThread.Task task, long ms) {
+        sendMessageDelayed(obtainMessage(TASK, task), ms);
+    }
+
+    /**
+     * Cancel a previously scheduled task.
+     */
+    public void cancelTask(SaveMovieThread.Task task) {
+        removeMessages(TASK, task);
     }
 
     @Override
@@ -40,8 +56,9 @@ public class SaveMovieThreadHandler extends android.os.Handler {
             case KILL:
                 thread.kill();
                 break;
-            case SAVE:
-                thread.save((File) msg.obj);
+            case TASK:
+                SaveMovieThread.Task task = (SaveMovieThread.Task) msg.obj;
+                task.perform(thread);
                 break;
         }
     }

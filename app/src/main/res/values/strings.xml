@@ -12,6 +12,7 @@
     <string name="errorOther">Camera error</string>
     <string name="saveButton">Save</string>
     <string name="initializing">Initializing…</string>
+    <string name="saving">Saving…</string>
     <string name="mainMenuPlayMovieString">Play movie activity</string>
     <string name="mainMenuPlaybackString">Playback activity</string>
     <string name="mainMenuBenchmarkingString">Benchmarking activity</string>
