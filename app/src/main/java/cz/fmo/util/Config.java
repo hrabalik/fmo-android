@@ -1,5 +1,6 @@
 package cz.fmo.util;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
@@ -15,6 +16,7 @@ public final class Config {
         detect = mPrefs.getBoolean("detect", true);
     }
 
+    @SuppressLint("ApplySharedPref")
     public void save() {
         SharedPreferences.Editor editor = mPrefs.edit();
         editor.putBoolean("record", record);
