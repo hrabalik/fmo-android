@@ -34,6 +34,7 @@ public final class RecordingActivity extends Activity {
     private CameraThread mCamera;
     private EncodeThread mEncode;
     private SaveMovieThread mSaveMovie;
+    private FileManager mFileMan = new FileManager(this);
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -51,16 +52,27 @@ public final class RecordingActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        if (isPermissionDenied()) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, 0);
+        if (isCameraPermissionDenied() || isStoragePermissionDenied()) {
+            String[] perms = new String[]{Manifest.permission.CAMERA,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            ActivityCompat.requestPermissions(this, perms, 0);
         }
     }
 
     /**
      * Queries the camera permission status.
      */
-    private boolean isPermissionDenied() {
+    private boolean isCameraPermissionDenied() {
         int permissionStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        return permissionStatus != PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Queries the storage permission status.
+     */
+    private boolean isStoragePermissionDenied() {
+        int permissionStatus = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE);
         return permissionStatus != PackageManager.PERMISSION_GRANTED;
     }
 
@@ -98,9 +110,15 @@ public final class RecordingActivity extends Activity {
         // stop if the preview surface has not been created yet
         if (!mGUI.isPreviewReady()) return;
 
-        // stop if the camera permissions haven't been granted
-        if (isPermissionDenied()) {
-            mStatus = Status.PERMISSION_ERROR;
+        // stop if permissions haven't been granted
+        if (isCameraPermissionDenied()) {
+            mStatus = Status.CAMERA_PERMISSION_ERROR;
+            mGUI.update();
+            return;
+        }
+
+        if (isStoragePermissionDenied()) {
+            mStatus = Status.STORAGE_PERMISSION_ERROR;
             mGUI.update();
             return;
         }
@@ -188,18 +206,18 @@ public final class RecordingActivity extends Activity {
     public void onClickSave(@SuppressWarnings("UnusedParameters") View view) {
         if (mStatus != Status.RUNNING) return;
         mStatus = Status.SAVING;
-        FileManager fileMan = new FileManager(this);
-        File outFile = fileMan.open(FILENAME);
+        File outFile = mFileMan.open(FILENAME);
         mSaveMovie.getHandler().sendSave(outFile);
     }
 
-    private void onSaveCompleted() {
+    private void onSaveCompleted(File file) {
         if (mStatus != Status.SAVING) return;
         mStatus = Status.RUNNING;
+        mFileMan.newMedia(file);
     }
 
     private enum Status {
-        STOPPED, RUNNING, SAVING, CAMERA_ERROR, PERMISSION_ERROR
+        STOPPED, RUNNING, SAVING, CAMERA_ERROR, CAMERA_PERMISSION_ERROR, STORAGE_PERMISSION_ERROR
     }
 
     private static class Timings {
@@ -246,9 +264,8 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
-        public void saveCompleted(String filename, boolean success) {
-            if (hasMessages(SAVE_COMPLETED)) return;
-            sendMessage(obtainMessage(SAVE_COMPLETED));
+        public void saveCompleted(File file, boolean success) {
+            sendMessage(obtainMessage(SAVE_COMPLETED, file));
         }
 
         @Override
@@ -292,7 +309,7 @@ public final class RecordingActivity extends Activity {
                     activity.onEncoderFlushed();
                     break;
                 case SAVE_COMPLETED:
-                    activity.onSaveCompleted();
+                    activity.onSaveCompleted((File) msg.obj);
                     break;
             }
         }
@@ -347,8 +364,10 @@ public final class RecordingActivity extends Activity {
             String bottomText;
             if (mStatus == Status.CAMERA_ERROR) {
                 bottomText = getString(R.string.errorOther);
-            } else if (mStatus == Status.PERMISSION_ERROR) {
-                bottomText = getString(R.string.errorPermissionFail);
+            } else if (mStatus == Status.CAMERA_PERMISSION_ERROR) {
+                bottomText = getString(R.string.errorCameraPermission);
+            } else if (mStatus == Status.STORAGE_PERMISSION_ERROR) {
+                bottomText = getString(R.string.errorStoragePermission);
             } else {
                 bottomText = String.format(Locale.US, "%.2f / %.1f / %.0f", q50, q95, q99);
             }

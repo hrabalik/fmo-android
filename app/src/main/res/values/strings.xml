@@ -7,7 +7,8 @@
     <string name="stop_button_text">Stop</string>
 
     <string name="videoLength">%1$.0f seconds in buffer</string>
-    <string name="errorPermissionFail">Camera permission denied</string>
+    <string name="errorCameraPermission">Camera permission denied</string>
+    <string name="errorStoragePermission">Storage permission denied</string>
     <string name="errorOther">Camera error</string>
     <string name="saveButton">Save</string>
     <string name="initializing">Initializing…</string>

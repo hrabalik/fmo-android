@@ -47,7 +47,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
      */
     void save(File file) {
         boolean win = saveImpl(file);
-        mCb.saveCompleted(file.getName(), win);
+        mCb.saveCompleted(file, win);
     }
 
     private boolean saveImpl(File file) {
@@ -84,11 +84,12 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
                 muxer.release();
             }
         }
+
         return win;
     }
 
     @SuppressWarnings("UnusedParameters")
     public interface Callback {
-        void saveCompleted(String filename, boolean success);
+        void saveCompleted(File file, boolean success);
     }
 }
