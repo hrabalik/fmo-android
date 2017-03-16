@@ -79,6 +79,19 @@ public class CyclicBuffer {
     }
 
     /**
+     * @param first start of range, index of the first frame
+     * @param last  end of range, index of the frame after the last frame (past-the-end index)
+     * @return the number of frames in range first inclusive to last exclusive
+     */
+    int numFrames(int first, int last) {
+        if (first <= last) {
+            return last - first;
+        } else {
+            return (last + mMeta.length) - first;
+        }
+    }
+
+    /**
      * Binary search for the frame that has a timestamp close to the specified one. It is assumed
      * that the timestamps in the range are strictly increasing, with a fixed frame rate.
      *
@@ -135,7 +148,7 @@ public class CyclicBuffer {
         else return index < first && index >= last;
     }
 
-    private boolean isIFrame(int index) {
+    boolean isIFrame(int index) {
         //noinspection deprecation
         return (mMeta[index].flags & android.media.MediaCodec.BUFFER_FLAG_SYNC_FRAME) != 0;
     }
