@@ -274,8 +274,13 @@ public final class RecordingActivity extends Activity {
 
     public void onDetectToggle(View toggle) {
         mConfig.detect = ((ToggleButton) toggle).isChecked();
-        mConfig.commit();
-        recreate();
+        mConfig.apply();
+
+        if (mConfig.detect) {
+            Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+        } else {
+            Lib.recordingStop();
+        }
     }
 
     public void onAutoToggle(View toggle) {
