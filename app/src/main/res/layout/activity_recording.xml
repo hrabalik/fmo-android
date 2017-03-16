@@ -37,15 +37,31 @@
             android:text="@string/initializing"
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
 
-        <Button
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:onClick="onClickSave"
-            android:text="@string/saveButton"
-            android:textAppearance="@android:style/TextAppearance.Material.Large"
-            tools:ignore="RelativeOverlap"/>
+            android:layout_alignParentTop="true">
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/recording_start_manual_recording"
+                android:onClick="onStartManualRecording"
+                android:text="@string/startManualRecording"
+                android:textAppearance="@android:style/TextAppearance.Material.Large"
+                tools:ignore="RelativeOverlap"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/recording_stop_manual_recording"
+                android:onClick="onStopManualRecording"
+                android:text="@string/stopManualRecording"
+                android:textAppearance="@android:style/TextAppearance.Material.Large"
+                tools:ignore="RelativeOverlap"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -61,6 +77,15 @@
                 android:textOn="@string/recordToggleOn"
                 android:textOff="@string/recordToggleOff"
                 android:onClick="onRecordToggle"/>
+
+            <ToggleButton
+                android:id="@+id/recording_auto_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textOn="@string/autoToggleOn"
+                android:textOff="@string/autoToggleOff"
+                android:onClick="onAutoToggle"/>
 
             <ToggleButton
                 android:id="@+id/recording_detect_toggle"

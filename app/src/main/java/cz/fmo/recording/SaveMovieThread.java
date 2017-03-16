@@ -111,6 +111,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
 
     public interface Task {
         void perform(SaveMovieThread thread);
+        void terminate(SaveMovieThread thread);
     }
 
     @SuppressWarnings("UnusedParameters")
@@ -147,10 +148,12 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
             }
         }
 
-        public void cancel() {
+        @Override
+        public void terminate(SaveMovieThread thread) {
             synchronized (mLock) {
-                mHandler.cancelTask(this);
+                if (mPerformed || mCancelled) return;
                 mCancelled = true;
+                mHandler.cancelTask(this);
             }
         }
     }
@@ -228,13 +231,15 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
             mHandler.sendTask(this, CHUNK_MS);
         }
 
-        public void stop(SaveMovieThread thread) {
+        @Override
+        public void terminate(SaveMovieThread thread) {
             synchronized (mLock) {
                 if (mMuxer == null) return;
                 writeFrames(thread);
                 mMuxer.stop();
                 mMuxer.release();
                 mMuxer = null;
+                mHandler.cancelTask(this);
             }
             thread.sendCallback(mFile, mFramesWritten > 0);
         }

@@ -10,6 +10,7 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -40,6 +41,7 @@ public final class RecordingActivity extends Activity {
     private CameraThread mCamera;
     private EncodeThread mEncode;
     private SaveMovieThread mSaveMovie;
+    private SaveMovieThread.Task mSaveTask;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -183,6 +185,11 @@ public final class RecordingActivity extends Activity {
             mCamera = null;
         }
 
+        if (mSaveTask != null) {
+            mSaveTask.terminate(mSaveMovie);
+            mSaveTask = null;
+        }
+
         if (mSaveMovie != null) {
             mSaveMovie.getHandler().sendKill();
             try {
@@ -215,36 +222,66 @@ public final class RecordingActivity extends Activity {
         mGUI.update();
     }
 
-    public void onClickSave(@SuppressWarnings("UnusedParameters") View view) {
+    public void onStartAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
         if (mSaveMovie == null) return;
         if (mStatus != Status.RUNNING) return;
+
+        if (mSaveTask != null) {
+            mSaveTask.terminate(mSaveMovie);
+            mSaveTask = null;
+        }
+
         File outFile = mFileMan.open(FILENAME);
-        new SaveMovieThread.AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN, outFile,
-                mSaveMovie);
+        mSaveTask = new SaveMovieThread.AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN,
+                outFile, mSaveMovie);
+    }
+
+    public void onStartManualRecording(@SuppressWarnings("UnusedParameters") View view) {
+        if (mSaveMovie == null) return;
+        if (mStatus != Status.RUNNING) return;
+        if (mSaveTask != null) return;
+        File outFile = mFileMan.open(FILENAME);
+        mSaveTask = new SaveMovieThread.ManualRecordingTask(outFile, mSaveMovie);
+        mGUI.update();
+    }
+
+    public void onStopManualRecording(@SuppressWarnings("UnusedParameters") View view) {
+        if (mSaveMovie == null) return;
+        mSaveTask.terminate(mSaveMovie);
+        mSaveTask = null;
+        mGUI.update();
     }
 
     private void onSaveCompleted(File file, boolean success) {
         if (success) {
             mFileMan.newMedia(file);
         }
-    }
-
-    /**
-     * When configuration changes, the configuration object is saved and the activity restarts.
-     */
-    private void onConfigChanged() {
-        mConfig.save();
-        recreate();
+        mSaveTask = null;
+        mGUI.update();
     }
 
     public void onRecordToggle(View toggle) {
         mConfig.record = ((ToggleButton) toggle).isChecked();
-        onConfigChanged();
+        mConfig.commit();
+        recreate();
     }
 
     public void onDetectToggle(View toggle) {
         mConfig.detect = ((ToggleButton) toggle).isChecked();
-        onConfigChanged();
+        mConfig.commit();
+        recreate();
+    }
+
+    public void onAutoToggle(View toggle) {
+        mConfig.automatic = ((ToggleButton) toggle).isChecked();
+        mConfig.apply();
+
+        if (mSaveTask != null) {
+            mSaveTask.terminate(mSaveMovie);
+            mSaveTask = null;
+        }
+
+        mGUI.update();
     }
 
     private enum Status {
@@ -360,6 +397,8 @@ public final class RecordingActivity extends Activity {
         private String mTopTextLast;
         private TextView mBottomText;
         private String mBottomTextLast;
+        private Button mManualStartButon;
+        private Button mManualStopButton;
 
         /**
          * Prepares all static UI elements.
@@ -372,8 +411,13 @@ public final class RecordingActivity extends Activity {
             mBottomTextLast = mBottomText.getText().toString();
             mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
+            mManualStartButon = (Button) findViewById(R.id.recording_start_manual_recording);
+            mManualStopButton = (Button) findViewById(R.id.recording_stop_manual_recording);
             ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
+            ((ToggleButton) findViewById(R.id.recording_auto_toggle)).setChecked(config.automatic);
             ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
+            findViewById(R.id.recording_auto_toggle).setVisibility(config.record ? View.VISIBLE :
+                    View.GONE);
         }
 
         /**
@@ -381,6 +425,14 @@ public final class RecordingActivity extends Activity {
          */
         void update() {
             if (mStatus == Status.STOPPED) return;
+
+            {
+                boolean relevant = mConfig.record && !mConfig.automatic;
+                boolean startVisible = relevant && mSaveTask == null;
+                boolean stopVisible = relevant && mSaveTask != null;
+                mManualStartButon.setVisibility(startVisible ? View.VISIBLE : View.GONE);
+                mManualStopButton.setVisibility(stopVisible ? View.VISIBLE : View.GONE);
+            }
 
             String topText;
             if (mStatus == Status.RUNNING) {

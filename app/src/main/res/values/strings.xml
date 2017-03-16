@@ -10,7 +10,6 @@
     <string name="errorCameraPermission">Camera permission denied</string>
     <string name="errorStoragePermission">Storage permission denied</string>
     <string name="errorOther">Camera error</string>
-    <string name="saveButton">Save</string>
     <string name="initializing">Initializing…</string>
     <string name="saving">Saving…</string>
     <string name="mainMenuPlayMovieString">Play movie activity</string>
@@ -18,8 +17,12 @@
     <string name="mainMenuBenchmarkingString">Benchmarking activity</string>
     <string name="mainMenuRecordingString">Recording activity</string>
     <string name="playbackPickVideo">Open video</string>
-    <string name="recordToggleOn">recording</string>
-    <string name="recordToggleOff">not recording</string>
-    <string name="detectToggleOn">detecting</string>
-    <string name="detectToggleOff">not detecting</string>
+    <string name="startManualRecording">REC</string>
+    <string name="stopManualRecording">STOP</string>
+    <string name="recordToggleOn">REC ON</string>
+    <string name="recordToggleOff">REC OFF</string>
+    <string name="autoToggleOn">AUTO ON</string>
+    <string name="autoToggleOff">AUTO OFF</string>
+    <string name="detectToggleOn">DET ON</string>
+    <string name="detectToggleOff">DET OFF</string>
 </resources>
