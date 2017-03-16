@@ -61,6 +61,15 @@
                 android:text="@string/stopManualRecording"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 tools:ignore="RelativeOverlap"/>
+
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/recording_force_automatic_recording"
+                android:onClick="onForceAutomaticRecording"
+                android:text="@string/forceAutomaticRecording"
+                android:textAppearance="@android:style/TextAppearance.Material.Large"
+                tools:ignore="RelativeOverlap"/>
         </LinearLayout>
 
         <LinearLayout

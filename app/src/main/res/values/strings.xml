@@ -19,6 +19,7 @@
     <string name="playbackPickVideo">Open video</string>
     <string name="startManualRecording">REC</string>
     <string name="stopManualRecording">STOP</string>
+    <string name="forceAutomaticRecording">AUTO</string>
     <string name="recordToggleOn">REC ON</string>
     <string name="recordToggleOff">REC OFF</string>
     <string name="autoToggleOn">AUTO ON</string>

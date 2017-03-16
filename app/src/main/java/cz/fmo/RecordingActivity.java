@@ -222,7 +222,7 @@ public final class RecordingActivity extends Activity {
         mGUI.update();
     }
 
-    public void onStartAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
+    public void onForceAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
         if (mSaveMovie == null) return;
         if (mStatus != Status.RUNNING) return;
 
@@ -397,8 +397,9 @@ public final class RecordingActivity extends Activity {
         private String mTopTextLast;
         private TextView mBottomText;
         private String mBottomTextLast;
-        private Button mManualStartButon;
+        private Button mManualStartButton;
         private Button mManualStopButton;
+        private Button mForceAutomaticButton;
 
         /**
          * Prepares all static UI elements.
@@ -411,8 +412,9 @@ public final class RecordingActivity extends Activity {
             mBottomTextLast = mBottomText.getText().toString();
             mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
-            mManualStartButon = (Button) findViewById(R.id.recording_start_manual_recording);
+            mManualStartButton = (Button) findViewById(R.id.recording_start_manual_recording);
             mManualStopButton = (Button) findViewById(R.id.recording_stop_manual_recording);
+            mForceAutomaticButton = (Button) findViewById(R.id.recording_force_automatic_recording);
             ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
             ((ToggleButton) findViewById(R.id.recording_auto_toggle)).setChecked(config.automatic);
             ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
@@ -430,8 +432,13 @@ public final class RecordingActivity extends Activity {
                 boolean relevant = mConfig.record && !mConfig.automatic;
                 boolean startVisible = relevant && mSaveTask == null;
                 boolean stopVisible = relevant && mSaveTask != null;
-                mManualStartButon.setVisibility(startVisible ? View.VISIBLE : View.GONE);
+                mManualStartButton.setVisibility(startVisible ? View.VISIBLE : View.GONE);
                 mManualStopButton.setVisibility(stopVisible ? View.VISIBLE : View.GONE);
+            }
+
+            {
+                boolean visible = mConfig.record && mConfig.automatic && mSaveTask == null;
+                mForceAutomaticButton.setVisibility(visible ? View.VISIBLE : View.GONE);
             }
 
             String topText;
