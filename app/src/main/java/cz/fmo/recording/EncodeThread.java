@@ -93,7 +93,7 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
     public long getBufferContentsDuration() {
         long duration;
         synchronized (mBuf) {
-            duration = mBuf.getDuration(mBuf.begin(), mBuf.end());
+            duration = mBuf.getDurationUs(mBuf.begin(), mBuf.end());
         }
         return duration;
     }

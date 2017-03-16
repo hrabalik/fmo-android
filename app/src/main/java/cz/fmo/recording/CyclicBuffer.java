@@ -83,7 +83,7 @@ public class CyclicBuffer {
      * @param last  end of range, index of the frame after the last frame (past-the-end index)
      * @return the number of frames in range first inclusive to last exclusive
      */
-    int numFrames(int first, int last) {
+    int getNumFrames(int first, int last) {
         if (first <= last) {
             return last - first;
         } else {
@@ -160,7 +160,7 @@ public class CyclicBuffer {
      * @param last  end of range, index of the frame after the last frame (past-the-end index)
      * @return presentation time delta in microseconds
      */
-    long getDuration(int first, int last) {
+    long getDurationUs(int first, int last) {
         if (first == last) return 0;
         return mMeta[prev(last)].presentationTimeUs - mMeta[first].presentationTimeUs;
     }
@@ -276,7 +276,7 @@ public class CyclicBuffer {
      * @param index frame index
      * @return timestamp of frame at index, in microseconds
      */
-    long getTime(int index) {
+    long getTimeUs(int index) {
         if (outOfRange(mHead, mTail, index)) throw new RuntimeException("Bad index");
         return mMeta[index].presentationTimeUs;
     }

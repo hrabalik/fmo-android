@@ -4,7 +4,6 @@ import android.media.MediaCodec;
 import android.media.MediaMuxer;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import cz.fmo.util.GenericThread;
@@ -15,10 +14,10 @@ import cz.fmo.util.GenericThread;
  */
 public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
-    private static final long SECOND_US = 1000000;
-    private static final long SECOND_MS = 1000;
-    private static final int SECOND_FRAMES = 30;
-    private static final long AUTOMATIC_MIN_LENGTH_US = (3 * SECOND_US) / 2;
+    private static final float SECOND_US = 1e6f;
+    private static final float SECOND_MS = 1e3f;
+    private static final float SECOND_FRAMES = 30;
+    private static final long AUTOMATIC_MIN_LENGTH_US = (long) (1.5f * SECOND_US);
     private static final float MIN_MARGIN_SEC = 1.f;
     private static final long MIN_MARGIN_US = (long) (SECOND_US * MIN_MARGIN_SEC);
     private static final int MIN_MARGIN_FRAMES = (int) (SECOND_FRAMES * MIN_MARGIN_SEC);
@@ -53,53 +52,6 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         return new SaveMovieThreadHandler(this);
     }
 
-    /**
-     * Saves the latest lengthUs of frames to the specified file. If the start of the movie is less
-     * than MIN_MARGIN_US from the start of the buffer, the method refuses to save the file. The
-     * MIN_MARGIN_US requirement is a precaution to avoid overwriting data of a frame while it is
-     * still being saved.
-     *
-     * @param file file to save to, should be writable and have a .mp4 extension
-     */
-    private void saveAutomatic(long lengthUs, File file) {
-        boolean win = saveAutomaticImpl(lengthUs, file);
-        sendCallback(file, win);
-    }
-
-    private boolean saveAutomaticImpl(long lengthUs, File file) {
-        int first;
-        int last;
-
-        synchronized (mBuf) {
-            if (mBuf.empty()) return false;
-            long endTime = mBuf.getTime(mBuf.prev(mBuf.end()));
-            long startTime = endTime - lengthUs;
-            first = mBuf.findByTime(mBuf.begin(), mBuf.end(), startTime);
-            first = mBuf.findIFrame(first);
-            last = mBuf.end();
-            if (mBuf.getDuration(first, last) < AUTOMATIC_MIN_LENGTH_US) return false;
-            if (mBuf.getDuration(mBuf.begin(), first) < MIN_MARGIN_US) return false;
-        }
-
-        boolean win = true;
-        MediaMuxer muxer = null;
-        try {
-            muxer = new MediaMuxer(file.getPath(), OUTPUT_FORMAT);
-            int track = muxer.addTrack(mBuf.getFormat());
-            muxer.start();
-            writeFrames(first, last, muxer, track);
-        } catch (IOException e) {
-            win = false;
-        } finally {
-            if (muxer != null) {
-                muxer.stop();
-                muxer.release();
-            }
-        }
-
-        return win;
-    }
-
     private void writeFrames(int first, int last, MediaMuxer muxer, int track) {
         synchronized (mBufCache) {
             for (int index = first; index != last; index = mBuf.next(index)) {
@@ -111,6 +63,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
 
     public interface Task {
         void perform(SaveMovieThread thread);
+
         void terminate(SaveMovieThread thread);
     }
 
@@ -122,21 +75,66 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     public static class AutomaticRecordingTask implements Task {
         private final Object mLock = new Object();
         private final long mWaitMs;
-        private final long mVideoLenUs;
+        private final long mWaitUs;
+        private final int mWaitFrames;
+        private final long mLenUs;
         private final File mFile;
+        private final CyclicBuffer mBuf;
         private final SaveMovieThreadHandler mHandler;
         private boolean mPerformed = false;
         private boolean mCancelled = false;
+        private int mFirst;
 
-        public AutomaticRecordingTask(float waitSec, float videoLenSec, File file,
+        /**
+         * Saves the latest lengthSec of frames to the specified file. If the start of the movie is
+         * less than MIN_MARGIN_SEC from the start of the buffer, the method refuses to save the
+         * file. The MIN_MARGIN_SEC requirement is a precaution to avoid overwriting data of a frame
+         * while it is still being saved.
+         * <p>
+         * Use terminate() to cancel the task during the waiting period.
+         *
+         * @param waitSec   time to wait for before saving, in seconds
+         * @param lengthSec length of the movie to be saved
+         * @param file      file to save to, should be writable and have a .mp4 extension
+         * @param thread    thread to use for saving
+         */
+        public AutomaticRecordingTask(float waitSec, float lengthSec, File file,
                                       SaveMovieThread thread) {
-            this.mWaitMs = (long) (waitSec * 1e3f);
-            this.mVideoLenUs = (long) (videoLenSec * 1e6f);
+            this.mWaitMs = (long) (waitSec * SECOND_MS);
+            this.mWaitUs = (long) (waitSec * SECOND_US);
+            this.mWaitFrames = (int) (waitSec * SECOND_FRAMES);
+            this.mLenUs = (long) (lengthSec * SECOND_US);
             this.mFile = file;
+            this.mBuf = thread.getBuffer();
             this.mHandler = thread.getHandler();
+            boolean win = init();
 
-            if (mHandler == null) return;
+            if (!win) {
+                mCancelled = true;
+                thread.sendCallback(file, false);
+                return;
+            }
+
             mHandler.sendTask(this, mWaitMs);
+        }
+
+        private boolean init() {
+            if (mHandler == null) return false;
+
+            synchronized (mBuf) {
+                if (mBuf.empty()) return false;
+                long nowUs = mBuf.getTimeUs(mBuf.prev(mBuf.end()));
+                long startUs = nowUs + mWaitUs - mLenUs;
+                mFirst = mBuf.findByTime(mBuf.begin(), mBuf.end(), startUs);
+                mFirst = mBuf.findIFrame(mFirst);
+                if (!mBuf.isIFrame(mFirst)) return false;
+                long marginUs = mBuf.getDurationUs(mBuf.begin(), mFirst);
+                if (marginUs < MIN_MARGIN_US + mWaitUs) return false;
+                int marginFrames = mBuf.getNumFrames(mBuf.begin(), mFirst);
+                if (marginFrames < MIN_MARGIN_FRAMES + mWaitFrames) return false;
+            }
+
+            return true;
         }
 
         @Override
@@ -144,7 +142,29 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
             synchronized (mLock) {
                 if (mPerformed || mCancelled) return;
                 mPerformed = true;
-                thread.saveAutomatic(mVideoLenUs, mFile);
+
+                int last;
+                synchronized (mBuf) {
+                    last = mBuf.end();
+                }
+
+                boolean win = true;
+                MediaMuxer muxer = null;
+                try {
+                    muxer = new MediaMuxer(mFile.getPath(), OUTPUT_FORMAT);
+                    int track = muxer.addTrack(mBuf.getFormat());
+                    muxer.start();
+                    thread.writeFrames(mFirst, last, muxer, track);
+                } catch (Exception e) {
+                    win = false;
+                }
+
+                if (muxer != null) {
+                    muxer.stop();
+                    muxer.release();
+                }
+
+                thread.sendCallback(mFile, win);
             }
         }
 
@@ -172,6 +192,13 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
         private int mTrack;
         private int mFramesWritten = 0;
 
+        /**
+         * Saves the contents of the buffer to the specified file. Recording is performed
+         * indefinitely, until terminate() is called.
+         *
+         * @param file   file to save to, should be writable and have a .mp4 extension
+         * @param thread thread to use for saving
+         */
         public ManualRecordingTask(File file, SaveMovieThread thread) {
             this.mFile = file;
             this.mBuf = thread.getBuffer();
@@ -194,9 +221,9 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
                 int last = mBuf.prev(mBuf.end());
                 mFirst = mBuf.findIFrame(last);
                 if (!mBuf.isIFrame(mFirst)) return false;
-                long marginUs = mBuf.getDuration(mBuf.begin(), mFirst);
+                long marginUs = mBuf.getDurationUs(mBuf.begin(), mFirst);
                 if (marginUs < MIN_MARGIN_US + CHUNK_US) return false;
-                int marginFrames = mBuf.numFrames(mBuf.begin(), mFirst);
+                int marginFrames = mBuf.getNumFrames(mBuf.begin(), mFirst);
                 if (marginFrames < MIN_MARGIN_FRAMES + CHUNK_FRAMES) return false;
             }
 
@@ -216,7 +243,7 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
             synchronized (mBuf) {
                 last = mBuf.end();
             }
-            int numFrames = mBuf.numFrames(mFirst, last);
+            int numFrames = mBuf.getNumFrames(mFirst, last);
             thread.writeFrames(mFirst, last, mMuxer, mTrack);
             mFramesWritten += numFrames;
             mFirst = last;
