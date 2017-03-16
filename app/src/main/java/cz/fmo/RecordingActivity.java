@@ -397,9 +397,10 @@ public final class RecordingActivity extends Activity {
         private String mTopTextLast;
         private TextView mBottomText;
         private String mBottomTextLast;
-        private Button mManualStartButton;
-        private Button mManualStopButton;
-        private Button mForceAutomaticButton;
+        private Button mManualStoppedButton;
+        private Button mManualRunningButton;
+        private Button mAutomaticStoppedButton;
+        private Button mAutomaticRunningButton;
 
         /**
          * Prepares all static UI elements.
@@ -412,9 +413,10 @@ public final class RecordingActivity extends Activity {
             mBottomTextLast = mBottomText.getText().toString();
             mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
-            mManualStartButton = (Button) findViewById(R.id.recording_start_manual_recording);
-            mManualStopButton = (Button) findViewById(R.id.recording_stop_manual_recording);
-            mForceAutomaticButton = (Button) findViewById(R.id.recording_force_automatic_recording);
+            mManualStoppedButton = (Button) findViewById(R.id.recording_manual_stopped);
+            mManualRunningButton = (Button) findViewById(R.id.recording_manual_running);
+            mAutomaticStoppedButton = (Button) findViewById(R.id.recording_automatic_stopped);
+            mAutomaticRunningButton = (Button) findViewById(R.id.recording_automatic_running);
             ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
             ((ToggleButton) findViewById(R.id.recording_auto_toggle)).setChecked(config.automatic);
             ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
@@ -427,46 +429,58 @@ public final class RecordingActivity extends Activity {
          */
         void update() {
             if (mStatus == Status.STOPPED) return;
+            updateRecordingButtons();
+            updateTopText();
+            updateBottomText();
+        }
 
+        private void updateBottomText() {
+            String text;
+            if (mStatus == Status.CAMERA_ERROR) {
+                text = getString(R.string.errorOther);
+            } else if (mStatus == Status.CAMERA_PERMISSION_ERROR) {
+                text = getString(R.string.errorCameraPermission);
+            } else if (mStatus == Status.STORAGE_PERMISSION_ERROR) {
+                text = getString(R.string.errorStoragePermission);
+            } else {
+                text = String.format(Locale.US, "%.2f / %.1f / %.0f", q50, q95, q99);
+            }
+
+            if (!mBottomTextLast.equals(text)) {
+                mBottomText.setText(text);
+                mBottomTextLast = text;
+            }
+        }
+
+        private void updateTopText() {
+            String text;
+            if (mStatus == Status.RUNNING) {
+                text = getString(R.string.videoLength, timeInBuffer);
+            } else {
+                text = "";
+            }
+
+            if (!mTopTextLast.equals(text)) {
+                mTopText.setText(text);
+                mTopTextLast = text;
+            }
+        }
+
+        private void updateRecordingButtons() {
             {
                 boolean relevant = mConfig.record && !mConfig.automatic;
-                boolean startVisible = relevant && mSaveTask == null;
-                boolean stopVisible = relevant && mSaveTask != null;
-                mManualStartButton.setVisibility(startVisible ? View.VISIBLE : View.GONE);
-                mManualStopButton.setVisibility(stopVisible ? View.VISIBLE : View.GONE);
+                boolean stopped = relevant && mSaveTask == null;
+                boolean running = relevant && mSaveTask != null;
+                mManualStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);
+                mManualRunningButton.setVisibility(running ? View.VISIBLE : View.GONE);
             }
 
             {
-                boolean visible = mConfig.record && mConfig.automatic && mSaveTask == null;
-                mForceAutomaticButton.setVisibility(visible ? View.VISIBLE : View.GONE);
-            }
-
-            String topText;
-            if (mStatus == Status.RUNNING) {
-                topText = getString(R.string.videoLength, timeInBuffer);
-            } else {
-                topText = "";
-            }
-
-            if (!mTopTextLast.equals(topText)) {
-                mTopText.setText(topText);
-                mTopTextLast = topText;
-            }
-
-            String bottomText;
-            if (mStatus == Status.CAMERA_ERROR) {
-                bottomText = getString(R.string.errorOther);
-            } else if (mStatus == Status.CAMERA_PERMISSION_ERROR) {
-                bottomText = getString(R.string.errorCameraPermission);
-            } else if (mStatus == Status.STORAGE_PERMISSION_ERROR) {
-                bottomText = getString(R.string.errorStoragePermission);
-            } else {
-                bottomText = String.format(Locale.US, "%.2f / %.1f / %.0f", q50, q95, q99);
-            }
-
-            if (!mBottomTextLast.equals(bottomText)) {
-                mBottomText.setText(bottomText);
-                mBottomTextLast = bottomText;
+                boolean relevant = mConfig.record && mConfig.automatic;
+                boolean stopped = relevant && mSaveTask == null;
+                boolean running = relevant && mSaveTask != null;
+                mAutomaticStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);
+                mAutomaticRunningButton.setVisibility(running ? View.VISIBLE : View.GONE);
             }
         }
 
