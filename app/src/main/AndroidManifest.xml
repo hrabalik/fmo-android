@@ -30,7 +30,7 @@
         android:theme="@style/Main">
 
         <activity
-            android:name=".Main"
+            android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
@@ -43,21 +43,21 @@
         </activity>
 
         <activity
-            android:name="cz.fmo.RecordingActivity"
+            android:name=".RecordingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Recording2"
             android:screenOrientation="landscape"
-            android:theme="@style/Fullscreen"/>
+            android:theme="@style/Recording"/>
 
         <activity
-            android:name="cz.fmo.BenchmarkingActivity"
+            android:name=".BenchmarkingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Benchmarking"
             android:screenOrientation="landscape"
             android:theme="@style/Benchmarking"/>
 
         <activity
-            android:name="cz.fmo.PlaybackActivity"
+            android:name=".PlaybackActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Playback"
             android:screenOrientation="landscape"
@@ -68,7 +68,7 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Play movie"
             android:screenOrientation="landscape"
-            android:theme="@style/Fullscreen">
+            android:theme="@style/PlayMovieSurfaceActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <data android:scheme="fmo-movie"/>

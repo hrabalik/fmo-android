@@ -1,14 +1,12 @@
 <resources>
 
-    <style name="Main" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
+    <style name="Main" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
 
-    <style name="Fullscreen" parent="@android:style/Theme.NoTitleBar.Fullscreen"/>
+    <style name="PlayMovieSurfaceActivity" parent="@android:style/Theme.NoTitleBar.Fullscreen"/>
 
     <style name="Benchmarking" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
+
+    <style name="Recording" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
 
     <style name="Playback" parent="@android:style/Theme.Material.NoActionBar.Fullscreen"/>
 

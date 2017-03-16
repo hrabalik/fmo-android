@@ -1,66 +1,33 @@
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-       xmlns:tools="http://schemas.android.com/tools"
-       android:layout_width="match_parent"
-       android:layout_height="match_parent"
-       tools:context="cz.fmo.Main">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical">
 
-    <!-- The primary full-screen view. This can be replaced with whatever view
-         is needed to present your content, e.g. VideoView, SurfaceView,
-         TextureView, etc. -->
-    <TextView
-        android:id="@+id/fullscreen_content"
+    <Button
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:keepScreenOn="true"
-        android:text="@string/dummy_content"
-        android:textColor="#33b5e5"
-        android:textSize="50sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:onClick="runPlayMovieSurfaceActivity"
+        android:text="@string/mainMenuPlayMovieString"/>
 
-    <LinearLayout
+    <Button
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:onClick="runBenchmarkingActivity"
+        android:text="@string/mainMenuBenchmarkingString"/>
 
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|bottom"
-            android:onClick="runPlayMovieSurfaceActivity"
-            android:text="@string/mainMenuPlayMovieString"/>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|bottom"
+        android:onClick="runPlaybackActivity"
+        android:text="@string/mainMenuPlaybackString"/>
 
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|bottom"
-            android:onClick="runBenchmarkingActivity"
-            android:text="@string/mainMenuBenchmarkingString"/>
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|bottom"
-            android:onClick="runPlaybackActivity"
-            android:text="@string/mainMenuPlaybackString"/>
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|top"
-            android:onClick="runRecordingActivity"
-            android:text="@string/mainMenuRecordingString"/>
-
-        <TextView
-            android:id="@+id/mainMenuTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingBottom="14sp"
-            android:paddingTop="14sp"
-            android:textAlignment="center" />
-    </LinearLayout>
-
-    <!-- This FrameLayout insets its children based on system windows using
-         android:fitsSystemWindows. -->
-
-</merge>
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start|top"
+        android:onClick="runRecordingActivity"
+        android:text="@string/mainMenuRecordingString"/>
+</LinearLayout>
