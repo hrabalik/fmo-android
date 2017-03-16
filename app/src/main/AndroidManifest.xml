@@ -44,7 +44,7 @@
 
         <activity
             android:name=".RecordingActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:configChanges=""
             android:label="Recording2"
             android:screenOrientation="landscape"
             android:theme="@style/Recording"/>
