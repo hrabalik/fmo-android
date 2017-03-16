@@ -19,8 +19,10 @@ import java.lang.ref.WeakReference;
 import java.util.Locale;
 
 import cz.fmo.camera.CameraThread;
+import cz.fmo.recording.AutomaticRecordingTask;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
+import cz.fmo.recording.ManualRecordingTask;
 import cz.fmo.recording.SaveMovieThread;
 import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
@@ -232,8 +234,7 @@ public final class RecordingActivity extends Activity {
         }
 
         File outFile = mFileMan.open(FILENAME);
-        mSaveTask = new SaveMovieThread.AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN,
-                outFile, mSaveMovie);
+        mSaveTask = new AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN, outFile, mSaveMovie);
     }
 
     public void onStartManualRecording(@SuppressWarnings("UnusedParameters") View view) {
@@ -241,7 +242,7 @@ public final class RecordingActivity extends Activity {
         if (mStatus != Status.RUNNING) return;
         if (mSaveTask != null) return;
         File outFile = mFileMan.open(FILENAME);
-        mSaveTask = new SaveMovieThread.ManualRecordingTask(outFile, mSaveMovie);
+        mSaveTask = new ManualRecordingTask(outFile, mSaveMovie);
         mGUI.update();
     }
 
