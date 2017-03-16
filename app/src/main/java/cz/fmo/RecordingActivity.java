@@ -44,6 +44,7 @@ public final class RecordingActivity extends Activity {
     private EncodeThread mEncode;
     private SaveThread mSaveMovie;
     private SaveThread.Task mSaveTask;
+    private CameraThread.Target mEncodeTarget;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -150,7 +151,12 @@ public final class RecordingActivity extends Activity {
             mSaveMovie = new SaveThread(buffer, mHandler);
 
             // add encoder as camera target
-            mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(), mCamera.getHeight());
+            mEncodeTarget = mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(),
+                    mCamera.getHeight());
+
+            // only allow encoding in automatic mode; manual mode starts encoding once the recording
+            // button is pressed
+            setEncodingEnabled(mConfig.automatic);
         }
 
         if (mConfig.detect) {
@@ -187,10 +193,7 @@ public final class RecordingActivity extends Activity {
             mCamera = null;
         }
 
-        if (mSaveTask != null) {
-            mSaveTask.terminate(mSaveMovie);
-            mSaveTask = null;
-        }
+        stopSaving();
 
         if (mSaveMovie != null) {
             mSaveMovie.getHandler().sendKill();
@@ -241,6 +244,7 @@ public final class RecordingActivity extends Activity {
         if (mSaveMovie == null) return;
         if (mStatus != Status.RUNNING) return;
         if (mSaveTask != null) return;
+        setEncodingEnabled(true);
         File outFile = mFileMan.open(FILENAME);
         mSaveTask = new ManualRecordingTask(outFile, mSaveMovie);
         mGUI.update();
@@ -249,6 +253,7 @@ public final class RecordingActivity extends Activity {
     public void onStopManualRecording(@SuppressWarnings("UnusedParameters") View view) {
         if (mSaveMovie == null) return;
         mSaveTask.terminate(mSaveMovie);
+        setEncodingEnabled(false);
         mSaveTask = null;
         mGUI.update();
     }
@@ -276,13 +281,35 @@ public final class RecordingActivity extends Activity {
     public void onAutoToggle(View toggle) {
         mConfig.automatic = ((ToggleButton) toggle).isChecked();
         mConfig.apply();
+        setEncodingEnabled(mConfig.automatic);
+        mGUI.update();
+    }
 
+    /**
+     * Ceases any saving operation, scheduled or in progress.
+     */
+    private void stopSaving() {
         if (mSaveTask != null) {
             mSaveTask.terminate(mSaveMovie);
             mSaveTask = null;
         }
+    }
 
-        mGUI.update();
+    /**
+     * Enabled or disables encoding, along with any possibility of recording. In idle state,
+     * encoding is disabled to save battery; while recording (both manually or automatically),
+     * encoding is enabled.
+     */
+    private void setEncodingEnabled(boolean enabled) {
+        stopSaving();
+
+        if (mEncode != null) {
+            mEncode.clearBuffer();
+        }
+
+        if (mEncodeTarget != null) {
+            mEncodeTarget.setEnabled(enabled);
+        }
     }
 
     private enum Status {

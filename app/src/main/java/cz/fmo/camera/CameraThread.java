@@ -37,8 +37,10 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
      * Adds a surface that the thread will draw onto using OpenGL. Multiple surfaces can be added.
      * Call this method before the start() method has been called.
      */
-    public void addTarget(Surface surface, int width, int height) {
-        mTargets.add(new Target(surface, width, height));
+    public Target addTarget(Surface surface, int width, int height) {
+        Target target = new Target(surface, width, height);
+        mTargets.add(target);
+        return target;
     }
 
     /**
@@ -134,16 +136,25 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
      * Internal output surface representation, containing references to the original surface and the
      * associated EGL.Surface.
      */
-    private static class Target {
+    public static class Target {
         private final Surface mSurface;
         private final int mWidth;
         private final int mHeight;
         private EGL.Surface mEglSurface;
+        private boolean mEnabled = true;
 
         Target(Surface surface, int width, int height) {
             mSurface = surface;
             mWidth = width;
             mHeight = height;
+        }
+
+        /**
+         * Allows to disable rendering to this target. To obtain an instance, store the return value
+         * of addTarget().
+         */
+        public void setEnabled(boolean enabled) {
+            mEnabled = enabled;
         }
 
         /**
@@ -166,6 +177,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
          * Draw the frame onto the target surface using OpenGL.
          */
         void render(Renderer renderer) {
+            if (!mEnabled) return;
             mEglSurface.makeCurrent();
             GLES20.glViewport(0, 0, mWidth, mHeight);
             renderer.drawRectangle();

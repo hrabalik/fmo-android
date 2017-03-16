@@ -33,6 +33,8 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
         }
 
         mCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        mBuf.clear();
+        mBuf.setFormat(mCodec.getOutputFormat());
         mInputSurface = mCodec.createInputSurface();
         mCodec.start();
     }
@@ -57,6 +59,7 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
             int status = mCodec.dequeueOutputBuffer(mInfo, 0);
             if (status == MediaCodec.INFO_TRY_AGAIN_LATER) break;
             if (status == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                mBuf.clear();
                 mBuf.setFormat(mCodec.getOutputFormat());
                 continue;
             }
@@ -96,6 +99,15 @@ public class EncodeThread extends GenericThread<EncodeThreadHandler> {
             duration = mBuf.getDurationUs(mBuf.begin(), mBuf.end());
         }
         return duration;
+    }
+
+    /**
+     * Deletes all data in the output buffer.
+     */
+    public void clearBuffer() {
+        synchronized (mBuf) {
+            mBuf.clear();
+        }
     }
 
     public interface Callback {

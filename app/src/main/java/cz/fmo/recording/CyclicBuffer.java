@@ -65,6 +65,11 @@ public class CyclicBuffer {
         return mTail;
     }
 
+    public void clear() {
+        mHead = 0;
+        mTail = 0;
+    }
+
     /**
      * @param first start of range, index of the first frame
      * @param last  end of range, index of the frame after the last frame (past-the-end index)
