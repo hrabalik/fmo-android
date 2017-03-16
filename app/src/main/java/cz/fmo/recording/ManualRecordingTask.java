@@ -9,12 +9,12 @@ import cz.fmo.util.Time;
 /**
  * For recording long movies.
  */
-public class ManualRecordingTask implements SaveMovieThread.Task {
+public class ManualRecordingTask implements SaveThread.Task {
     private static final float CHUNK_SEC = 1.f;
     private final Object mLock = new Object();
     private final File mFile;
     private final CyclicBuffer mBuf;
-    private final SaveMovieThreadHandler mHandler;
+    private final SaveThreadHandler mHandler;
     private int mFirst;
     private MediaMuxer mMuxer;
     private int mTrack;
@@ -28,7 +28,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
      * @param file   file to save to, should be writable and have a .mp4 extension
      * @param thread thread to use for saving
      */
-    public ManualRecordingTask(File file, SaveMovieThread thread) {
+    public ManualRecordingTask(File file, SaveThread thread) {
         this.mFile = file;
         this.mBuf = thread.getBuffer();
         this.mHandler = thread.getHandler();
@@ -50,7 +50,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
             int last = mBuf.prev(mBuf.end());
             mFirst = mBuf.findIFrame(last);
             if (!mBuf.isIFrame(mFirst)) return false;
-            float minMargin = SaveMovieThread.MIN_MARGIN_SEC + CHUNK_SEC;
+            float minMargin = SaveThread.MIN_MARGIN_SEC + CHUNK_SEC;
             long marginUs = mBuf.getDurationUs(mBuf.begin(), mFirst);
             if (marginUs < Time.toUs(minMargin)) return false;
             int marginFrames = mBuf.getNumFrames(mBuf.begin(), mFirst);
@@ -58,7 +58,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
         }
 
         try {
-            mMuxer = new MediaMuxer(mFile.getPath(), SaveMovieThread.OUTPUT_FORMAT);
+            mMuxer = new MediaMuxer(mFile.getPath(), SaveThread.OUTPUT_FORMAT);
         } catch (java.io.IOException e) {
             return false;
         }
@@ -68,7 +68,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
         return true;
     }
 
-    private void writeFrames(SaveMovieThread thread) {
+    private void writeFrames(SaveThread thread) {
         int last;
         synchronized (mBuf) {
             last = mBuf.end();
@@ -80,7 +80,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
     }
 
     @Override
-    public void perform(SaveMovieThread thread) {
+    public void perform(SaveThread thread) {
         synchronized (mLock) {
             if (mMuxer == null) return;
             writeFrames(thread);
@@ -89,7 +89,7 @@ public class ManualRecordingTask implements SaveMovieThread.Task {
     }
 
     @Override
-    public void terminate(SaveMovieThread thread) {
+    public void terminate(SaveThread thread) {
         synchronized (mLock) {
             if (mMuxer == null) return;
             writeFrames(thread);

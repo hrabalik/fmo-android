@@ -12,7 +12,7 @@ import cz.fmo.util.GenericThread;
  * Thread for saving videos from frames stored in a buffer. The buffer needs to be filled with
  * MPEG-4 frames and the exact format has to be specified using the CyclicBuffer.setFormat() method.
  */
-public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
+public class SaveThread extends GenericThread<SaveThreadHandler> {
     static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
     static final float MIN_MARGIN_SEC = 1.f;
     private final CyclicBuffer mBuf;
@@ -20,8 +20,8 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     private final MediaCodec.BufferInfo mInfoCache;
     private final Callback mCb;
 
-    public SaveMovieThread(CyclicBuffer buf, Callback cb) {
-        super("SaveMovieThread");
+    public SaveThread(CyclicBuffer buf, Callback cb) {
+        super("SaveThread");
         mBuf = buf;
         mBufCache = buf.getCache();
         mInfoCache = new MediaCodec.BufferInfo();
@@ -42,8 +42,8 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     }
 
     @Override
-    protected SaveMovieThreadHandler makeHandler() {
-        return new SaveMovieThreadHandler(this);
+    protected SaveThreadHandler makeHandler() {
+        return new SaveThreadHandler(this);
     }
 
     void writeFrames(int first, int last, MediaMuxer muxer, int track) {
@@ -56,9 +56,9 @@ public class SaveMovieThread extends GenericThread<SaveMovieThreadHandler> {
     }
 
     public interface Task {
-        void perform(SaveMovieThread thread);
+        void perform(SaveThread thread);
 
-        void terminate(SaveMovieThread thread);
+        void terminate(SaveThread thread);
     }
 
     @SuppressWarnings("UnusedParameters")

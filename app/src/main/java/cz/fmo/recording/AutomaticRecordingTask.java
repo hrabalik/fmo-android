@@ -9,13 +9,13 @@ import cz.fmo.util.Time;
 /**
  * For recording short movies on demand.
  */
-public class AutomaticRecordingTask implements SaveMovieThread.Task {
+public class AutomaticRecordingTask implements SaveThread.Task {
     private final Object mLock = new Object();
     private final float mWaitSec;
     private final float mLengthSec;
     private final File mFile;
     private final CyclicBuffer mBuf;
-    private final SaveMovieThreadHandler mHandler;
+    private final SaveThreadHandler mHandler;
     private boolean mPerformed = false;
     private boolean mCancelled = false;
     private int mFirst;
@@ -35,7 +35,7 @@ public class AutomaticRecordingTask implements SaveMovieThread.Task {
      * @param thread    thread to use for saving
      */
     public AutomaticRecordingTask(float waitSec, float lengthSec, File file,
-                                  SaveMovieThread thread) {
+                                  SaveThread thread) {
         this.mWaitSec = waitSec;
         this.mLengthSec = lengthSec;
         this.mFile = file;
@@ -62,7 +62,7 @@ public class AutomaticRecordingTask implements SaveMovieThread.Task {
             mFirst = mBuf.findByTime(mBuf.begin(), mBuf.end(), startUs);
             mFirst = mBuf.findIFrame(mFirst);
             if (!mBuf.isIFrame(mFirst)) return false;
-            float minMargin = SaveMovieThread.MIN_MARGIN_SEC + mWaitSec;
+            float minMargin = SaveThread.MIN_MARGIN_SEC + mWaitSec;
             long marginUs = mBuf.getDurationUs(mBuf.begin(), mFirst);
             if (marginUs < Time.toUs(minMargin)) return false;
             int marginFrames = mBuf.getNumFrames(mBuf.begin(), mFirst);
@@ -73,7 +73,7 @@ public class AutomaticRecordingTask implements SaveMovieThread.Task {
     }
 
     @Override
-    public void perform(SaveMovieThread thread) {
+    public void perform(SaveThread thread) {
         synchronized (mLock) {
             if (mPerformed || mCancelled) return;
             mPerformed = true;
@@ -86,7 +86,7 @@ public class AutomaticRecordingTask implements SaveMovieThread.Task {
             boolean win = true;
             MediaMuxer muxer = null;
             try {
-                muxer = new MediaMuxer(mFile.getPath(), SaveMovieThread.OUTPUT_FORMAT);
+                muxer = new MediaMuxer(mFile.getPath(), SaveThread.OUTPUT_FORMAT);
                 int track = muxer.addTrack(mBuf.getFormat());
                 muxer.start();
                 thread.writeFrames(mFirst, last, muxer, track);
@@ -104,7 +104,7 @@ public class AutomaticRecordingTask implements SaveMovieThread.Task {
     }
 
     @Override
-    public void terminate(SaveMovieThread thread) {
+    public void terminate(SaveThread thread) {
         synchronized (mLock) {
             if (mPerformed || mCancelled) return;
             mCancelled = true;

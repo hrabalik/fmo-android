@@ -23,7 +23,7 @@ import cz.fmo.recording.AutomaticRecordingTask;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
 import cz.fmo.recording.ManualRecordingTask;
-import cz.fmo.recording.SaveMovieThread;
+import cz.fmo.recording.SaveThread;
 import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
 
@@ -42,8 +42,8 @@ public final class RecordingActivity extends Activity {
     private Status mStatus = Status.STOPPED;
     private CameraThread mCamera;
     private EncodeThread mEncode;
-    private SaveMovieThread mSaveMovie;
-    private SaveMovieThread.Task mSaveTask;
+    private SaveThread mSaveMovie;
+    private SaveThread.Task mSaveTask;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -147,7 +147,7 @@ public final class RecordingActivity extends Activity {
 
             // create dedicated encoding and video saving threads
             mEncode = new EncodeThread(mCamera.getMediaFormat(), buffer, mHandler);
-            mSaveMovie = new SaveMovieThread(buffer, mHandler);
+            mSaveMovie = new SaveThread(buffer, mHandler);
 
             // add encoder as camera target
             mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(), mCamera.getHeight());
@@ -197,7 +197,7 @@ public final class RecordingActivity extends Activity {
             try {
                 mSaveMovie.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted when closing SaveMovieThread");
+                throw new RuntimeException("Interrupted when closing SaveThread");
             }
             mSaveMovie = null;
         }
@@ -300,7 +300,7 @@ public final class RecordingActivity extends Activity {
      * typically by forwarding them to the main (GUI) thread.
      */
     private static class Handler extends android.os.Handler implements Lib.Callback,
-            EncodeThread.Callback, SaveMovieThread.Callback, CameraThread.Callback {
+            EncodeThread.Callback, SaveThread.Callback, CameraThread.Callback {
         private static final int FRAME_TIMINGS = 1;
         private static final int CAMERA_ERROR = 2;
         private static final int ENCODER_FLUSHED = 3;
