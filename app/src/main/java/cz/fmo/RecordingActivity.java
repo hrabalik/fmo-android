@@ -33,6 +33,7 @@ public final class RecordingActivity extends Activity {
     private static final float BUFFER_SECONDS = 8;
     private static final float AUTOMATIC_LEN = 4;
     private static final float AUTOMATIC_WAIT = 2;
+    private static final int PREVIEW_SLOWDOWN_FRAMES = 59;
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
     private final GUI mGUI = new GUI();
@@ -43,7 +44,8 @@ public final class RecordingActivity extends Activity {
     private EncodeThread mEncode;
     private SaveThread mSaveMovie;
     private SaveThread.Task mSaveTask;
-    private CameraThread.Target mEncodeTarget;
+    private CameraThread.TargetWithEnable mEncodeTarget;
+    private CameraThread.TargetWithSlowdown mPreviewTarget;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -133,12 +135,29 @@ public final class RecordingActivity extends Activity {
             return;
         }
 
-        // create a dedicated camera input thread
-        mCamera = new CameraThread(mHandler);
+        // configure camera
+        {
+            // calculate preferred dimensions based on settings
+            int preferWidth = 1280;
+            int preferHeight = 720;
+
+            if (mConfig.hires) {
+                preferWidth = 1920;
+                preferHeight = 1080;
+            }
+
+            // create a dedicated camera input thread
+            mCamera = new CameraThread(mHandler, preferWidth, preferHeight);
+        }
 
         // add preview as camera target
-        mCamera.addTarget(mGUI.getPreviewSurface(), mGUI.getPreviewWidth(),
-                mGUI.getPreviewHeight());
+        mPreviewTarget = new CameraThread.TargetWithSlowdown(mGUI.getPreviewSurface(),
+                mGUI.getPreviewWidth(), mGUI.getPreviewHeight());
+        mCamera.addTarget(mPreviewTarget);
+
+        if (!mConfig.preview) {
+            mPreviewTarget.setSlowdown(PREVIEW_SLOWDOWN_FRAMES);
+        }
 
         if (mConfig.record) {
             // make a suitably-sized cyclic buffer
@@ -150,8 +169,9 @@ public final class RecordingActivity extends Activity {
             mSaveMovie = new SaveThread(buffer, mHandler);
 
             // add encoder as camera target
-            mEncodeTarget = mCamera.addTarget(mEncode.getInputSurface(), mCamera.getWidth(),
-                    mCamera.getHeight());
+            mEncodeTarget = new CameraThread.TargetWithEnable(mEncode.getInputSurface(),
+                    mCamera.getWidth(), mCamera.getHeight());
+            mCamera.addTarget(mEncodeTarget);
 
             // only allow encoding in automatic mode; manual mode starts encoding once the recording
             // button is pressed
@@ -266,8 +286,25 @@ public final class RecordingActivity extends Activity {
         mGUI.update();
     }
 
+    public void onPreviewToggle(View toggle) {
+        mConfig.preview = ((ToggleButton) toggle).isChecked();
+        mConfig.apply();
+
+        if (mConfig.preview) {
+            mPreviewTarget.setSlowdown(0);
+        } else {
+            mPreviewTarget.setSlowdown(PREVIEW_SLOWDOWN_FRAMES);
+        }
+    }
+
     public void onRecordToggle(View toggle) {
         mConfig.record = ((ToggleButton) toggle).isChecked();
+        mConfig.commit();
+        recreate();
+    }
+
+    public void onHiresToggle(View toggle) {
+        mConfig.hires = ((ToggleButton) toggle).isChecked();
         mConfig.commit();
         recreate();
     }

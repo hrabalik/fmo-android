@@ -28,6 +28,8 @@ class CameraCapture implements Camera.PreviewCallback {
     private static final int IMAGE_FORMAT = ImageFormat.NV21;
     private static final int BITS_PER_PIXEL = ImageFormat.getBitsPerPixel(IMAGE_FORMAT);
     private final Callback mCb;
+    private final int mPreferWidth;
+    private final int mPreferHeight;
     private Camera mCamera;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
@@ -38,8 +40,10 @@ class CameraCapture implements Camera.PreviewCallback {
      * Selects a suitable camera and opens it. The provided callback is used to report errors and
      * provide image data.
      */
-    CameraCapture(@Nullable Callback cb) {
+    CameraCapture(@Nullable Callback cb, int preferWidth, int preferHeight) {
         mCb = cb;
+        mPreferWidth = preferWidth;
+        mPreferHeight = preferHeight;
         int bestCam = selectCamera();
 
         if (bestCam < 0) {
@@ -79,8 +83,8 @@ class CameraCapture implements Camera.PreviewCallback {
         int bestScore = Integer.MAX_VALUE;
 
         for (Camera.Size size : params.getSupportedPreviewSizes()) {
-            int dWidth = Math.abs(size.width - PREFER_WIDTH);
-            int dHeight = Math.abs(size.height - PREFER_HEIGHT);
+            int dWidth = Math.abs(size.width - mPreferWidth);
+            int dHeight = Math.abs(size.height - mPreferHeight);
             int score = dWidth + dHeight;
 
             if (score < bestScore) {

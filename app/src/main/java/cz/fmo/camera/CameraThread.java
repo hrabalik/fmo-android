@@ -1,6 +1,8 @@
 package cz.fmo.camera;
 
+import android.graphics.SurfaceTexture;
 import android.media.MediaFormat;
+import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.support.annotation.Nullable;
 import android.view.Surface;
@@ -27,21 +29,22 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
      * Precondition: camera permission must be granted, otherwise the camera initialization will
      * fail.
      */
-    public CameraThread(@Nullable Callback cb) {
+    public CameraThread(@Nullable Callback cb, int preferWidth, int preferHeight) {
         super("CameraThread");
         mCb = cb;
-        mCapture = new CameraCapture(mCb);
+        mCapture = new CameraCapture(mCb, preferWidth, preferHeight);
     }
 
     /**
      * Adds a surface that the thread will draw onto using OpenGL. Multiple surfaces can be added.
      * Call this method before the start() method has been called.
      */
-    public Target addTarget(Surface surface, int width, int height) {
-        Target target = new Target(surface, width, height);
+    public void addTarget(Target target) {
         mTargets.add(target);
-        return target;
     }
+
+    private int mDummyId;
+    private SurfaceTexture mDummy;
 
     /**
      * This method is called once the thread is running, but before it starts receiving events.
@@ -51,6 +54,20 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     @Override
     protected void setup(CameraThreadHandler handler) {
         mEGL = new EGL();
+
+        {
+            int[] result = {0};
+            GLES20.glGenTextures(1, result, 0);
+            mDummyId = result[0];
+            int target = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
+            GLES20.glBindTexture(target, mDummyId);
+            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+            mDummy = new SurfaceTexture(mDummyId);
+        }
+        mTargets.add(new Target(new Surface(mDummy), 1, 1));
 
         for (Target target : mTargets) {
             target.initEGL(mEGL);
@@ -78,6 +95,13 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
             target.release();
         }
         mTargets.clear();
+
+        if (mDummy != null) {
+            int[] array = {mDummyId};
+            GLES20.glDeleteTextures(1, array, 0);
+            mDummy.release();
+            mDummy = null;
+        }
 
         if (mEGL != null) {
             mEGL.release();
@@ -141,20 +165,11 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         private final int mWidth;
         private final int mHeight;
         private EGL.Surface mEglSurface;
-        private boolean mEnabled = true;
 
-        Target(Surface surface, int width, int height) {
+        public Target(Surface surface, int width, int height) {
             mSurface = surface;
             mWidth = width;
             mHeight = height;
-        }
-
-        /**
-         * Allows to disable rendering to this target. To obtain an instance, store the return value
-         * of addTarget().
-         */
-        public void setEnabled(boolean enabled) {
-            mEnabled = enabled;
         }
 
         /**
@@ -177,11 +192,64 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
          * Draw the frame onto the target surface using OpenGL.
          */
         void render(Renderer renderer) {
-            if (!mEnabled) return;
             mEglSurface.makeCurrent();
+            renderImpl(renderer);
+            mEglSurface.swapBuffers();
+        }
+
+        /**
+         * Do the actual drawing on the surface.
+         */
+        void renderImpl(Renderer renderer) {
             GLES20.glViewport(0, 0, mWidth, mHeight);
             renderer.drawRectangle();
-            mEglSurface.swapBuffers();
+        }
+    }
+
+    public static class TargetWithEnable extends Target {
+        private boolean mEnabled = true;
+
+        public TargetWithEnable(Surface surface, int width, int height) {
+            super(surface, width, height);
+        }
+
+        /**
+         * Allows to disable rendering to this target.
+         */
+        public void setEnabled(boolean enabled) {
+            mEnabled = enabled;
+        }
+
+        @Override
+        void render(Renderer renderer) {
+            if (!mEnabled) return;
+            super.render(renderer);
+        }
+    }
+
+    public static class TargetWithSlowdown extends Target {
+        private int mSlowdown = 0;
+        private int mCounter = 0;
+
+        public TargetWithSlowdown(Surface surface, int width, int height) {
+            super(surface, width, height);
+        }
+
+        /**
+         * Set up the target to render every n-th frame.
+         *
+         * @param n every n-th frame will be rendered
+         */
+        public void setSlowdown(int n) {
+            mSlowdown = n;
+            mCounter = n;
+        }
+
+        @Override
+        void render(Renderer renderer) {
+            if (++mCounter < mSlowdown) return;
+            mCounter = 0;
+            super.render(renderer);
         }
     }
 }

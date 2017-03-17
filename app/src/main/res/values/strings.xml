@@ -22,8 +22,12 @@
     <string name="recordingManualRunning">REC</string>
     <string name="recordingAutomaticStopped">AUTO</string>
     <string name="recordingAutomaticRunning">AUTO</string>
+    <string name="previewToggleOn">PRE ON</string>
+    <string name="previewToggleOff">PRE OFF</string>
     <string name="recordToggleOn">REC ON</string>
     <string name="recordToggleOff">REC OFF</string>
+    <string name="hiresToggleOn">1080p</string>
+    <string name="hiresToggleOff">720p</string>
     <string name="autoToggleOn">AUTO ON</string>
     <string name="autoToggleOff">AUTO OFF</string>
     <string name="detectToggleOn">DET ON</string>

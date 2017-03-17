@@ -95,19 +95,33 @@
             android:layout_alignParentEnd="true">
 
             <ToggleButton
+                android:id="@+id/recording_preview_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="@string/previewToggleOn"
+                android:textOff="@string/previewToggleOff"
+                android:onClick="onPreviewToggle"/>
+
+            <ToggleButton
                 android:id="@+id/recording_record_toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textOn="@string/recordToggleOn"
                 android:textOff="@string/recordToggleOff"
                 android:onClick="onRecordToggle"/>
 
             <ToggleButton
+                android:id="@+id/recording_hires_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="@string/hiresToggleOn"
+                android:textOff="@string/hiresToggleOff"
+                android:onClick="onHiresToggle"/>
+
+            <ToggleButton
                 android:id="@+id/recording_auto_toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textOn="@string/autoToggleOn"
                 android:textOff="@string/autoToggleOff"
                 android:onClick="onAutoToggle"/>
@@ -116,7 +130,6 @@
                 android:id="@+id/recording_detect_toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:textOn="@string/detectToggleOn"
                 android:textOff="@string/detectToggleOff"
                 android:onClick="onDetectToggle"/>
