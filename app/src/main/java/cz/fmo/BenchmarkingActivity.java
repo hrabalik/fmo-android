@@ -58,11 +58,6 @@ public final class BenchmarkingActivity extends Activity {
         }
 
         @Override
-        public void frameTimings(float q50, float q95, float q99) {
-            // ignored
-        }
-
-        @Override
         public void log(String string) {
             sendMessage(obtainMessage(LOG, string));
         }

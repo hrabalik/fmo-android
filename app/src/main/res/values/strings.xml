@@ -6,10 +6,11 @@
     <string name="play_button_text">Play</string>
     <string name="stop_button_text">Stop</string>
 
-    <string name="videoLength">%1$.0f seconds in buffer</string>
-    <string name="errorCameraPermission">Camera permission denied</string>
-    <string name="errorStoragePermission">Storage permission denied</string>
-    <string name="errorOther">Camera error</string>
+    <string name="videoLength">%d seconds in buffer</string>
+    <string name="noVideoLength">Buffer is empty</string>
+    <string name="errorPermissionCamera">Camera permission denied</string>
+    <string name="errorPermissionStorage">Storage permission denied</string>
+    <string name="errorCamera">Camera error</string>
     <string name="initializing">Initializing…</string>
     <string name="saving">Saving…</string>
     <string name="mainMenuPlayMovieString">Play movie activity</string>

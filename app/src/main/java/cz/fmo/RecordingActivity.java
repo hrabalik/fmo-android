@@ -16,7 +16,6 @@ import android.widget.ToggleButton;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.Locale;
 
 import cz.fmo.camera.CameraThread;
 import cz.fmo.recording.AutomaticRecordingTask;
@@ -161,7 +160,7 @@ public final class RecordingActivity extends Activity {
 
         if (mConfig.detect) {
             // C++ initialization
-            Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+            Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
         }
 
         // refresh GUI
@@ -181,7 +180,7 @@ public final class RecordingActivity extends Activity {
     protected void onPause() {
         super.onPause();
 
-        Lib.recordingStop();
+        Lib.detectionStop();
 
         if (mCamera != null) {
             mCamera.getHandler().sendKill();
@@ -223,7 +222,8 @@ public final class RecordingActivity extends Activity {
      */
     private void onEncoderFlushed() {
         if (mEncode == null) return;
-        mGUI.timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
+        float timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
+        mGUI.timeInBuffer = Math.round(timeInBuffer);
         mGUI.update();
     }
 
@@ -277,9 +277,9 @@ public final class RecordingActivity extends Activity {
         mConfig.apply();
 
         if (mConfig.detect) {
-            Lib.recordingStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
+            Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
         } else {
-            Lib.recordingStop();
+            Lib.detectionStop();
         }
     }
 
@@ -321,19 +321,13 @@ public final class RecordingActivity extends Activity {
         STOPPED, RUNNING, CAMERA_ERROR, CAMERA_PERMISSION_ERROR, STORAGE_PERMISSION_ERROR
     }
 
-    private static class Timings {
-        float q50 = 0;
-        float q95 = 0;
-        float q99 = 0;
-    }
-
     /**
      * A subclass that receives all relevant messages on an arbitrary thread and reacts to them,
      * typically by forwarding them to the main (GUI) thread.
      */
     private static class Handler extends android.os.Handler implements Lib.Callback,
             EncodeThread.Callback, SaveThread.Callback, CameraThread.Callback {
-        private static final int FRAME_TIMINGS = 1;
+        private static final int LOG = 1;
         private static final int CAMERA_ERROR = 2;
         private static final int ENCODER_FLUSHED = 3;
         private static final int SAVE_COMPLETED = 4;
@@ -344,18 +338,9 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
-        public void frameTimings(float q50, float q95, float q99) {
-            Timings timings = new Timings();
-            timings.q50 = q50;
-            timings.q95 = q95;
-            timings.q99 = q99;
-            removeMessages(FRAME_TIMINGS);
-            sendMessage(obtainMessage(FRAME_TIMINGS, timings));
-        }
-
-        @Override
         public void log(String message) {
-            // ignored
+            removeMessages(LOG);
+            sendMessage(obtainMessage(LOG, message));
         }
 
         @Override
@@ -380,7 +365,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void onCameraFrame(byte[] dataYUV420SP) {
-            Lib.recordingFrame(dataYUV420SP);
+            Lib.detectionFrame(dataYUV420SP);
         }
 
         @Override
@@ -395,11 +380,8 @@ public final class RecordingActivity extends Activity {
             if (activity == null) return;
 
             switch (msg.what) {
-                case FRAME_TIMINGS:
-                    Timings timings = (Timings) msg.obj;
-                    activity.mGUI.q50 = timings.q50;
-                    activity.mGUI.q95 = timings.q95;
-                    activity.mGUI.q99 = timings.q99;
+                case LOG:
+                    activity.mGUI.logString = (String) msg.obj;
                     activity.mGUI.update();
                     break;
                 case CAMERA_ERROR:
@@ -420,16 +402,23 @@ public final class RecordingActivity extends Activity {
      * A subclass that handles visual elements -- buttons, labels, and suchlike.
      */
     private class GUI implements SurfaceHolder.Callback {
-        float timeInBuffer;
-        float q50;
-        float q95;
-        float q99;
+        int timeInBuffer;
+        String logString;
         private SurfaceView mPreview;
         private boolean mPreviewReady = false;
+
+        private int mTimeInBufferLast;
+        private String mTimeInBufferString;
         private TextView mTopText;
         private String mTopTextLast;
         private TextView mBottomText;
         private String mBottomTextLast;
+
+        private String mErrorCamera;
+        private String mErrorPermissionCamera;
+        private String mErrorPermissionStorage;
+        private String mBufferIsEmpty;
+
         private Button mManualStoppedButton;
         private Button mManualRunningButton;
         private Button mAutomaticStoppedButton;
@@ -442,10 +431,17 @@ public final class RecordingActivity extends Activity {
             setContentView(R.layout.activity_recording);
             mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
-            mBottomText = (TextView) findViewById(R.id.recording_bottom_text);
-            mBottomTextLast = mBottomText.getText().toString();
+
             mTopText = (TextView) findViewById(R.id.recording_top_text);
             mTopTextLast = mTopText.getText().toString();
+            mBottomText = (TextView) findViewById(R.id.recording_bottom_text);
+            mBottomTextLast = null;
+
+            mErrorCamera = getString(R.string.errorCamera);
+            mErrorPermissionCamera = getString(R.string.errorPermissionCamera);
+            mErrorPermissionStorage = getString(R.string.errorPermissionStorage);
+            mBufferIsEmpty = getString(R.string.noVideoLength);
+
             mManualStoppedButton = (Button) findViewById(R.id.recording_manual_stopped);
             mManualRunningButton = (Button) findViewById(R.id.recording_manual_running);
             mAutomaticStoppedButton = (Button) findViewById(R.id.recording_automatic_stopped);
@@ -470,30 +466,40 @@ public final class RecordingActivity extends Activity {
         private void updateBottomText() {
             String text;
             if (mStatus == Status.CAMERA_ERROR) {
-                text = getString(R.string.errorOther);
+                text = mErrorCamera;
             } else if (mStatus == Status.CAMERA_PERMISSION_ERROR) {
-                text = getString(R.string.errorCameraPermission);
+                text = mErrorPermissionCamera;
             } else if (mStatus == Status.STORAGE_PERMISSION_ERROR) {
-                text = getString(R.string.errorStoragePermission);
+                text = mErrorPermissionStorage;
             } else {
-                text = String.format(Locale.US, "%.2f / %.1f / %.0f", q50, q95, q99);
+                text = logString;
             }
 
-            if (!mBottomTextLast.equals(text)) {
+            //noinspection StringEquality
+            if (mBottomTextLast != text) {
                 mBottomText.setText(text);
                 mBottomTextLast = text;
             }
         }
 
         private void updateTopText() {
+            // update mTimeInBufferString
+            if (timeInBuffer == 0) {
+                mTimeInBufferString = mBufferIsEmpty;
+            } else if (timeInBuffer != mTimeInBufferLast) {
+                mTimeInBufferLast = timeInBuffer;
+                mTimeInBufferString = getString(R.string.videoLength, timeInBuffer);
+            }
+
             String text;
             if (mStatus == Status.RUNNING) {
-                text = getString(R.string.videoLength, timeInBuffer);
+                text = mTimeInBufferString;
             } else {
                 text = "";
             }
 
-            if (!mTopTextLast.equals(text)) {
+            //noinspection StringEquality
+            if (mTopTextLast != text) {
                 mTopText.setText(text);
                 mTopTextLast = text;
             }
