@@ -25,4 +25,9 @@ public class RecordingCameraTarget extends CameraThread.Target {
         if (!mEnabled) return;
         super.render(thread);
     }
+
+    @Override
+    void renderImpl(CameraThread thread) {
+        thread.getCameraFrameRenderer().drawCameraFrame();
+    }
 }

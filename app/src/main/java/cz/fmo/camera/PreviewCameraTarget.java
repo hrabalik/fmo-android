@@ -30,4 +30,9 @@ public class PreviewCameraTarget extends CameraThread.Target {
         mCounter = 0;
         super.render(thread);
     }
+
+    @Override
+    void renderImpl(CameraThread thread) {
+        thread.getCameraFrameRenderer().drawCameraFrame();
+    }
 }

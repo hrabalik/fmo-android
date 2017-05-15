@@ -1,8 +1,6 @@
 package cz.fmo.camera;
 
-import android.graphics.SurfaceTexture;
 import android.media.MediaFormat;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.support.annotation.Nullable;
 import android.view.Surface;
@@ -23,8 +21,6 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     private EGL mEGL;
     private CameraFrameRenderer mCameraFrameRenderer;
     private CameraCapture mCapture;
-    private int mDummyId;
-    private SurfaceTexture mDummy;
 
     /**
      * The constructor selects and opens a suitable camera. All methods can be called afterwards.
@@ -54,19 +50,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     protected void setup(CameraThreadHandler handler) {
         mEGL = new EGL();
 
-        {
-            int[] result = {0};
-            GLES20.glGenTextures(1, result, 0);
-            mDummyId = result[0];
-            int target = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
-            GLES20.glBindTexture(target, mDummyId);
-            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameterf(target, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-            mDummy = new SurfaceTexture(mDummyId);
-        }
-        mTargets.add(new Target(new Surface(mDummy), 1, 1));
+        mTargets.add(new DummyCameraTarget());
 
         for (Target target : mTargets) {
             target.initEGL(mEGL);
@@ -95,13 +79,6 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
             target.release();
         }
         mTargets.clear();
-
-        if (mDummy != null) {
-            int[] array = {mDummyId};
-            GLES20.glDeleteTextures(1, array, 0);
-            mDummy.release();
-            mDummy = null;
-        }
 
         if (mEGL != null) {
             mEGL.release();
@@ -152,7 +129,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         return mCapture.getFrameRate();
     }
 
-    public CameraFrameRenderer getCameraFrameRenderer() {
+    CameraFrameRenderer getCameraFrameRenderer() {
         return mCameraFrameRenderer;
     }
 
@@ -163,16 +140,23 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     /**
      * Encapsulates a surface that is to be drawn to whenever a new camera frame is received.
      */
-    public static class Target {
-        private final Surface mSurface;
+    public static abstract class Target {
         private final int mWidth;
         private final int mHeight;
+        private Surface mSurface;
         private EGL.Surface mEglSurface;
 
         public Target(Surface surface, int width, int height) {
             mSurface = surface;
             mWidth = width;
             mHeight = height;
+        }
+
+        /**
+         * Additionally changes the surface to render to. Must be used before initEGL() is called.
+         */
+        protected void setSurface(Surface surface) {
+            mSurface = surface;
         }
 
         /**
@@ -192,21 +176,19 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         }
 
         /**
-         * Draw the frame onto the target surface using OpenGL.
+         * Draw onto the target surface using OpenGL (high level).
          */
         void render(CameraThread thread) {
             mEglSurface.makeCurrent();
+            GLES20.glViewport(0, 0, mWidth, mHeight);
             renderImpl(thread);
             mEglSurface.swapBuffers();
         }
 
         /**
-         * Do the actual drawing on the surface.
+         * Draw onto the target surface using OpenGL (low level).
          */
-        void renderImpl(CameraThread thread) {
-            GLES20.glViewport(0, 0, mWidth, mHeight);
-            thread.getCameraFrameRenderer().drawCameraFrame();
-        }
+        abstract void renderImpl(CameraThread thread);
     }
 
 }
