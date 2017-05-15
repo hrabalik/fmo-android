@@ -23,6 +23,8 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     private EGL mEGL;
     private Renderer mRenderer;
     private CameraCapture mCapture;
+    private int mDummyId;
+    private SurfaceTexture mDummy;
 
     /**
      * The constructor selects and opens a suitable camera. All methods can be called afterwards.
@@ -43,12 +45,9 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         mTargets.add(target);
     }
 
-    private int mDummyId;
-    private SurfaceTexture mDummy;
-
     /**
      * This method is called once the thread is running, but before it starts receiving events.
-     * Since we're running in the correct thread, we are safe to establish an EGL context and
+     * Since we are running in the correct thread, we are safe to establish an EGL context and
      * other entities that depend on having it. Finally, we start the capture.
      */
     @Override
@@ -73,7 +72,8 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
             target.initEGL(mEGL);
         }
 
-        mRenderer = new Renderer(handler);
+        mRenderer = new Renderer();
+        mRenderer.getInputTexture().setOnFrameAvailableListener(handler);
 
         mCapture.start(mRenderer.getInputTexture());
     }
@@ -115,11 +115,11 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     }
 
     /**
-     * This method is triggered by the Renderer.Callback.onFrameAvailable() event. It is called
-     * every frame, as soon as the renderer is ready to draw. Each registered surface is drawn on
-     * using OpenGL.
+     * This method is triggered by the SurfaceTexture.onFrameAvailable() event. It is called every
+     * frame, as soon as the next image is ready to draw. Each registered surface is drawn on using
+     * OpenGL.
      */
-    void rendererFrame() {
+    void frameAvailable() {
         if (mCb != null) mCb.onCameraRender();
 
         for (Target target : mTargets) {
@@ -202,7 +202,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
          */
         void renderImpl(Renderer renderer) {
             GLES20.glViewport(0, 0, mWidth, mHeight);
-            renderer.drawRectangle();
+            renderer.drawInputTexture();
         }
     }
 

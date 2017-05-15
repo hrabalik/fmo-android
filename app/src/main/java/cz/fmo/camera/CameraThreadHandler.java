@@ -1,15 +1,15 @@
 package cz.fmo.camera;
 
-import java.lang.ref.WeakReference;
+import android.graphics.SurfaceTexture;
 
-import cz.fmo.graphics.Renderer;
+import java.lang.ref.WeakReference;
 
 /**
  * Message handler for CameraThread.
  */
-public class CameraThreadHandler extends android.os.Handler implements Renderer.Callback {
+public class CameraThreadHandler extends android.os.Handler implements SurfaceTexture.OnFrameAvailableListener {
     private static final int KILL = 1;
-    private static final int RENDERER_FRAME = 2;
+    private static final int FRAME = 2;
     private final WeakReference<CameraThread> mThreadRef;
 
     CameraThreadHandler(CameraThread thread) {
@@ -17,9 +17,9 @@ public class CameraThreadHandler extends android.os.Handler implements Renderer.
     }
 
     @Override
-    public void onFrameAvailable() {
-        if (hasMessages(RENDERER_FRAME)) return;
-        sendMessage(obtainMessage(RENDERER_FRAME));
+    public void onFrameAvailable(SurfaceTexture texture) {
+        if (hasMessages(FRAME)) return;
+        sendMessage(obtainMessage(FRAME));
     }
 
     /**
@@ -38,8 +38,8 @@ public class CameraThreadHandler extends android.os.Handler implements Renderer.
             case KILL:
                 thread.kill();
                 break;
-            case RENDERER_FRAME:
-                thread.rendererFrame();
+            case FRAME:
+                thread.frameAvailable();
                 break;
         }
     }
