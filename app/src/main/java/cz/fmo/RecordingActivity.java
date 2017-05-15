@@ -483,7 +483,9 @@ public final class RecordingActivity extends Activity {
             mManualRunningButton = (Button) findViewById(R.id.recording_manual_running);
             mAutomaticStoppedButton = (Button) findViewById(R.id.recording_automatic_stopped);
             mAutomaticRunningButton = (Button) findViewById(R.id.recording_automatic_running);
+            ((ToggleButton) findViewById(R.id.recording_preview_toggle)).setChecked(config.preview);
             ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
+            ((ToggleButton) findViewById(R.id.recording_hires_toggle)).setChecked(config.hires);
             ((ToggleButton) findViewById(R.id.recording_auto_toggle)).setChecked(config.automatic);
             ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
             findViewById(R.id.recording_auto_toggle).setVisibility(config.record ? View.VISIBLE :
