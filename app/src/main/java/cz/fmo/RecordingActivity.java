@@ -18,6 +18,8 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 
 import cz.fmo.camera.CameraThread;
+import cz.fmo.camera.PreviewCameraTarget;
+import cz.fmo.camera.RecordingCameraTarget;
 import cz.fmo.recording.AutomaticRecordingTask;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
@@ -44,8 +46,8 @@ public final class RecordingActivity extends Activity {
     private EncodeThread mEncode;
     private SaveThread mSaveMovie;
     private SaveThread.Task mSaveTask;
-    private CameraThread.TargetWithEnable mEncodeTarget;
-    private CameraThread.TargetWithSlowdown mPreviewTarget;
+    private RecordingCameraTarget mEncodeTarget;
+    private PreviewCameraTarget mPreviewTarget;
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -151,7 +153,7 @@ public final class RecordingActivity extends Activity {
         }
 
         // add preview as camera target
-        mPreviewTarget = new CameraThread.TargetWithSlowdown(mGUI.getPreviewSurface(),
+        mPreviewTarget = new PreviewCameraTarget(mGUI.getPreviewSurface(),
                 mGUI.getPreviewWidth(), mGUI.getPreviewHeight());
         mCamera.addTarget(mPreviewTarget);
 
@@ -169,7 +171,7 @@ public final class RecordingActivity extends Activity {
             mSaveMovie = new SaveThread(buffer, mHandler);
 
             // add encoder as camera target
-            mEncodeTarget = new CameraThread.TargetWithEnable(mEncode.getInputSurface(),
+            mEncodeTarget = new RecordingCameraTarget(mEncode.getInputSurface(),
                     mCamera.getWidth(), mCamera.getHeight());
             mCamera.addTarget(mEncodeTarget);
 

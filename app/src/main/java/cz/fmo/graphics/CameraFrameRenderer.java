@@ -9,18 +9,18 @@ import android.opengl.GLES20;
  * (e.g. android.graphics.SurfaceTexture). Usage:
  * <ul>
  * <li>initialize OpenGL, e.g. create an instance of the EGL class</li>
- * <li>create an instance of Renderer</li>
+ * <li>create an instance of CameraFrameRenderer</li>
  * <li>bind the renderer's surface texture to a source, e.g.
  * camera.setPreviewTexture(renderer.getInputTexture())</li>
  * </ul>
  * When a new frame is available in the surface texture:
  * <ul>
  * <li>make some surface current for writing, e.g. using EGL.Surface.makeCurrent()</li>
- * <li>call the drawInputTexture() method to draw the surface texture onto the current surface</li>
+ * <li>call the drawCameraFrame() method to draw the surface texture onto the current surface</li>
  * </ul>
  * To clean up, call release().
  */
-public class Renderer {
+public class CameraFrameRenderer {
     private static final int TEXTURE_TYPE = GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
     private static final String VERTEX_SOURCE = "" +
             "uniform mat4 uvMat;\n" +
@@ -55,7 +55,7 @@ public class Renderer {
     private final float[] mTemp = new float[16];
     private boolean mReleased = false;
 
-    public Renderer() throws RuntimeException {
+    public CameraFrameRenderer() throws RuntimeException {
         mProgramId = GLES20.glCreateProgram();
         GL.checkError();
         mVertexShader = new Shader(GLES20.GL_VERTEX_SHADER, VERTEX_SOURCE);
@@ -116,7 +116,7 @@ public class Renderer {
     /**
      * Draw the whole input surface texture onto the current output surface.
      */
-    public void drawInputTexture() {
+    public void drawCameraFrame() {
         if (mReleased) throw new RuntimeException("Draw after release");
         mInputTex.updateTexImage();
         mInputTex.getTransformMatrix(mTemp);

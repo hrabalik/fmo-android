@@ -7,8 +7,8 @@ import android.opengl.GLES20;
 import android.support.annotation.Nullable;
 import android.view.Surface;
 
+import cz.fmo.graphics.CameraFrameRenderer;
 import cz.fmo.graphics.EGL;
-import cz.fmo.graphics.Renderer;
 import cz.fmo.util.GenericThread;
 
 /**
@@ -21,7 +21,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     private final Callback mCb;
     private final java.util.ArrayList<Target> mTargets = new java.util.ArrayList<>();
     private EGL mEGL;
-    private Renderer mRenderer;
+    private CameraFrameRenderer mCameraFrameRenderer;
     private CameraCapture mCapture;
     private int mDummyId;
     private SurfaceTexture mDummy;
@@ -72,10 +72,10 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
             target.initEGL(mEGL);
         }
 
-        mRenderer = new Renderer();
-        mRenderer.getInputTexture().setOnFrameAvailableListener(handler);
+        mCameraFrameRenderer = new CameraFrameRenderer();
+        mCameraFrameRenderer.getInputTexture().setOnFrameAvailableListener(handler);
 
-        mCapture.start(mRenderer.getInputTexture());
+        mCapture.start(mCameraFrameRenderer.getInputTexture());
     }
 
     /**
@@ -86,9 +86,9 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     protected void teardown() {
         mCapture.stop();
 
-        if (mRenderer != null) {
-            mRenderer.release();
-            mRenderer = null;
+        if (mCameraFrameRenderer != null) {
+            mCameraFrameRenderer.release();
+            mCameraFrameRenderer = null;
         }
 
         for (Target target : mTargets) {
@@ -123,7 +123,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         if (mCb != null) mCb.onCameraRender();
 
         for (Target target : mTargets) {
-            target.render(mRenderer);
+            target.render(this);
         }
     }
 
@@ -152,13 +152,16 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         return mCapture.getFrameRate();
     }
 
+    public CameraFrameRenderer getCameraFrameRenderer() {
+        return mCameraFrameRenderer;
+    }
+
     public interface Callback extends CameraCapture.Callback {
         void onCameraRender();
     }
 
     /**
-     * Internal output surface representation, containing references to the original surface and the
-     * associated EGL.Surface.
+     * Encapsulates a surface that is to be drawn to whenever a new camera frame is received.
      */
     public static class Target {
         private final Surface mSurface;
@@ -191,65 +194,19 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         /**
          * Draw the frame onto the target surface using OpenGL.
          */
-        void render(Renderer renderer) {
+        void render(CameraThread thread) {
             mEglSurface.makeCurrent();
-            renderImpl(renderer);
+            renderImpl(thread);
             mEglSurface.swapBuffers();
         }
 
         /**
          * Do the actual drawing on the surface.
          */
-        void renderImpl(Renderer renderer) {
+        void renderImpl(CameraThread thread) {
             GLES20.glViewport(0, 0, mWidth, mHeight);
-            renderer.drawInputTexture();
+            thread.getCameraFrameRenderer().drawCameraFrame();
         }
     }
 
-    public static class TargetWithEnable extends Target {
-        private boolean mEnabled = true;
-
-        public TargetWithEnable(Surface surface, int width, int height) {
-            super(surface, width, height);
-        }
-
-        /**
-         * Allows to disable rendering to this target.
-         */
-        public void setEnabled(boolean enabled) {
-            mEnabled = enabled;
-        }
-
-        @Override
-        void render(Renderer renderer) {
-            if (!mEnabled) return;
-            super.render(renderer);
-        }
-    }
-
-    public static class TargetWithSlowdown extends Target {
-        private int mSlowdown = 0;
-        private int mCounter = 0;
-
-        public TargetWithSlowdown(Surface surface, int width, int height) {
-            super(surface, width, height);
-        }
-
-        /**
-         * Set up the target to render every n-th frame.
-         *
-         * @param n every n-th frame will be rendered
-         */
-        public void setSlowdown(int n) {
-            mSlowdown = n;
-            mCounter = n;
-        }
-
-        @Override
-        void render(Renderer renderer) {
-            if (++mCounter < mSlowdown) return;
-            mCounter = 0;
-            super.render(renderer);
-        }
-    }
 }
