@@ -41,8 +41,8 @@ public class CameraFrameRenderer {
             "}\n";
     private static final float[] RECTANGLE_POS_DATA = {-1, -1, 1, -1, -1, 1, 1, 1};
     private static final float[] RECTANGLE_UV_DATA = {0, 0, 1, 0, 0, 1, 1, 1};
-    private static final java.nio.Buffer RECTANGLE_POS = GL.makeBuffer(RECTANGLE_POS_DATA);
-    private static final java.nio.Buffer RECTANGLE_UV = GL.makeBuffer(RECTANGLE_UV_DATA);
+    private static final java.nio.Buffer RECTANGLE_POS = GL.makeReadOnlyBuffer(RECTANGLE_POS_DATA);
+    private static final java.nio.Buffer RECTANGLE_UV = GL.makeReadOnlyBuffer(RECTANGLE_UV_DATA);
 
     private final int mProgramId;
     private final int mTextureId;

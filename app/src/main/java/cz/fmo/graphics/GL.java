@@ -23,12 +23,23 @@ class GL {
      * @param arr array of floats
      * @return a new, read-only, directly allocated buffer with its contents copied from arr
      */
-    static java.nio.Buffer makeBuffer(float[] arr) {
+    static java.nio.Buffer makeReadOnlyBuffer(float[] arr) {
         java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * arr.length);
         byteBuf.order(java.nio.ByteOrder.nativeOrder());
         java.nio.FloatBuffer floatBuf = byteBuf.asFloatBuffer();
         floatBuf.put(arr);
         byteBuf.clear();
         return byteBuf.asReadOnlyBuffer();
+    }
+
+    /**
+     * Create a writable buffer of a specified size.
+     *
+     * @param size maximum number of float value that will fit into the buffer
+     */
+    static java.nio.FloatBuffer makeWritableBuffer(int size) {
+        java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * size);
+        byteBuf.order(java.nio.ByteOrder.nativeOrder());
+        return byteBuf.asFloatBuffer();
     }
 }
