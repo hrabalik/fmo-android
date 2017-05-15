@@ -7,6 +7,7 @@ import android.view.Surface;
 
 import cz.fmo.graphics.CameraFrameRenderer;
 import cz.fmo.graphics.EGL;
+import cz.fmo.graphics.TriangleStripRenderer;
 import cz.fmo.util.GenericThread;
 
 /**
@@ -20,6 +21,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     private final java.util.ArrayList<Target> mTargets = new java.util.ArrayList<>();
     private EGL mEGL;
     private CameraFrameRenderer mCameraFrameRenderer;
+    private TriangleStripRenderer mTriangleStripRenderer;
     private CameraCapture mCapture;
 
     /**
@@ -58,6 +60,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
 
         mCameraFrameRenderer = new CameraFrameRenderer();
         mCameraFrameRenderer.getInputTexture().setOnFrameAvailableListener(handler);
+        mTriangleStripRenderer = new TriangleStripRenderer();
 
         mCapture.start(mCameraFrameRenderer.getInputTexture());
     }
@@ -131,6 +134,10 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
 
     CameraFrameRenderer getCameraFrameRenderer() {
         return mCameraFrameRenderer;
+    }
+
+    TriangleStripRenderer getTriangleStripRenderer() {
+        return mTriangleStripRenderer;
     }
 
     public interface Callback extends CameraCapture.Callback {

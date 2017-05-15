@@ -8,7 +8,7 @@ import java.nio.FloatBuffer;
  * A general-purpose renderer of triangle strips with a solid color or gradient, possibly
  * transparent.
  */
-class TriangleStripRenderer {
+public class TriangleStripRenderer {
     public static final int MAX_VERTICES = 256;
     private static final String VERTEX_SOURCE = "" +
             //"uniform mat4 posMat;\n" +
@@ -78,17 +78,28 @@ class TriangleStripRenderer {
 
     public void setNumVertices(int numVertices) {
         mNumVertices = numVertices;
+
+        if (mNumVertices * 2 != mPosBuffer.limit()) {
+            throw new RuntimeException("Bad number of positions");
+        }
+
+        if (mNumVertices * 4 != mColorBuffer.limit()) {
+            throw new RuntimeException("Bad number of colors");
+        }
     }
 
-    public void drawQuads() {
+    public void drawTriangleStrip() {
         if (mReleased) throw new RuntimeException("Draw after release");
         GLES20.glUseProgram(mProgramId);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glEnableVertexAttribArray(mLoc_pos);
         GLES20.glVertexAttribPointer(mLoc_pos, 2, GLES20.GL_FLOAT, false, 8, mPosBuffer);
         GLES20.glEnableVertexAttribArray(mLoc_color1);
         GLES20.glVertexAttribPointer(mLoc_color1, 4, GLES20.GL_FLOAT, false, 16, mColorBuffer);
         //GLES20.glUniformMatrix4fv(mLoc_posMat, 1, false, mTemp, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mNumVertices);
+        GLES20.glDisable(GLES20.GL_BLEND);
         GLES20.glUseProgram(0);
         GL.checkError();
     }
