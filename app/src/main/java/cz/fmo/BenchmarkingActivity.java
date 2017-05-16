@@ -30,6 +30,35 @@ public final class BenchmarkingActivity extends Activity {
         Lib.benchmarkingStop();
     }
 
+    private static class Handler extends android.os.Handler implements Lib.Callback {
+        static final int LOG = 1;
+        private final WeakReference<BenchmarkingActivity> mActivity;
+
+        Handler(BenchmarkingActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void log(String string) {
+            sendMessage(obtainMessage(LOG, string));
+        }
+
+        @Override
+        public void onObjectsDetected(Lib.Detection[] detections) {
+        }
+
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            BenchmarkingActivity activity = mActivity.get();
+            if (activity == null) return;
+
+            switch (msg.what) {
+                case LOG:
+                    activity.mGUI.appendToLog((String) msg.obj);
+            }
+        }
+    }
+
     private class GUI {
         private TextView mLog;
 
@@ -46,31 +75,6 @@ public final class BenchmarkingActivity extends Activity {
          */
         void appendToLog(String line) {
             mLog.append(line);
-        }
-    }
-
-    private static class Handler extends android.os.Handler implements Lib.Callback {
-        static final int LOG = 1;
-        private final WeakReference<BenchmarkingActivity> mActivity;
-
-        Handler(BenchmarkingActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void log(String string) {
-            sendMessage(obtainMessage(LOG, string));
-        }
-
-        @Override
-        public void handleMessage(android.os.Message msg) {
-            BenchmarkingActivity activity = mActivity.get();
-            if (activity == null) return;
-
-            switch (msg.what) {
-                case LOG:
-                    activity.mGUI.appendToLog((String) msg.obj);
-            }
         }
     }
 }

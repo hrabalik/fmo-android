@@ -383,6 +383,11 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
+        public void onObjectsDetected(Lib.Detection[] detections) {
+            sendMessage(obtainMessage(LOG, "Object detected"));
+        }
+
+        @Override
         public void flushCompleted(EncodeThread thread) {
             if (hasMessages(ENCODER_FLUSHED)) return;
             sendMessage(obtainMessage(ENCODER_FLUSHED));
