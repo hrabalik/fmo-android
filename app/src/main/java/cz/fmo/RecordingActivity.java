@@ -387,7 +387,9 @@ public final class RecordingActivity extends Activity {
         public void onObjectsDetected(Lib.Detection[] detections) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
-            TrackSet.getInstance().addDetections(detections);
+            CameraThread cam = activity.mCamera;
+            if (cam == null) return;
+            TrackSet.getInstance().addDetections(detections, cam.getWidth(), cam.getHeight());
         }
 
         @Override

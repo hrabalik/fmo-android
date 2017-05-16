@@ -17,6 +17,8 @@ public class TrackSet {
     private final ArrayList<Track> mTracks = new ArrayList<>();
     private SparseArray<Track> mCurrentTrackMap = new SparseArray<>();
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
+    private int mWidth = 1;
+    private int mHeight = 1;
 
     private TrackSet() {
     }
@@ -29,8 +31,11 @@ public class TrackSet {
      * Adds detections to the correct tracks. If there is no predecessor for a given detection, a
      * new track is created.
      */
-    public void addDetections(Lib.Detection[] detections) {
+    public void addDetections(Lib.Detection[] detections, int width, int height) {
         synchronized (mLock) {
+            mWidth = width;
+            mHeight = height;
+
             // swap the maps
             {
                 SparseArray<Track> temp = mCurrentTrackMap;
@@ -65,49 +70,55 @@ public class TrackSet {
     }
 
     public void generateCurves(TriangleStripRenderer.Buffers b) {
-        // add a few verts
-        GL.setIdentity(b.posMat);
-        b.pos.clear();
-        b.pos.put(-1);
-        b.pos.put(-1);
-        b.pos.put(-1);
-        b.pos.put(-1);
-        b.pos.put(-1);
-        b.pos.put(1);
-        b.pos.put(1);
-        b.pos.put(-1);
-        b.pos.put(1);
-        b.pos.put(1);
-        b.pos.put(1);
-        b.pos.put(1);
-        b.pos.flip();
-        b.color.clear();
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(1.f);
-        b.color.put(0.f);
-        b.color.flip();
-        b.numVertices = 6;
+        synchronized (mLock) {
+            // add a few verts
+            GL.setIdentity(b.posMat);
+            b.posMat[0x0] = 2.f / mWidth;
+            b.posMat[0x5] = -2.f / mHeight;
+            b.posMat[0xC] = -1.f;
+            b.posMat[0xD] = 1.f;
+            b.pos.clear();
+            b.pos.put(100);
+            b.pos.put(100);
+            b.pos.put(100);
+            b.pos.put(100);
+            b.pos.put(100);
+            b.pos.put(mHeight - 100);
+            b.pos.put(mWidth - 100);
+            b.pos.put(100);
+            b.pos.put(mWidth - 100);
+            b.pos.put(mHeight - 100);
+            b.pos.put(mWidth - 100);
+            b.pos.put(mHeight - 100);
+            b.pos.flip();
+            b.color.clear();
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(1.f);
+            b.color.put(0.f);
+            b.color.flip();
+            b.numVertices = 6;
+        }
     }
 
     private static class SingletonHolder {
