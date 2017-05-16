@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import cz.fmo.Lib;
 import cz.fmo.graphics.GL;
 import cz.fmo.graphics.TriangleStripRenderer;
+import cz.fmo.util.CG;
+import cz.fmo.util.Color;
 
 /**
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
@@ -19,6 +21,7 @@ public class TrackSet {
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
     private int mWidth = 1;
     private int mHeight = 1;
+    private final GenerateCache mCache = new GenerateCache();
 
     private TrackSet() {
     }
@@ -71,54 +74,34 @@ public class TrackSet {
 
     public void generateCurves(TriangleStripRenderer.Buffers b) {
         synchronized (mLock) {
-            // add a few verts
             GL.setIdentity(b.posMat);
             b.posMat[0x0] = 2.f / mWidth;
             b.posMat[0x5] = -2.f / mHeight;
             b.posMat[0xC] = -1.f;
             b.posMat[0xD] = 1.f;
             b.pos.clear();
-            b.pos.put(100);
-            b.pos.put(100);
-            b.pos.put(100);
-            b.pos.put(100);
-            b.pos.put(100);
-            b.pos.put(mHeight - 100);
-            b.pos.put(mWidth - 100);
-            b.pos.put(100);
-            b.pos.put(mWidth - 100);
-            b.pos.put(mHeight - 100);
-            b.pos.put(mWidth - 100);
-            b.pos.put(mHeight - 100);
-            b.pos.flip();
             b.color.clear();
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(1.f);
-            b.color.put(0.f);
+            b.numVertices = 0;
+
+            for (Track track : mTracks) {
+                track.generateCurve(b, mCache);
+            }
+
+            b.pos.flip();
             b.color.flip();
-            b.numVertices = 6;
         }
+    }
+
+    static class GenerateCache {
+        CG.Vec norm1 = new CG.Vec();
+        CG.Vec norm2 = new CG.Vec();
+        CG.Vec dir1 = new CG.Vec();
+        CG.Vec dir2 = new CG.Vec();
+        CG.Vec pos1 = new CG.Vec();
+        CG.Vec pos2 = new CG.Vec();
+        CG.Vec miter = new CG.Vec();
+        CG.Vec temp = new CG.Vec();
+        Color.RGBA color = new Color.RGBA();
     }
 
     private static class SingletonHolder {
