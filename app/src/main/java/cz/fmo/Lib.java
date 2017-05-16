@@ -1,6 +1,6 @@
 package cz.fmo;
 
-final class Lib {
+public final class Lib {
 
     static {
         System.loadLibrary("fmo-android");
@@ -25,14 +25,17 @@ final class Lib {
 
     @SuppressWarnings("unused")
     public static class Detection {
-        int id;            // unique identifier
-        int predecessorId; // unique identifier of the immediate predecessor
-        int centerX;       // midpoint of the object in the input image, X coordinate
-        int centerY;       // midpoint of the object in the input image, Y coordinate
-        float directionX;  // unit orientation of the object, X coordinate
-        float directionY;  // unit orientation of the object, Y coordinate
-        float length;      // length of the object in input image pixels
-        float radius;      // radius of the object in input image pixels
-        float velocity;    // velocity of the object in pixels per frame
+        public int id;            // unique identifier
+        public int predecessorId; // unique identifier of the immediate predecessor
+        public int centerX;       // midpoint of the object in the input image, X coordinate
+        public int centerY;       // midpoint of the object in the input image, Y coordinate
+        public float directionX;  // unit orientation of the object, X coordinate
+        public float directionY;  // unit orientation of the object, Y coordinate
+        public float length;      // length of the object in input image pixels
+        public float radius;      // radius of the object in input image pixels
+        public float velocity;    // velocity of the object in pixels per frame
+
+        // Java-specific
+        public Detection predecessor;
     }
 }

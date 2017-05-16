@@ -20,6 +20,7 @@ import java.lang.ref.WeakReference;
 import cz.fmo.camera.CameraThread;
 import cz.fmo.camera.PreviewCameraTarget;
 import cz.fmo.camera.RecordingCameraTarget;
+import cz.fmo.data.TrackSet;
 import cz.fmo.recording.AutomaticRecordingTask;
 import cz.fmo.recording.CyclicBuffer;
 import cz.fmo.recording.EncodeThread;
@@ -48,6 +49,7 @@ public final class RecordingActivity extends Activity {
     private SaveThread.Task mSaveTask;
     private RecordingCameraTarget mEncodeTarget;
     private PreviewCameraTarget mPreviewTarget;
+    private TrackSet mTrackSet = new TrackSet();
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -384,7 +386,9 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void onObjectsDetected(Lib.Detection[] detections) {
-            sendMessage(obtainMessage(LOG, "Object detected"));
+            RecordingActivity activity = mActivity.get();
+            if (activity == null) return;
+            activity.mTrackSet.addDetections(detections);
         }
 
         @Override
