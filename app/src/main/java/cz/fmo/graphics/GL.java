@@ -5,7 +5,9 @@ import android.opengl.GLES20;
 /**
  * Utility functions for working with OpenGL.
  */
-class GL {
+public class GL {
+    private static final float[] IDENTITY = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+
     /**
      * Checks whether the last GL call succeeded.
      *
@@ -41,5 +43,19 @@ class GL {
         java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * size);
         byteBuf.order(java.nio.ByteOrder.nativeOrder());
         return byteBuf.asFloatBuffer();
+    }
+
+    /**
+     * @return A new 4x4 identity matrix.
+     */
+    static float[] makeIdentity() {
+        return IDENTITY.clone();
+    }
+
+    /**
+     * Sets a 4x4 matrix to identity.
+     */
+    public static void setIdentity(float[] m) {
+        System.arraycopy(IDENTITY, 0, m, 0, 16);
     }
 }

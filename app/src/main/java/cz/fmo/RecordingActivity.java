@@ -49,7 +49,6 @@ public final class RecordingActivity extends Activity {
     private SaveThread.Task mSaveTask;
     private RecordingCameraTarget mEncodeTarget;
     private PreviewCameraTarget mPreviewTarget;
-    private TrackSet mTrackSet = new TrackSet();
 
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
@@ -388,7 +387,7 @@ public final class RecordingActivity extends Activity {
         public void onObjectsDetected(Lib.Detection[] detections) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
-            activity.mTrackSet.addDetections(detections);
+            TrackSet.getInstance().addDetections(detections);
         }
 
         @Override

@@ -11,13 +11,12 @@ import java.nio.FloatBuffer;
 public class TriangleStripRenderer {
     public static final int MAX_VERTICES = 256;
     private static final String VERTEX_SOURCE = "" +
-            //"uniform mat4 posMat;\n" +
+            "uniform mat4 posMat;\n" +
             "attribute vec4 pos;\n" +
             "attribute vec4 color1;\n" +
             "varying vec4 color2;\n" +
             "void main() {\n" +
-            //"    gl_Position = posMat * pos;\n" +
-            "    gl_Position = pos;\n" +
+            "    gl_Position = posMat * pos;\n" +
             "    color2 = color1;\n" +
             "}\n";
     private static final String FRAGMENT_SOURCE = "" +
@@ -31,10 +30,9 @@ public class TriangleStripRenderer {
     private final Shader mFragmentShader;
     private final int mLoc_pos;
     private final int mLoc_color1;
-    private final FloatBuffer mPosBuffer;
-    private final FloatBuffer mColorBuffer;
+    private final int mLoc_posMat;
+    private final Buffers mBuffers = new Buffers();
     private boolean mReleased = false;
-    private int mNumVertices = 0;
 
     public TriangleStripRenderer() throws RuntimeException {
         mProgramId = GLES20.glCreateProgram();
@@ -55,9 +53,7 @@ public class TriangleStripRenderer {
 
         mLoc_pos = GLES20.glGetAttribLocation(mProgramId, "pos");
         mLoc_color1 = GLES20.glGetAttribLocation(mProgramId, "color1");
-        //mLoc_posMat = GLES20.glGetUniformLocation(mProgramId, "posMat");
-        mPosBuffer = GL.makeWritableBuffer(2 * MAX_VERTICES);
-        mColorBuffer = GL.makeWritableBuffer(4 * MAX_VERTICES);
+        mLoc_posMat = GLES20.glGetUniformLocation(mProgramId, "posMat");
     }
 
     public void release() {
@@ -68,39 +64,38 @@ public class TriangleStripRenderer {
         GLES20.glDeleteProgram(mProgramId);
     }
 
-    public FloatBuffer getPosBuffer() {
-        return mPosBuffer;
-    }
-
-    public FloatBuffer getColorBuffer() {
-        return mColorBuffer;
-    }
-
-    public void setNumVertices(int numVertices) {
-        mNumVertices = numVertices;
-
-        if (mNumVertices * 2 != mPosBuffer.limit()) {
-            throw new RuntimeException("Bad number of positions");
-        }
-
-        if (mNumVertices * 4 != mColorBuffer.limit()) {
-            throw new RuntimeException("Bad number of colors");
-        }
+    public Buffers getBuffers() {
+        return mBuffers;
     }
 
     public void drawTriangleStrip() {
         if (mReleased) throw new RuntimeException("Draw after release");
+        if (mBuffers.numVertices * 2 != mBuffers.pos.limit()) {
+            throw new RuntimeException("Bad position buffer");
+        }
+        if (mBuffers.numVertices * 4 != mBuffers.color.limit()) {
+            throw new RuntimeException("Bad color buffer");
+        }
+
         GLES20.glUseProgram(mProgramId);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glEnableVertexAttribArray(mLoc_pos);
-        GLES20.glVertexAttribPointer(mLoc_pos, 2, GLES20.GL_FLOAT, false, 8, mPosBuffer);
+        GLES20.glVertexAttribPointer(mLoc_pos, 2, GLES20.GL_FLOAT, false, 8, mBuffers.pos);
         GLES20.glEnableVertexAttribArray(mLoc_color1);
-        GLES20.glVertexAttribPointer(mLoc_color1, 4, GLES20.GL_FLOAT, false, 16, mColorBuffer);
-        //GLES20.glUniformMatrix4fv(mLoc_posMat, 1, false, mTemp, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mNumVertices);
+        GLES20.glVertexAttribPointer(mLoc_color1, 4, GLES20.GL_FLOAT, false, 16, mBuffers.color);
+        GLES20.glUniformMatrix4fv(mLoc_posMat, 1, false, mBuffers.posMat, 0);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mBuffers.numVertices);
         GLES20.glDisable(GLES20.GL_BLEND);
         GLES20.glUseProgram(0);
         GL.checkError();
     }
+
+    public static class Buffers {
+        public final float[] posMat = GL.makeIdentity();
+        public final FloatBuffer pos = GL.makeWritableBuffer(2 * MAX_VERTICES);
+        public final FloatBuffer color = GL.makeWritableBuffer(4 * MAX_VERTICES);
+        public int numVertices = 0;
+    }
+
 }

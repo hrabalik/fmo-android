@@ -5,6 +5,8 @@ import android.util.SparseArray;
 import java.util.ArrayList;
 
 import cz.fmo.Lib;
+import cz.fmo.graphics.GL;
+import cz.fmo.graphics.TriangleStripRenderer;
 
 /**
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
@@ -15,6 +17,13 @@ public class TrackSet {
     private final ArrayList<Track> mTracks = new ArrayList<>();
     private SparseArray<Track> mCurrentTrackMap = new SparseArray<>();
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
+
+    private TrackSet() {
+    }
+
+    public static TrackSet getInstance() {
+        return SingletonHolder.instance;
+    }
 
     /**
      * Adds detections to the correct tracks. If there is no predecessor for a given detection, a
@@ -55,4 +64,53 @@ public class TrackSet {
         }
     }
 
+    public void generateCurves(TriangleStripRenderer.Buffers b) {
+        // add a few verts
+        GL.setIdentity(b.posMat);
+        b.pos.clear();
+        b.pos.put(-1);
+        b.pos.put(-1);
+        b.pos.put(-1);
+        b.pos.put(-1);
+        b.pos.put(-1);
+        b.pos.put(1);
+        b.pos.put(1);
+        b.pos.put(-1);
+        b.pos.put(1);
+        b.pos.put(1);
+        b.pos.put(1);
+        b.pos.put(1);
+        b.pos.flip();
+        b.color.clear();
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(1.f);
+        b.color.put(0.f);
+        b.color.flip();
+        b.numVertices = 6;
+    }
+
+    private static class SingletonHolder {
+        static final TrackSet instance = new TrackSet();
+    }
 }

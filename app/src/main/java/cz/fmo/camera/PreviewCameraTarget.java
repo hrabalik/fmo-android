@@ -1,9 +1,9 @@
 package cz.fmo.camera;
 
 import android.view.Surface;
-import cz.fmo.graphics.TriangleStripRenderer;
 
-import java.nio.FloatBuffer;
+import cz.fmo.data.TrackSet;
+import cz.fmo.graphics.TriangleStripRenderer;
 
 /**
  * Camera target that can be set up to drop most of the frames, saving on battery. Draws not only
@@ -40,30 +40,8 @@ public class PreviewCameraTarget extends CameraThread.Target {
         thread.getCameraFrameRenderer().drawCameraFrame();
 
         // draw tracks
-        renderTracks(thread.getTriangleStripRenderer());
-    }
-
-    private void renderTracks(TriangleStripRenderer renderer) {
-        // reset
-        FloatBuffer posBuf = renderer.getPosBuffer();
-        FloatBuffer colorBuf = renderer.getColorBuffer();
-
-        // add a few verts
-        posBuf.clear();
-        posBuf.put(-1); posBuf.put(-1);
-        posBuf.put(1); posBuf.put(-1);
-        posBuf.put(-1); posBuf.put(1);
-        posBuf.put(1); posBuf.put(1);
-        posBuf.flip();
-        colorBuf.clear();
-        colorBuf.put(1.f); colorBuf.put(0.f); colorBuf.put(0.f); colorBuf.put(1.f);
-        colorBuf.put(0.f); colorBuf.put(1.f); colorBuf.put(0.f); colorBuf.put(1.f);
-        colorBuf.put(0.f); colorBuf.put(0.f); colorBuf.put(1.f); colorBuf.put(1.f);
-        colorBuf.put(1.f); colorBuf.put(1.f); colorBuf.put(1.f); colorBuf.put(0.f);
-        colorBuf.flip();
-        renderer.setNumVertices(4);
-
-        // render
-        renderer.drawTriangleStrip();
+        TriangleStripRenderer tsRender = thread.getTriangleStripRenderer();
+        TrackSet.getInstance().generateCurves(tsRender.getBuffers());
+        tsRender.drawTriangleStrip();
     }
 }
