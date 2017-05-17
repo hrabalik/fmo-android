@@ -246,16 +246,6 @@ public final class RecordingActivity extends Activity {
         mStatus = Status.STOPPED;
     }
 
-    /**
-     * Called when the encoder output has been moved into the cyclic buffer.
-     */
-    private void onEncoderFlushed() {
-        if (mEncode == null) return;
-        float timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
-        mGUI.timeInBuffer = Math.round(timeInBuffer);
-        mGUI.update(GUIUpdate.LABELS);
-    }
-
     public void onForceAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
         if (mSaveMovie == null) return;
         if (mStatus != Status.RUNNING) return;
@@ -384,7 +374,6 @@ public final class RecordingActivity extends Activity {
             EncodeThread.Callback, SaveThread.Callback, CameraThread.Callback {
         private static final int LOG = 1;
         private static final int CAMERA_ERROR = 2;
-        private static final int ENCODER_FLUSHED = 3;
         private static final int SAVE_COMPLETED = 4;
         private static final int UPDATE_GUI = 5;
         private final WeakReference<RecordingActivity> mActivity;
@@ -410,8 +399,6 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void flushCompleted(EncodeThread thread) {
-            if (hasMessages(ENCODER_FLUSHED)) return;
-            sendMessage(obtainMessage(ENCODER_FLUSHED));
         }
 
         @Override
@@ -453,9 +440,6 @@ public final class RecordingActivity extends Activity {
                     activity.mStatus = Status.CAMERA_ERROR;
                     activity.mGUI.update(GUIUpdate.ALL);
                     break;
-                case ENCODER_FLUSHED:
-                    activity.onEncoderFlushed();
-                    break;
                 case SAVE_COMPLETED:
                     activity.onSaveCompleted((File) msg.obj, msg.arg1 == 1);
                     break;
@@ -470,22 +454,16 @@ public final class RecordingActivity extends Activity {
      * A subclass that handles visual elements -- buttons, labels, and suchlike.
      */
     private class GUI implements SurfaceHolder.Callback {
-        int timeInBuffer;
         String logString;
         private SurfaceView mPreview;
         private boolean mPreviewReady = false;
 
-        private int mTimeInBufferLast;
-        private String mTimeInBufferString;
         private TextView mStatusText;
         private String mStatusTextLast;
-        private TextView mLogText;
-        private String mLogTextLast;
 
         private String mErrorCamera;
         private String mErrorPermissionCamera;
         private String mErrorPermissionStorage;
-        private String mBufferIsEmpty;
 
         private Button mManualStoppedButton;
         private Button mManualRunningButton;
@@ -500,15 +478,12 @@ public final class RecordingActivity extends Activity {
             mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
 
-            mStatusText = (TextView) findViewById(R.id.recording_top_text);
-            mStatusTextLast = mStatusText.getText().toString();
-            mLogText = (TextView) findViewById(R.id.recording_bottom_text);
-            mLogTextLast = null;
+            mStatusText = (TextView) findViewById(R.id.recording_status);
+            mStatusTextLast = null;
 
             mErrorCamera = getString(R.string.errorCamera);
             mErrorPermissionCamera = getString(R.string.errorPermissionCamera);
             mErrorPermissionStorage = getString(R.string.errorPermissionStorage);
-            mBufferIsEmpty = getString(R.string.noVideoLength);
 
             mManualStoppedButton = (Button) findViewById(R.id.recording_manual_stopped);
             mManualRunningButton = (Button) findViewById(R.id.recording_manual_running);
@@ -530,10 +505,9 @@ public final class RecordingActivity extends Activity {
             if (mStatus == Status.STOPPED) return;
             if (u == GUIUpdate.ALL || u == GUIUpdate.BUTTONS) updateRecordingButtons();
             if (u == GUIUpdate.ALL || u == GUIUpdate.LABELS) updateStatusString();
-            if (u == GUIUpdate.ALL || u == GUIUpdate.LABELS) updateLogString();
         }
 
-        private void updateLogString() {
+        private void updateStatusString() {
             String text;
             if (mStatus == Status.CAMERA_ERROR) {
                 text = mErrorCamera;
@@ -543,29 +517,6 @@ public final class RecordingActivity extends Activity {
                 text = mErrorPermissionStorage;
             } else {
                 text = logString;
-            }
-
-            //noinspection StringEquality
-            if (mLogTextLast != text) {
-                mLogText.setText(text);
-                mLogTextLast = text;
-            }
-        }
-
-        private void updateStatusString() {
-            // update mTimeInBufferString
-            if (timeInBuffer == 0) {
-                mTimeInBufferString = mBufferIsEmpty;
-            } else if (timeInBuffer != mTimeInBufferLast) {
-                mTimeInBufferLast = timeInBuffer;
-                mTimeInBufferString = getString(R.string.videoLength, timeInBuffer);
-            }
-
-            String text;
-            if (mStatus == Status.RUNNING) {
-                text = mTimeInBufferString;
-            } else {
-                text = "";
             }
 
             //noinspection StringEquality

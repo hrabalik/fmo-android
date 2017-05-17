@@ -50,11 +50,17 @@ public class PreviewCameraTarget extends CameraThread.Target {
         FontRenderer fontRender = thread.getFontRenderer();
         fontRender.clear();
         Color.RGBA color = new Color.RGBA();
+        float em = ((float) mHeight) / 20.f;
+        color.rgba[0] = 0.f;
+        color.rgba[1] = 0.f;
+        color.rgba[2] = 0.f;
+        color.rgba[3] = 0.5f;
+        fontRender.addRectangle(0, mHeight / 2 - 4.5f * em, 6 * em, 9 * em, color);
         color.rgba[0] = 1.f;
-        color.rgba[1] = 1.f;
-        color.rgba[2] = 1.f;
+        color.rgba[1] = 0.f;
+        color.rgba[2] = 0.f;
         color.rgba[3] = 1.f;
-        fontRender.add("Hello, world!", 200.f, 200.f, 40.f, color);
+        fontRender.addString("225 px/fr", 0.5f * em, mHeight / 2, em, color);
         fontRender.drawText(mWidth, mHeight);
     }
 }

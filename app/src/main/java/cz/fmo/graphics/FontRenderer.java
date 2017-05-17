@@ -14,6 +14,8 @@ import cz.fmo.util.Color;
  * Special-purpose renderer for drawing text.
  */
 public class FontRenderer {
+    public static final float CHAR_WIDTH = 0.639f;
+    public static final float CHAR_STEP_X = 0.8f * CHAR_WIDTH;
     private static final int MAX_CHARACTERS = 128;
     private static final int TEXTURE_TYPE = GLES20.GL_TEXTURE_2D;
     private static final String VERTEX_SOURCE = "" +
@@ -35,7 +37,7 @@ public class FontRenderer {
             "uniform sampler2D tex;\n" +
             "void main() {\n" +
             "    vec4 color3 = color2;\n" +
-            "    color3.a = texture2D(tex, uv2).r;\n" +
+            "    color3.a *= texture2D(tex, uv2).r;\n" +
             "    gl_FragColor = color3;\n" +
             "}\n";
     private final int mProgramId;
@@ -104,7 +106,7 @@ public class FontRenderer {
         mBuffers.uv.clear();
         mBuffers.color.clear();
         mBuffers.idx.clear();
-        mBuffers.numVertices = 0;
+        mBuffers.numCharacters = 0;
     }
 
     /**
@@ -116,10 +118,10 @@ public class FontRenderer {
      * @param h     text height
      * @param color text color, alpha channel will be ignored
      */
-    public void add(String str, float x, float y, float h, Color.RGBA color) {
+    public void addString(String str, float x, float y, float h, Color.RGBA color) {
         int len = str.length();
-        float w = 0.639f * h;
-        float ws = 0.8f * w;
+        float w = CHAR_WIDTH * h;
+        float ws = CHAR_STEP_X * h;
         float topPos = y - 0.5f * h;
         float bottomPos = y + 0.5f * h;
 
@@ -134,12 +136,19 @@ public class FontRenderer {
             float topUv = (((float) vi) / 8.f);
             float bottomUv = (((float) (vi + 1)) / 8.f);
             addVertex(leftPos, topPos, leftUv, topUv, color);
-            addVertex(leftPos, topPos, leftUv, topUv, color);
             addVertex(leftPos, bottomPos, leftUv, bottomUv, color);
             addVertex(rightPos, topPos, rightUv, topUv, color);
             addVertex(rightPos, bottomPos, rightUv, bottomUv, color);
-            addVertex(rightPos, bottomPos, rightUv, bottomUv, color);
+            addQuad();
         }
+    }
+
+    public void addRectangle(float x, float y, float w, float h, Color.RGBA color) {
+        addVertex(x, y, 0.f, 0.f, color);
+        addVertex(x, y + h, 0.f, 0.125f, color);
+        addVertex(x + w, y, 0.0625f, 0.f, color);
+        addVertex(x + w, y + h, 0.0625f, 0.125f, color);
+        addQuad();
     }
 
     private void addVertex(float x, float y, float u, float v, Color.RGBA color) {
@@ -152,7 +161,17 @@ public class FontRenderer {
         mBuffers.color.put(color.rgba[1]);
         mBuffers.color.put(color.rgba[2]);
         mBuffers.color.put(color.rgba[3]);
-        mBuffers.numVertices++;
+    }
+
+    private void addQuad() {
+        int base = 4 * mBuffers.numCharacters;
+        mBuffers.idx.put(base);
+        mBuffers.idx.put(base);
+        mBuffers.idx.put(base + 1);
+        mBuffers.idx.put(base + 2);
+        mBuffers.idx.put(base + 3);
+        mBuffers.idx.put(base + 3);
+        mBuffers.numCharacters++;
     }
 
     /**
@@ -174,14 +193,17 @@ public class FontRenderer {
         mBuffers.color.flip();
         mBuffers.idx.flip();
 
-        if (mBuffers.numVertices * 2 != mBuffers.pos.limit()) {
+        if (mBuffers.numCharacters * 8 != mBuffers.pos.limit()) {
             throw new RuntimeException("Bad position buffer");
         }
-        if (mBuffers.numVertices * 2 != mBuffers.uv.limit()) {
+        if (mBuffers.numCharacters * 8 != mBuffers.uv.limit()) {
             throw new RuntimeException("Bad UV buffer");
         }
-        if (mBuffers.numVertices * 4 != mBuffers.color.limit()) {
+        if (mBuffers.numCharacters * 16 != mBuffers.color.limit()) {
             throw new RuntimeException("Bad color buffer");
+        }
+        if (mBuffers.numCharacters * 6 != mBuffers.idx.limit()) {
+            throw new RuntimeException("Bad index buffer");
         }
 
         GLES20.glUseProgram(mProgramId);
@@ -197,7 +219,7 @@ public class FontRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(TEXTURE_TYPE, mTextureId);
         GLES20.glUniform1i(mLoc_tex, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mBuffers.numVertices);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, 6 * mBuffers.numCharacters, GLES20.GL_UNSIGNED_INT, mBuffers.idx);
         GLES20.glDisable(GLES20.GL_BLEND);
         GLES20.glUseProgram(0);
         GL.checkError();
@@ -205,10 +227,10 @@ public class FontRenderer {
 
     public static class Buffers {
         public final float[] posMat = GL.makeIdentity();
-        public final FloatBuffer pos = GL.makeWritableFloatBuffer(12 * MAX_CHARACTERS);
-        public final FloatBuffer uv = GL.makeWritableFloatBuffer(12 * MAX_CHARACTERS);
-        public final FloatBuffer color = GL.makeWritableFloatBuffer(24 * MAX_CHARACTERS);
+        public final FloatBuffer pos = GL.makeWritableFloatBuffer(8 * MAX_CHARACTERS);
+        public final FloatBuffer uv = GL.makeWritableFloatBuffer(8 * MAX_CHARACTERS);
+        public final FloatBuffer color = GL.makeWritableFloatBuffer(16 * MAX_CHARACTERS);
         public final IntBuffer idx = GL.makeWritableIntBuffer(6 * MAX_CHARACTERS);
-        public int numVertices = 0;
+        public int numCharacters = 0;
     }
 }
