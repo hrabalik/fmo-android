@@ -35,14 +35,25 @@ public class GL {
     }
 
     /**
-     * Create a writable buffer of a specified size.
+     * Create a writable buffer that can hold a specific number of float values.
      *
-     * @param size maximum number of float value that will fit into the buffer
+     * @param size maximum number of float values that will fit into the buffer
      */
-    static java.nio.FloatBuffer makeWritableBuffer(int size) {
+    static java.nio.FloatBuffer makeWritableFloatBuffer(int size) {
         java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * size);
         byteBuf.order(java.nio.ByteOrder.nativeOrder());
         return byteBuf.asFloatBuffer();
+    }
+
+    /**
+     * Create a writable buffer that can hold a specific number of int values.
+     *
+     * @param size maximum number of int values that will fit into the buffer
+     */
+    static java.nio.IntBuffer makeWritableIntBuffer(int size) {
+        java.nio.ByteBuffer byteBuf = java.nio.ByteBuffer.allocateDirect(4 * size);
+        byteBuf.order(java.nio.ByteOrder.nativeOrder());
+        return byteBuf.asIntBuffer();
     }
 
     /**

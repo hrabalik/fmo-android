@@ -9,7 +9,7 @@ import java.nio.FloatBuffer;
  * transparent.
  */
 public class TriangleStripRenderer {
-    public static final int MAX_VERTICES = 256;
+    private static final int MAX_VERTICES = 512;
     private static final String VERTEX_SOURCE = "" +
             "uniform mat4 posMat;\n" +
             "attribute vec4 pos;\n" +
@@ -93,8 +93,8 @@ public class TriangleStripRenderer {
 
     public static class Buffers {
         public final float[] posMat = GL.makeIdentity();
-        public final FloatBuffer pos = GL.makeWritableBuffer(2 * MAX_VERTICES);
-        public final FloatBuffer color = GL.makeWritableBuffer(4 * MAX_VERTICES);
+        public final FloatBuffer pos = GL.makeWritableFloatBuffer(2 * MAX_VERTICES);
+        public final FloatBuffer color = GL.makeWritableFloatBuffer(4 * MAX_VERTICES);
         public int numVertices = 0;
     }
 

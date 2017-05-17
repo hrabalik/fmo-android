@@ -7,6 +7,7 @@ import android.view.Surface;
 
 import cz.fmo.graphics.CameraFrameRenderer;
 import cz.fmo.graphics.EGL;
+import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.TriangleStripRenderer;
 import cz.fmo.util.GenericThread;
 
@@ -22,6 +23,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     private EGL mEGL;
     private CameraFrameRenderer mCameraFrameRenderer;
     private TriangleStripRenderer mTriangleStripRenderer;
+    private FontRenderer mFontRenderer;
     private CameraCapture mCapture;
 
     /**
@@ -61,6 +63,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         mCameraFrameRenderer = new CameraFrameRenderer();
         mCameraFrameRenderer.getInputTexture().setOnFrameAvailableListener(handler);
         mTriangleStripRenderer = new TriangleStripRenderer();
+        mFontRenderer = new FontRenderer();
 
         mCapture.start(mCameraFrameRenderer.getInputTexture());
     }
@@ -72,6 +75,16 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
     @Override
     protected void teardown() {
         mCapture.stop();
+
+        if (mFontRenderer != null) {
+            mFontRenderer.release();
+            mFontRenderer = null;
+        }
+
+        if (mTriangleStripRenderer != null) {
+            mTriangleStripRenderer.release();
+            mTriangleStripRenderer = null;
+        }
 
         if (mCameraFrameRenderer != null) {
             mCameraFrameRenderer.release();
@@ -140,6 +153,8 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         return mTriangleStripRenderer;
     }
 
+    FontRenderer getFontRenderer() { return mFontRenderer; }
+
     public interface Callback extends CameraCapture.Callback {
         void onCameraRender();
     }
@@ -148,8 +163,8 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
      * Encapsulates a surface that is to be drawn to whenever a new camera frame is received.
      */
     public static abstract class Target {
-        private final int mWidth;
-        private final int mHeight;
+        protected final int mWidth;
+        protected final int mHeight;
         private Surface mSurface;
         private EGL.Surface mEglSurface;
 

@@ -20,6 +20,7 @@ import java.lang.ref.WeakReference;
 import cz.fmo.camera.CameraThread;
 import cz.fmo.camera.PreviewCameraTarget;
 import cz.fmo.camera.RecordingCameraTarget;
+import cz.fmo.data.Assets;
 import cz.fmo.data.TrackSet;
 import cz.fmo.recording.AutomaticRecordingTask;
 import cz.fmo.recording.CyclicBuffer;
@@ -137,6 +138,9 @@ public final class RecordingActivity extends Activity {
             mGUI.update(GUIUpdate.LABELS);
             return;
         }
+
+        // load assets
+        Assets.getInstance().load(this);
 
         // configure camera
         {

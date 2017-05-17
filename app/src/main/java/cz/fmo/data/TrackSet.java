@@ -17,8 +17,8 @@ public class TrackSet {
     private final ArrayList<Track> mTracks = new ArrayList<>();
     private SparseArray<Track> mCurrentTrackMap = new SparseArray<>();
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
-    private int mWidth = 1;
-    private int mHeight = 1;
+    private int mWidth = 1;  // width of the source image (not necessarily the screen width)
+    private int mHeight = 1; // height of the source image (not necessarily the screen height)
     private int mTrackCounter = 0;
     private static final float[] HUES = {0.f, 45.f, 90.f, 135.f, 180.f, 225.f, 270.f, 315.f};
 
@@ -32,6 +32,9 @@ public class TrackSet {
     /**
      * Adds detections to the correct tracks. If there is no predecessor for a given detection, a
      * new track is created.
+     *
+     * @param width width of the source image (not the screen)
+     * @param height height of the source image (not the screen)
      */
     public void addDetections(Lib.Detection[] detections, int width, int height) {
         synchronized (mLock) {
