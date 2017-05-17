@@ -37,6 +37,69 @@
             android:text="@string/initializing"
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentStart="true"
+            android:gravity="center_vertical"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/recording_speed_0"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_6"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+            <TextView
+                android:id="@+id/recording_speed_7"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/initializing"
+                android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -98,9 +161,9 @@
                 android:id="@+id/recording_preview_toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textOn="@string/previewToggleOn"
+                android:onClick="onPreviewToggle"
                 android:textOff="@string/previewToggleOff"
-                android:onClick="onPreviewToggle"/>
+                android:textOn="@string/previewToggleOn"/>
 
             <ToggleButton
                 android:id="@+id/recording_record_toggle"

@@ -55,7 +55,7 @@ public final class RecordingActivity extends Activity {
         super.onCreate(savedBundle);
         mConfig = new Config(this);
         mGUI.init(mConfig);
-        mGUI.update();
+        mGUI.update(GUIUpdate.ALL);
     }
 
     /**
@@ -128,13 +128,13 @@ public final class RecordingActivity extends Activity {
         // stop if permissions haven't been granted
         if (isCameraPermissionDenied()) {
             mStatus = Status.CAMERA_PERMISSION_ERROR;
-            mGUI.update();
+            mGUI.update(GUIUpdate.LABELS);
             return;
         }
 
         if (isStoragePermissionDenied()) {
             mStatus = Status.STORAGE_PERMISSION_ERROR;
-            mGUI.update();
+            mGUI.update(GUIUpdate.LABELS);
             return;
         }
 
@@ -188,7 +188,7 @@ public final class RecordingActivity extends Activity {
 
         // refresh GUI
         mStatus = Status.RUNNING;
-        mGUI.update();
+        mGUI.update(GUIUpdate.ALL);
 
         // start threads
         if (mEncode != null) mEncode.start();
@@ -249,7 +249,7 @@ public final class RecordingActivity extends Activity {
         if (mEncode == null) return;
         float timeInBuffer = mEncode.getBufferContentsDuration() / 1e6f;
         mGUI.timeInBuffer = Math.round(timeInBuffer);
-        mGUI.update();
+        mGUI.update(GUIUpdate.LABELS);
     }
 
     public void onForceAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
@@ -272,7 +272,7 @@ public final class RecordingActivity extends Activity {
         setEncodingEnabled(true);
         File outFile = mFileMan.open(FILENAME);
         mSaveTask = new ManualRecordingTask(outFile, mSaveMovie);
-        mGUI.update();
+        mGUI.update(GUIUpdate.BUTTONS);
     }
 
     public void onStopManualRecording(@SuppressWarnings("UnusedParameters") View view) {
@@ -280,7 +280,7 @@ public final class RecordingActivity extends Activity {
         mSaveTask.terminate(mSaveMovie);
         setEncodingEnabled(false);
         mSaveTask = null;
-        mGUI.update();
+        mGUI.update(GUIUpdate.BUTTONS);
     }
 
     private void onSaveCompleted(File file, boolean success) {
@@ -288,7 +288,7 @@ public final class RecordingActivity extends Activity {
             mFileMan.newMedia(file);
         }
         mSaveTask = null;
-        mGUI.update();
+        mGUI.update(GUIUpdate.BUTTONS);
     }
 
     public void onPreviewToggle(View toggle) {
@@ -329,7 +329,7 @@ public final class RecordingActivity extends Activity {
         mConfig.automatic = ((ToggleButton) toggle).isChecked();
         mConfig.apply();
         setEncodingEnabled(mConfig.automatic);
-        mGUI.update();
+        mGUI.update(GUIUpdate.BUTTONS);
     }
 
     /**
@@ -364,6 +364,15 @@ public final class RecordingActivity extends Activity {
     }
 
     /**
+     * Available types of GUI updates.
+     */
+    private enum GUIUpdate {
+        ALL,
+        LABELS,
+        BUTTONS,
+    }
+
+    /**
      * A subclass that receives all relevant messages on an arbitrary thread and reacts to them,
      * typically by forwarding them to the main (GUI) thread.
      */
@@ -373,6 +382,7 @@ public final class RecordingActivity extends Activity {
         private static final int CAMERA_ERROR = 2;
         private static final int ENCODER_FLUSHED = 3;
         private static final int SAVE_COMPLETED = 4;
+        private static final int UPDATE_GUI = 5;
         private final WeakReference<RecordingActivity> mActivity;
 
         Handler(RecordingActivity activity) {
@@ -433,17 +443,20 @@ public final class RecordingActivity extends Activity {
             switch (msg.what) {
                 case LOG:
                     activity.mGUI.logString = (String) msg.obj;
-                    activity.mGUI.update();
+                    activity.mGUI.update(GUIUpdate.LABELS);
                     break;
                 case CAMERA_ERROR:
                     activity.mStatus = Status.CAMERA_ERROR;
-                    activity.mGUI.update();
+                    activity.mGUI.update(GUIUpdate.ALL);
                     break;
                 case ENCODER_FLUSHED:
                     activity.onEncoderFlushed();
                     break;
                 case SAVE_COMPLETED:
                     activity.onSaveCompleted((File) msg.obj, msg.arg1 == 1);
+                    break;
+                case UPDATE_GUI:
+                    activity.mGUI.update((GUIUpdate) msg.obj);
                     break;
             }
         }
@@ -460,10 +473,10 @@ public final class RecordingActivity extends Activity {
 
         private int mTimeInBufferLast;
         private String mTimeInBufferString;
-        private TextView mTopText;
-        private String mTopTextLast;
-        private TextView mBottomText;
-        private String mBottomTextLast;
+        private TextView mStatusText;
+        private String mStatusTextLast;
+        private TextView mLogText;
+        private String mLogTextLast;
 
         private String mErrorCamera;
         private String mErrorPermissionCamera;
@@ -483,10 +496,10 @@ public final class RecordingActivity extends Activity {
             mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
 
-            mTopText = (TextView) findViewById(R.id.recording_top_text);
-            mTopTextLast = mTopText.getText().toString();
-            mBottomText = (TextView) findViewById(R.id.recording_bottom_text);
-            mBottomTextLast = null;
+            mStatusText = (TextView) findViewById(R.id.recording_top_text);
+            mStatusTextLast = mStatusText.getText().toString();
+            mLogText = (TextView) findViewById(R.id.recording_bottom_text);
+            mLogTextLast = null;
 
             mErrorCamera = getString(R.string.errorCamera);
             mErrorPermissionCamera = getString(R.string.errorPermissionCamera);
@@ -509,14 +522,14 @@ public final class RecordingActivity extends Activity {
         /**
          * Updates all dynamic UI elements, such as labels and buttons.
          */
-        void update() {
+        void update(GUIUpdate u) {
             if (mStatus == Status.STOPPED) return;
-            updateRecordingButtons();
-            updateTopText();
-            updateBottomText();
+            if (u == GUIUpdate.ALL || u == GUIUpdate.BUTTONS) updateRecordingButtons();
+            if (u == GUIUpdate.ALL || u == GUIUpdate.LABELS) updateStatusString();
+            if (u == GUIUpdate.ALL || u == GUIUpdate.LABELS) updateLogString();
         }
 
-        private void updateBottomText() {
+        private void updateLogString() {
             String text;
             if (mStatus == Status.CAMERA_ERROR) {
                 text = mErrorCamera;
@@ -529,13 +542,13 @@ public final class RecordingActivity extends Activity {
             }
 
             //noinspection StringEquality
-            if (mBottomTextLast != text) {
-                mBottomText.setText(text);
-                mBottomTextLast = text;
+            if (mLogTextLast != text) {
+                mLogText.setText(text);
+                mLogTextLast = text;
             }
         }
 
-        private void updateTopText() {
+        private void updateStatusString() {
             // update mTimeInBufferString
             if (timeInBuffer == 0) {
                 mTimeInBufferString = mBufferIsEmpty;
@@ -552,9 +565,9 @@ public final class RecordingActivity extends Activity {
             }
 
             //noinspection StringEquality
-            if (mTopTextLast != text) {
-                mTopText.setText(text);
-                mTopTextLast = text;
+            if (mStatusTextLast != text) {
+                mStatusText.setText(text);
+                mStatusTextLast = text;
             }
         }
 
