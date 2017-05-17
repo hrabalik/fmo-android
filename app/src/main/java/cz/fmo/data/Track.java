@@ -1,6 +1,9 @@
 package cz.fmo.data;
 
+import java.util.Locale;
+
 import cz.fmo.Lib;
+import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.TriangleStripRenderer;
 import cz.fmo.util.Color;
 
@@ -13,8 +16,6 @@ class Track {
     private Color.HSV mColorHSV = new Color.HSV();
     private Color.RGBA mColorRGBA = new Color.RGBA();
     private long mLastDetectionTime;
-    private static final float DECAY_BASE = 0.33f;
-    private static final float DECAY_RATE = 0.25f;
 
     Lib.Detection getLatest() {
         return mLatest;
@@ -32,6 +33,7 @@ class Track {
 
     private void updateColor() {
         float sinceDetectionSec = ((float)(System.nanoTime() - mLastDetectionTime)) / 1e9f;
+        mColorHSV.hsv[1] = Math.min(1.0f, .2f + 0.4f * sinceDetectionSec);
         mColorHSV.hsv[2] = Math.max(0.6f, 1.f - 0.3f * sinceDetectionSec);
         Color.convert(mColorHSV, mColorRGBA);
     }
@@ -39,5 +41,10 @@ class Track {
     void generateCurve(TriangleStripRenderer.Buffers b) {
         updateColor();
         Lib.generateCurve(mLatest, mColorRGBA.rgba, b);
+    }
+
+    void generateLabel(FontRenderer fontRender, float hs, float ws, float top, int i) {
+        String str = String.format(Locale.UK, "%5d", mLatest.id);
+        fontRender.addString(str, ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
     }
 }

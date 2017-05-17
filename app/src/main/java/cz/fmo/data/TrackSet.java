@@ -5,8 +5,10 @@ import android.util.SparseArray;
 import java.util.ArrayList;
 
 import cz.fmo.Lib;
+import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.GL;
 import cz.fmo.graphics.TriangleStripRenderer;
+import cz.fmo.util.Color;
 
 /**
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
@@ -59,7 +61,7 @@ public class TrackSet {
                 if (track == null) {
                     // no predecessor/track not found: make a new track
                     mTrackCounter++;
-                    float hue = HUES[mTrackCounter % 8] + 12.34f;
+                    float hue = HUES[mTrackCounter % 8] + 24.56f;
                     track = new Track(hue);
                     // shift to erase the oldest track
                     if (mTracks.size() == NUM_TRACKS) {
@@ -93,6 +95,32 @@ public class TrackSet {
 
             b.pos.limit(b.numVertices * 2);
             b.color.limit(b.numVertices * 4);
+        }
+    }
+
+    public void generateLabels(FontRenderer fontRender, int height) {
+        synchronized (mLock) {
+            Color.RGBA color = new Color.RGBA();
+            float hs = ((float) height) / 20.f;
+            float ws = hs * FontRenderer.CHAR_STEP_X;
+            float mid = height / 2.f;
+            int items = mTracks.size();
+            float top = mid - 0.5f * (items + 1) * hs;
+
+            color.rgba[0] = 0.0f;
+            color.rgba[1] = 0.0f;
+            color.rgba[2] = 0.0f;
+            color.rgba[3] = 0.5f;
+            fontRender.addRectangle(0, mid - 0.5f * (items + 1) * hs, 7 * ws, (items + 1) * hs, color);
+            color.rgba[0] = 0.5f;
+            color.rgba[1] = 0.5f;
+            color.rgba[2] = 0.5f;
+            color.rgba[3] = 1.0f;
+            fontRender.addString("px/fr", ws, top + 0.5f * hs, hs, color);
+
+            for (int i = 0; i < items; i++) {
+                mTracks.get(i).generateLabel(fontRender, hs, ws, top, i);
+            }
         }
     }
 
