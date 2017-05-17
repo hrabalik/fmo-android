@@ -7,6 +7,7 @@ import android.opengl.GLUtils;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import cz.fmo.Lib;
 import cz.fmo.data.Assets;
 import cz.fmo.util.Color;
 
@@ -119,59 +120,11 @@ public class FontRenderer {
      * @param color text color, alpha channel will be ignored
      */
     public void addString(String str, float x, float y, float h, Color.RGBA color) {
-        int len = str.length();
-        float w = CHAR_WIDTH * h;
-        float ws = CHAR_STEP_X * h;
-        float topPos = y - 0.5f * h;
-        float bottomPos = y + 0.5f * h;
-
-        for (int i = 0; i < len; i++) {
-            char c = str.charAt(i);
-            float leftPos = x + ((float) i) * ws;
-            float rightPos = leftPos + w;
-            int ui = c % 16;
-            int vi = c / 16;
-            float leftUv = ((float) ui) / 16.f;
-            float rightUv = ((float) (ui + 1)) / 16.f;
-            float topUv = (((float) vi) / 8.f);
-            float bottomUv = (((float) (vi + 1)) / 8.f);
-            addVertex(leftPos, topPos, leftUv, topUv, color);
-            addVertex(leftPos, bottomPos, leftUv, bottomUv, color);
-            addVertex(rightPos, topPos, rightUv, topUv, color);
-            addVertex(rightPos, bottomPos, rightUv, bottomUv, color);
-            addQuad();
-        }
+        Lib.generateString(str, x, y, h, color.rgba, mBuffers);
     }
 
     public void addRectangle(float x, float y, float w, float h, Color.RGBA color) {
-        addVertex(x, y, 0.f, 0.f, color);
-        addVertex(x, y + h, 0.f, 0.125f, color);
-        addVertex(x + w, y, 0.0625f, 0.f, color);
-        addVertex(x + w, y + h, 0.0625f, 0.125f, color);
-        addQuad();
-    }
-
-    private void addVertex(float x, float y, float u, float v, Color.RGBA color) {
-        // no check for max vertices
-        mBuffers.pos.put(x);
-        mBuffers.pos.put(y);
-        mBuffers.uv.put(u);
-        mBuffers.uv.put(v);
-        mBuffers.color.put(color.rgba[0]);
-        mBuffers.color.put(color.rgba[1]);
-        mBuffers.color.put(color.rgba[2]);
-        mBuffers.color.put(color.rgba[3]);
-    }
-
-    private void addQuad() {
-        int base = 4 * mBuffers.numCharacters;
-        mBuffers.idx.put(base);
-        mBuffers.idx.put(base);
-        mBuffers.idx.put(base + 1);
-        mBuffers.idx.put(base + 2);
-        mBuffers.idx.put(base + 3);
-        mBuffers.idx.put(base + 3);
-        mBuffers.numCharacters++;
+        Lib.generateRectangle(x, y, w, h, color.rgba, mBuffers);
     }
 
     /**
@@ -188,24 +141,6 @@ public class FontRenderer {
         mBuffers.posMat[0xC] = -1.f;
         mBuffers.posMat[0xD] = 1.f;
 
-        mBuffers.pos.flip();
-        mBuffers.uv.flip();
-        mBuffers.color.flip();
-        mBuffers.idx.flip();
-
-        if (mBuffers.numCharacters * 8 != mBuffers.pos.limit()) {
-            throw new RuntimeException("Bad position buffer");
-        }
-        if (mBuffers.numCharacters * 8 != mBuffers.uv.limit()) {
-            throw new RuntimeException("Bad UV buffer");
-        }
-        if (mBuffers.numCharacters * 16 != mBuffers.color.limit()) {
-            throw new RuntimeException("Bad color buffer");
-        }
-        if (mBuffers.numCharacters * 6 != mBuffers.idx.limit()) {
-            throw new RuntimeException("Bad index buffer");
-        }
-
         GLES20.glUseProgram(mProgramId);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
         GLES20.glEnable(GLES20.GL_BLEND);
@@ -219,7 +154,8 @@ public class FontRenderer {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(TEXTURE_TYPE, mTextureId);
         GLES20.glUniform1i(mLoc_tex, 0);
-        GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, 6 * mBuffers.numCharacters, GLES20.GL_UNSIGNED_INT, mBuffers.idx);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, 6 * mBuffers.numCharacters,
+                GLES20.GL_UNSIGNED_INT, mBuffers.idx);
         GLES20.glDisable(GLES20.GL_BLEND);
         GLES20.glUseProgram(0);
         GL.checkError();

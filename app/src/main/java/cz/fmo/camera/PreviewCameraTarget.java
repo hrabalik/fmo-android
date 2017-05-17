@@ -61,6 +61,7 @@ public class PreviewCameraTarget extends CameraThread.Target {
         color.rgba[2] = 0.f;
         color.rgba[3] = 1.f;
         fontRender.addString("225 px/fr", 0.5f * em, mHeight / 2, em, color);
+        fontRender.addString("225 px/fr", 0.5f * em, mHeight / 2 + em, em, color);
         fontRender.drawText(mWidth, mHeight);
     }
 }
