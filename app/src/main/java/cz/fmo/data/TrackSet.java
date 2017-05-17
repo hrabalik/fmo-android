@@ -7,14 +7,12 @@ import java.util.ArrayList;
 import cz.fmo.Lib;
 import cz.fmo.graphics.GL;
 import cz.fmo.graphics.TriangleStripRenderer;
-import cz.fmo.util.CG;
-import cz.fmo.util.Color;
 
 /**
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
  */
 public class TrackSet {
-    private final int NUM_TRACKS = 8;
+    private static final int NUM_TRACKS = 8;
     private final Object mLock = new Object();
     private final ArrayList<Track> mTracks = new ArrayList<>();
     private SparseArray<Track> mCurrentTrackMap = new SparseArray<>();
@@ -22,7 +20,6 @@ public class TrackSet {
     private int mWidth = 1;
     private int mHeight = 1;
     private int mTrackCounter = 0;
-    private final GenerateCache mCache = new GenerateCache();
     private static final float[] HUES = {0.f, 45.f, 90.f, 135.f, 180.f, 225.f, 270.f, 315.f};
 
     private TrackSet() {
@@ -88,11 +85,11 @@ public class TrackSet {
             b.numVertices = 0;
 
             for (Track track : mTracks) {
-                track.generateCurve(b, mCache);
+                track.generateCurve(b);
             }
 
-            b.pos.flip();
-            b.color.flip();
+            b.pos.limit(b.numVertices * 2);
+            b.color.limit(b.numVertices * 4);
         }
     }
 
@@ -102,18 +99,6 @@ public class TrackSet {
             mPreviousTrackMap.clear();
             mCurrentTrackMap.clear();
         }
-    }
-
-    static class GenerateCache {
-        CG.Vec norm1 = new CG.Vec();
-        CG.Vec norm2 = new CG.Vec();
-        CG.Vec dir1 = new CG.Vec();
-        CG.Vec dir2 = new CG.Vec();
-        CG.Vec pos1 = new CG.Vec();
-        CG.Vec pos2 = new CG.Vec();
-        CG.Vec miter = new CG.Vec();
-        CG.Vec temp = new CG.Vec();
-        Color.RGBA color = new Color.RGBA();
     }
 
     private static class SingletonHolder {
