@@ -1,5 +1,7 @@
 package cz.fmo;
 
+import cz.fmo.graphics.TriangleStripRenderer;
+
 public final class Lib {
 
     static {
@@ -15,6 +17,9 @@ public final class Lib {
     public static native void benchmarkingStart(Callback cb);
 
     public static native void benchmarkingStop();
+
+    public static native void generateCurve(Detection det, float[] colorHsv,
+                                            TriangleStripRenderer.Buffers b);
 
     @SuppressWarnings("unused")
     public interface Callback {
