@@ -4,6 +4,7 @@ import cz.fmo.Lib;
 import cz.fmo.graphics.TriangleStripRenderer;
 import cz.fmo.util.CG;
 import cz.fmo.util.Color;
+import cz.fmo.util.Time;
 
 /**
  * A series of objects detected in consecutive frames that are considered to be the same object
@@ -11,20 +12,35 @@ import cz.fmo.util.Color;
  */
 class Track {
     private Lib.Detection mLatest;
+    private Color.HSV mColor = new Color.HSV();
+    private long mLastDetectionTime;
+    private static final float DECAY_BASE = 0.33f;
+    private static final float DECAY_RATE = 0.25f;
 
     Lib.Detection getLatest() {
         return mLatest;
     }
 
     void setLatest(Lib.Detection latest) {
+        mLastDetectionTime = System.nanoTime();
         mLatest = latest;
     }
 
+    Track(float hue) {
+        mColor.hsv[0] = hue;
+        mColor.hsv[1] = 0.8f;
+    }
+
+    private void getColor(Color.RGBA out) {
+        float sinceDetectionSec = ((float)(System.nanoTime() - mLastDetectionTime)) / 1e9f;
+        mColor.hsv[2] = Math.max(0.6f, 1.f - 0.3f * sinceDetectionSec);
+        Color.convert(mColor, out);
+    }
+
     void generateCurve(TriangleStripRenderer.Buffers b, TrackSet.GenerateCache c) {
-        c.color.rgba[0] = 1.f;
-        c.color.rgba[1] = 0.f;
-        c.color.rgba[2] = 1.f;
-        c.color.rgba[3] = 1.f;
+        getColor(c.color);
+        float decay = 1 - DECAY_BASE;
+        c.color.rgba[3] = DECAY_BASE + decay;
 
         // first vertex
         Lib.Detection d1 = mLatest;
@@ -40,6 +56,8 @@ class Track {
         addPoint(b, c.temp, c.color);
         shiftPoint(c.pos1, -d1.radius, c.norm2, c.temp);
         addPoint(b, c.temp, c.color);
+        decay *= DECAY_RATE;
+        c.color.rgba[3] = DECAY_BASE + decay;
 
         // middle vertices
         while (true) {
@@ -59,6 +77,8 @@ class Track {
             addPoint(b, c.temp, c.color);
             shiftPoint(c.pos1, -d1.radius, c.norm2, c.temp);
             addPoint(b, c.temp, c.color);
+            decay *= DECAY_RATE;
+            c.color.rgba[3] = DECAY_BASE + decay;
         }
 
         // last vertex

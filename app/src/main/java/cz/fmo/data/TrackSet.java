@@ -21,7 +21,9 @@ public class TrackSet {
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
     private int mWidth = 1;
     private int mHeight = 1;
+    private int mTrackCounter = 0;
     private final GenerateCache mCache = new GenerateCache();
+    private static final float[] HUES = {0.f, 45.f, 90.f, 135.f, 180.f, 225.f, 270.f, 315.f};
 
     private TrackSet() {
     }
@@ -56,7 +58,9 @@ public class TrackSet {
                 Track track = mPreviousTrackMap.get(detection.predecessorId);
                 if (track == null) {
                     // no predecessor/track not found: make a new track
-                    track = new Track();
+                    mTrackCounter++;
+                    float hue = HUES[mTrackCounter % 8] + 12.34f;
+                    track = new Track(hue);
                     // shift to erase the oldest track
                     if (mTracks.size() == NUM_TRACKS) {
                         mTracks.remove(0);
@@ -89,6 +93,14 @@ public class TrackSet {
 
             b.pos.flip();
             b.color.flip();
+        }
+    }
+
+    public void clear() {
+        synchronized (mLock) {
+            mTracks.clear();
+            mPreviousTrackMap.clear();
+            mCurrentTrackMap.clear();
         }
     }
 

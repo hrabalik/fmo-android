@@ -18,7 +18,7 @@ public final class Lib {
 
     public static native void benchmarkingStop();
 
-    public static native void generateCurve(Detection det, float[] colorHsv,
+    public static native void generateCurve(Detection det, float[] rgba,
                                             TriangleStripRenderer.Buffers b);
 
     @SuppressWarnings("unused")

@@ -237,6 +237,8 @@ public final class RecordingActivity extends Activity {
             mEncode = null;
         }
 
+        TrackSet.getInstance().clear();
+
         mStatus = Status.STOPPED;
     }
 
