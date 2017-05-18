@@ -16,12 +16,22 @@ class Track {
     private Color.HSV mColorHSV = new Color.HSV();
     private Color.RGBA mColorRGBA = new Color.RGBA();
     private long mLastDetectionTime;
+    private float velocityDistance = 0;
+    private int velocityNumFrames = 0;
 
     Lib.Detection getLatest() {
         return mLatest;
     }
 
     void setLatest(Lib.Detection latest) {
+        if (mLatest != null) {
+            // calculate speed stats for each segment
+            double dx = latest.centerX - mLatest.centerX;
+            double dy = latest.centerY - mLatest.centerY;
+            velocityDistance += Math.sqrt(dx * dx + dy * dy);
+            velocityNumFrames++;
+        }
+
         mLastDetectionTime = System.nanoTime();
         mLatest = latest;
     }
@@ -44,7 +54,10 @@ class Track {
     }
 
     void generateLabel(FontRenderer fontRender, float hs, float ws, float top, int i) {
-        String str = String.format(Locale.UK, "%5d", mLatest.id);
-        fontRender.addString(str, ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
+        if (velocityNumFrames != 0) {
+            float velocity = velocityDistance / velocityNumFrames;
+            String str = String.format(Locale.US, "%3.1f", velocity);
+            fontRender.addString(str, ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
+        }
     }
 }
