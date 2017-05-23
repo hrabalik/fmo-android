@@ -71,6 +71,7 @@
 
     <string name="prefHeaderAdvanced">Advanced</string>
     <string name="runBenchmark">Run benchmark</string>
+    <string name="runVideoPlayer">Run video player</string>
 
     <!-- Strings related to Settings -->
 

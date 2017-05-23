@@ -3,4 +3,7 @@
     <Preference android:title="@string/runBenchmark">
         <intent android:action="cz.fmo.BenchmarkingActivity"/>
     </Preference>
+    <Preference android:title="@string/runVideoPlayer">
+        <intent android:action="com.android.grafika.PlayMovieSurfaceActivity"/>
+    </Preference>
 </PreferenceScreen>

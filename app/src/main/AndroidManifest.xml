@@ -31,7 +31,7 @@
         <activity
             android:name=".RecordingActivity"
             android:configChanges=""
-            android:label="Fast-moving object detector"
+            android:label="FMO"
             android:screenOrientation="landscape"
             android:theme="@style/Recording">
             <intent-filter>
@@ -72,11 +72,9 @@
             android:screenOrientation="landscape"
             android:theme="@style/PlayMovieSurfaceActivity">
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-
-                <data android:scheme="fmo-movie"/>
+                <action android:name="com.android.grafika.PlayMovieSurfaceActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
     </application>
-
 </manifest>
