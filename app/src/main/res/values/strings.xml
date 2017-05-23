@@ -32,7 +32,40 @@
     <string name="autoToggleOff">AUTO OFF</string>
     <string name="detectToggleOn">DET ON</string>
     <string name="detectToggleOff">DET OFF</string>
-    <string name="title_activity_settings">Settings</string>
+    <string name="settings">Settings</string>
+
+    <!-- Strings related to actual settings -->
+
+    <string name="prefHeaderCapture">Video capture</string>
+    <string name="prefFacing">Camera direction</string>
+    <string-array name="prefFacingNames">
+        <item>Front-facing</item>
+        <item>Back-facing</item>
+    </string-array>
+    <string-array name="prefFacingValues">
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string name="prefResolution">Resolution</string>
+    <string-array name="prefResolutionNames">
+        <item>720p</item>
+        <item>1080p</item>
+    </string-array>
+    <string-array name="prefResolutionValues">
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string name="prefRecordMode">Recording</string>
+    <string-array name="prefRecordModeNames">
+        <item>Off</item>
+        <item>Manually controlled</item>
+        <item>Automatically triggered</item>
+    </string-array>
+    <string-array name="prefRecordModeValues">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
 
     <!-- Strings related to Settings -->
 

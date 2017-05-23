@@ -81,6 +81,7 @@ public class SettingsActivity extends PreferenceActivity {
 
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
+                || CapturePreferenceFragment.class.getName().equals(fragmentName)
                 || GeneralPreferenceFragment.class.getName().equals(fragmentName)
                 || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
@@ -109,6 +110,17 @@ public class SettingsActivity extends PreferenceActivity {
                 return true;
             }
             return super.onOptionsItemSelected(item);
+        }
+    }
+
+    public static class CapturePreferenceFragment extends PreferenceFragmentBase {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.setXmlResourceId(R.xml.pref_capture);
+            super.onCreate(savedInstanceState);
+            bindPreferenceSummaryToValue(findPreference("facing"));
+            bindPreferenceSummaryToValue(findPreference("resolution"));
+            bindPreferenceSummaryToValue(findPreference("recordMode"));
         }
     }
 
