@@ -82,6 +82,8 @@ public class SettingsActivity extends PreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || CapturePreferenceFragment.class.getName().equals(fragmentName)
+                || VelocityPreferenceFragment.class.getName().equals(fragmentName)
+                || AdvancedPreferenceFragment.class.getName().equals(fragmentName)
                 || GeneralPreferenceFragment.class.getName().equals(fragmentName)
                 || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
                 || NotificationPreferenceFragment.class.getName().equals(fragmentName);
@@ -121,6 +123,22 @@ public class SettingsActivity extends PreferenceActivity {
             bindPreferenceSummaryToValue(findPreference("facing"));
             bindPreferenceSummaryToValue(findPreference("resolution"));
             bindPreferenceSummaryToValue(findPreference("recordMode"));
+        }
+    }
+
+    public static class VelocityPreferenceFragment extends PreferenceFragmentBase {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.setXmlResourceId(R.xml.pref_velocity);
+            super.onCreate(savedInstanceState);
+        }
+    }
+
+    public static class AdvancedPreferenceFragment extends PreferenceFragmentBase {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.setXmlResourceId(R.xml.pref_advanced);
+            super.onCreate(savedInstanceState);
         }
     }
 

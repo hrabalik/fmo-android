@@ -48,7 +48,6 @@
             android:theme="@style/Recording">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
@@ -57,7 +56,12 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Benchmark"
             android:screenOrientation="landscape"
-            android:theme="@style/Benchmarking"/>
+            android:theme="@style/Benchmarking">
+            <intent-filter>
+                <action android:name="cz.fmo.BenchmarkingActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
         <activity
             android:name=".PlaybackActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -79,8 +83,8 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/settings"
-            android:screenOrientation="landscape"
-            android:parentActivityName=".RecordingActivity">
+            android:parentActivityName=".RecordingActivity"
+            android:screenOrientation="landscape">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="cz.fmo.RecordingActivity"/>

@@ -67,6 +67,11 @@
         <item>2</item>
     </string-array>
 
+    <string name="prefHeaderVelocity">Velocity estimation</string>
+
+    <string name="prefHeaderAdvanced">Advanced</string>
+    <string name="runBenchmark">Run benchmark</string>
+
     <!-- Strings related to Settings -->
 
     <!-- Example General settings -->

@@ -3,6 +3,14 @@
         android:fragment="cz.fmo.SettingsActivity$CapturePreferenceFragment"
         android:icon="@drawable/settings_capture"
         android:title="@string/prefHeaderCapture"/>
+    <header
+        android:fragment="cz.fmo.SettingsActivity$VelocityPreferenceFragment"
+        android:icon="@drawable/settings_velocity"
+        android:title="@string/prefHeaderVelocity"/>
+    <header
+        android:fragment="cz.fmo.SettingsActivity$AdvancedPreferenceFragment"
+        android:icon="@drawable/settings_advanced"
+        android:title="@string/prefHeaderAdvanced"/>
 
     <header
         android:fragment="cz.fmo.SettingsActivity$GeneralPreferenceFragment"
