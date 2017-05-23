@@ -46,7 +46,7 @@ class Track {
         float sinceDetectionSec = ((float)(System.nanoTime() - mLastDetectionTime)) / 1e9f;
         mColorHSV.hsv[0] = (mLatestDx > 0) ? 100.f : 200.f;
         mColorHSV.hsv[1] = Math.min(1.0f, .2f + 0.4f * sinceDetectionSec);
-        mColorHSV.hsv[2] = Math.max(0.6f, 1.f - 0.3f * sinceDetectionSec);
+        mColorHSV.hsv[2] = Math.max((mLatestDx > 0) ? 0.6f : 0.8f, 1.f - 0.3f * sinceDetectionSec);
         Color.convert(mColorHSV, mColorRGBA);
     }
 
