@@ -56,9 +56,9 @@ public class SaveThread extends GenericThread<SaveThreadHandler> {
     }
 
     public interface Task {
-        void perform(SaveThread thread);
+        void perform();
 
-        void terminate(SaveThread thread);
+        void terminate();
     }
 
     @SuppressWarnings("UnusedParameters")

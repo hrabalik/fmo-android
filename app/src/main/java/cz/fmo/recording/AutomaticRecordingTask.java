@@ -7,108 +7,160 @@ import java.io.File;
 import cz.fmo.util.Time;
 
 /**
- * For recording short movies on demand.
+ * For recording short movies in reaction to ongoing events.
  */
 public class AutomaticRecordingTask implements SaveThread.Task {
+    private static final float CHUNK_SEC = 1.f;
     private final Object mLock = new Object();
-    private final float mWaitSec;
-    private final float mLengthSec;
     private final File mFile;
+    private final long mMarginUs;
+    private final SaveThread mThread;
     private final CyclicBuffer mBuf;
     private final SaveThreadHandler mHandler;
-    private boolean mPerformed = false;
-    private boolean mCancelled = false;
-    private int mFirst;
+    private int mFirst = -1;
+    private long mEndUs = -1;
+    private MediaMuxer mMuxer;
+    private int mTrack;
+    private int mFramesWritten = 0;
+    private boolean mFinished = false;
 
     /**
-     * Saves the latest lengthSec of frames to the specified file. If the start of the movie is less
-     * than MIN_MARGIN_SEC from the start of the buffer, the method refuses to save the file. The
-     * MIN_MARGIN_SEC requirement is a precaution to avoid overwriting data of a frame while it is
-     * still being saved.
-     * <p>
-     * Use terminate() to cancel the task during the waiting period. The constructor does all
-     * scheduling on its own, therefore there's no need to send the task object to an event queue.
+     * Saves a video that contains interesting events, surrounded by a given time margin. If new
+     * events happen before the recording is finished, the extend() method can be used to postpone
+     * the end of the video. Once the end of the video is saved, the recording is stopped
+     * automatically.
      *
-     * @param waitSec   time to wait for before saving, in seconds
-     * @param lengthSec length of the movie to be saved
+     * @param marginSec number of seconds to include before the first event and after the last one
      * @param file      file to save to, should be writable and have a .mp4 extension
      * @param thread    thread to use for saving
      */
-    public AutomaticRecordingTask(float waitSec, float lengthSec, File file,
-                                  SaveThread thread) {
-        this.mWaitSec = waitSec;
-        this.mLengthSec = lengthSec;
-        this.mFile = file;
-        this.mBuf = thread.getBuffer();
-        this.mHandler = thread.getHandler();
-        boolean win = init();
+    public AutomaticRecordingTask(float marginSec, File file, SaveThread thread) {
+        mFile = file;
+        mMarginUs = Time.toUs(marginSec);
+        mThread = thread;
+        mBuf = thread.getBuffer();
+        mHandler = thread.getHandler();
 
-        if (!win) {
-            mCancelled = true;
-            thread.sendCallback(file, false);
+        if (mHandler == null) {
+            error();
             return;
         }
 
-        mHandler.sendTask(this, Time.toMs(mWaitSec));
+        if (!init()) {
+            error();
+            return;
+        }
+
+        mHandler.sendTask(this, 0);
+    }
+
+    private void error() {
+        mThread.sendCallback(mFile, false);
+        mFinished = true;
+    }
+
+    private long latestUs(CyclicBuffer b) {
+        return b.getTimeUs(b.prev(b.end()));
     }
 
     private boolean init() {
-        if (mHandler == null) return false;
-
         synchronized (mBuf) {
             if (mBuf.empty()) return false;
-            long nowUs = mBuf.getTimeUs(mBuf.prev(mBuf.end()));
-            long startUs = nowUs + Time.toUs(mWaitSec) - Time.toUs(mLengthSec);
+            long nowUs = latestUs(mBuf);
+            long startUs = nowUs - mMarginUs;
+            mEndUs = nowUs + mMarginUs;
             mFirst = mBuf.findByTime(mBuf.begin(), mBuf.end(), startUs);
             mFirst = mBuf.findIFrame(mFirst);
             if (!mBuf.isIFrame(mFirst)) return false;
-            float minMargin = SaveThread.MIN_MARGIN_SEC + mWaitSec;
-            long marginUs = mBuf.getDurationUs(mBuf.begin(), mFirst);
-            if (marginUs < Time.toUs(minMargin)) return false;
-            int marginFrames = mBuf.getNumFrames(mBuf.begin(), mFirst);
-            if (marginFrames < Time.toFrames(minMargin)) return false;
         }
 
+        try {
+            mMuxer = new MediaMuxer(mFile.getPath(), SaveThread.OUTPUT_FORMAT);
+        } catch (java.io.IOException e) {
+            return false;
+        }
+
+        mTrack = mMuxer.addTrack(mBuf.getFormat());
+        mMuxer.start();
         return true;
     }
 
-    @Override
-    public void perform(SaveThread thread) {
+    public boolean extend() {
         synchronized (mLock) {
-            if (mPerformed || mCancelled) return;
-            mPerformed = true;
-
-            int last;
-            synchronized (mBuf) {
-                last = mBuf.end();
+            if (mFinished) return false;
+            if (!extendImpl()) {
+                error();
+                return false;
             }
+        }
+        return true;
+    }
 
-            boolean win = true;
-            MediaMuxer muxer = null;
-            try {
-                muxer = new MediaMuxer(mFile.getPath(), SaveThread.OUTPUT_FORMAT);
-                int track = muxer.addTrack(mBuf.getFormat());
-                muxer.start();
-                thread.writeFrames(mFirst, last, muxer, track);
-            } catch (Exception e) {
-                win = false;
+    private boolean extendImpl() {
+        synchronized (mBuf) {
+            if (mBuf.empty()) return false;
+            long nowUs = latestUs(mBuf);
+            mEndUs = nowUs + mMarginUs;
+        }
+        return true;
+    }
+
+    private boolean writeFrames() {
+        boolean finish = false;
+        int last;
+        synchronized (mBuf) {
+            last = mBuf.end();
+
+            // detect end of video
+            long nowUs = latestUs(mBuf);
+            if (nowUs > mEndUs) {
+                last = mBuf.findByTime(mBuf.begin(), mBuf.end(), mEndUs);
+                last = mBuf.next(last);
+                finish = true;
             }
+        }
 
-            if (muxer != null) {
-                muxer.stop();
-                muxer.release();
-            }
+        int numFrames = mBuf.getNumFrames(mFirst, last);
+        mThread.writeFrames(mFirst, last, mMuxer, mTrack);
+        mFramesWritten += numFrames;
+        mFirst = last;
+        return finish;
+    }
 
-            thread.sendCallback(mFile, win);
+    @Override
+    public void perform() {
+        synchronized (mLock) {
+            if (mFinished) return;
+            mFinished = writeFrames();
+        }
+
+        if (mFinished) {
+            cleanUp();
+            mThread.sendCallback(mFile, mFramesWritten > 0);
+        } else {
+            mHandler.sendTask(this, Time.toMs(CHUNK_SEC));
         }
     }
 
     @Override
-    public void terminate(SaveThread thread) {
+    public void terminate() {
         synchronized (mLock) {
-            if (mPerformed || mCancelled) return;
-            mCancelled = true;
-            mHandler.cancelTask(this);
+            if (mFinished) return;
+            mFinished = true;
         }
+
+        writeFrames();
+        cleanUp();
+        mThread.sendCallback(mFile, mFramesWritten > 0);
+    }
+
+    private void cleanUp() {
+        if (mMuxer != null) {
+            mMuxer.stop();
+            mMuxer.release();
+            mMuxer = null;
+        }
+
+        mHandler.cancelTask(this);
     }
 }

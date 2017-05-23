@@ -14,6 +14,7 @@ public class ManualRecordingTask implements SaveThread.Task {
     private static final float CHUNK_SEC = 1.f;
     private final Object mLock = new Object();
     private final File mFile;
+    private final SaveThread mThread;
     private final CyclicBuffer mBuf;
     private final SaveThreadHandler mHandler;
     private int mFirst = NO_FIRST;
@@ -32,20 +33,29 @@ public class ManualRecordingTask implements SaveThread.Task {
      * @param thread thread to use for saving
      */
     public ManualRecordingTask(File file, SaveThread thread) {
-        this.mFile = file;
-        this.mBuf = thread.getBuffer();
-        this.mHandler = thread.getHandler();
+        mFile = file;
+        mThread = thread;
+        mBuf = thread.getBuffer();
+        mHandler = thread.getHandler();
 
         if (mHandler == null) {
-            thread.sendCallback(file, false);
+            error();
             return;
         }
+
+        // postpone init() until first writeFrames(), because mBuf may be still empty at this point
 
         mHandler.sendTask(this, Time.toMs(CHUNK_SEC));
     }
 
+    private void error() {
+        mThread.sendCallback(mFile, false);
+        mFinished = true;
+    }
+
     private boolean init() {
         synchronized (mBuf) {
+            // save from the start of the buffer, expecting it to be cleared when recording starts
             if (mBuf.empty()) return false;
             mFirst = mBuf.begin();
             mFirst = mBuf.findIFrame(mFirst);
@@ -63,10 +73,13 @@ public class ManualRecordingTask implements SaveThread.Task {
         return true;
     }
 
-    private void writeFrames(SaveThread thread) {
+    private void writeFrames() {
         if (!mInitialized) {
             boolean win = init();
-            if (!win) return;
+            if (!win) {
+                error();
+                return;
+            }
             mInitialized = true;
         }
 
@@ -76,27 +89,27 @@ public class ManualRecordingTask implements SaveThread.Task {
         }
 
         int numFrames = mBuf.getNumFrames(mFirst, last);
-        thread.writeFrames(mFirst, last, mMuxer, mTrack);
+        mThread.writeFrames(mFirst, last, mMuxer, mTrack);
         mFramesWritten += numFrames;
         mFirst = last;
     }
 
     @Override
-    public void perform(SaveThread thread) {
+    public void perform() {
         synchronized (mLock) {
             if (mFinished) return;
-            writeFrames(thread);
+            writeFrames();
         }
         mHandler.sendTask(this, Time.toMs(CHUNK_SEC));
     }
 
     @Override
-    public void terminate(SaveThread thread) {
+    public void terminate() {
         synchronized (mLock) {
             if (mFinished) return;
             mFinished = true;
 
-            writeFrames(thread);
+            writeFrames();
 
             if (mMuxer != null) {
                 mMuxer.stop();
@@ -106,6 +119,6 @@ public class ManualRecordingTask implements SaveThread.Task {
 
             mHandler.cancelTask(this);
         }
-        thread.sendCallback(mFile, mFramesWritten > 0);
+        mThread.sendCallback(mFile, mFramesWritten > 0);
     }
 }

@@ -35,8 +35,7 @@ import cz.fmo.util.FileManager;
  */
 public final class RecordingActivity extends Activity {
     private static final float BUFFER_SECONDS = 8;
-    private static final float AUTOMATIC_LEN = 4;
-    private static final float AUTOMATIC_WAIT = 2;
+    private static final float AUTOMATIC_MARGIN = 2;
     private static final int PREVIEW_SLOWDOWN_FRAMES = 59;
     private static final String FILENAME = "video.mp4";
     private final Handler mHandler = new Handler(this);
@@ -251,12 +250,12 @@ public final class RecordingActivity extends Activity {
         if (mStatus != Status.RUNNING) return;
 
         if (mSaveTask != null) {
-            mSaveTask.terminate(mSaveMovie);
+            mSaveTask.terminate();
             mSaveTask = null;
         }
 
         File outFile = mFileMan.open(FILENAME);
-        mSaveTask = new AutomaticRecordingTask(AUTOMATIC_WAIT, AUTOMATIC_LEN, outFile, mSaveMovie);
+        mSaveTask = new AutomaticRecordingTask(AUTOMATIC_MARGIN, outFile, mSaveMovie);
     }
 
     public void onStartManualRecording(@SuppressWarnings("UnusedParameters") View view) {
@@ -271,7 +270,7 @@ public final class RecordingActivity extends Activity {
 
     public void onStopManualRecording(@SuppressWarnings("UnusedParameters") View view) {
         if (mSaveMovie == null) return;
-        mSaveTask.terminate(mSaveMovie);
+        mSaveTask.terminate();
         setEncodingEnabled(false);
         mSaveTask = null;
         mGUI.update(GUIUpdate.BUTTONS);
@@ -331,7 +330,7 @@ public final class RecordingActivity extends Activity {
      */
     private void stopSaving() {
         if (mSaveTask != null) {
-            mSaveTask.terminate(mSaveMovie);
+            mSaveTask.terminate();
             mSaveTask = null;
         }
     }

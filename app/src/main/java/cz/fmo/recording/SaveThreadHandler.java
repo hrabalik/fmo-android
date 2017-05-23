@@ -49,7 +49,7 @@ public class SaveThreadHandler extends android.os.Handler {
                 break;
             case TASK:
                 SaveThread.Task task = (SaveThread.Task) msg.obj;
-                task.perform(thread);
+                task.perform();
                 break;
         }
     }
