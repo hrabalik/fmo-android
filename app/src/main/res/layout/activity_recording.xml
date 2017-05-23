@@ -9,7 +9,8 @@
         <SurfaceView
             android:id="@+id/recording_preview"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"/>
+            android:layout_height="fill_parent"
+            android:keepScreenOn="true"/>
     </LinearLayout>
 
     <RelativeLayout
