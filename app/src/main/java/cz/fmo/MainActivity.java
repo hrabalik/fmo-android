@@ -26,4 +26,8 @@ public class MainActivity extends Activity {
     public void runPlaybackActivity(@SuppressWarnings("UnusedParameters") View view) {
         startActivity(new Intent(this, PlaybackActivity.class));
     }
+
+    public void runMenuActivity(@SuppressWarnings("UnusedParameters") View view) {
+        startActivity(new Intent(this, MenuActivity.class));
+    }
 }
