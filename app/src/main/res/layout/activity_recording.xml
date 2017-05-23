@@ -37,47 +37,51 @@
             android:layout_alignParentTop="true">
 
             <Button
+                android:id="@+id/recording_manual_stopped"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/recording_manual_stopped"
+                android:drawableEnd="@drawable/record_manual_stopped"
                 android:onClick="onStartManualRecording"
                 android:text="@string/recordingManualStopped"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordManualStopped"
-                android:drawableEnd="@drawable/record_manual_stopped"
+                android:visibility="gone"
                 tools:ignore="RelativeOverlap"/>
 
             <Button
+                android:id="@+id/recording_manual_running"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/recording_manual_running"
+                android:drawableEnd="@drawable/record_manual_running"
                 android:onClick="onStopManualRecording"
                 android:text="@string/recordingManualRunning"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordManualRunning"
-                android:drawableEnd="@drawable/record_manual_running"
+                android:visibility="gone"
                 tools:ignore="RelativeOverlap"/>
 
             <Button
+                android:id="@+id/recording_automatic_stopped"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/recording_automatic_stopped"
+                android:drawableEnd="@drawable/record_automatic_stopped"
                 android:onClick="onForceAutomaticRecording"
                 android:text="@string/recordingAutomaticStopped"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordAutomaticStopped"
-                android:drawableEnd="@drawable/record_automatic_stopped"
+                android:visibility="gone"
                 tools:ignore="RelativeOverlap"/>
 
             <Button
+                android:id="@+id/recording_automatic_running"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:id="@+id/recording_automatic_running"
+                android:drawableEnd="@drawable/record_automatic_running"
                 android:onClick="onForceAutomaticRecording"
                 android:text="@string/recordingAutomaticRunning"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordAutomaticRunning"
-                android:drawableEnd="@drawable/record_automatic_running"
+                android:visibility="gone"
                 tools:ignore="RelativeOverlap"/>
         </LinearLayout>
 
