@@ -27,7 +27,6 @@
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
-            android:text="@string/initializing"
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
 
         <LinearLayout
