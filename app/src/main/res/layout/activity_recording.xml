@@ -29,23 +29,23 @@
             android:layout_alignParentTop="true"
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
 
-        <Button
+        <ImageButton
             android:id="@+id/recording_clear_button"
-            android:layout_width="60dip"
-            android:layout_height="60dip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true"
-            android:drawableEnd="@drawable/clear_detections"
+            android:src="@drawable/clear_detections"
             android:onClick="onClearDetections"
             android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
 
-        <Button
+        <ImageButton
             android:id="@+id/recording_settings_button"
-            android:layout_width="60dip"
-            android:layout_height="60dip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
-            android:drawableStart="@drawable/settings"
+            android:src="@drawable/settings"
             android:onClick="onOpenMenu"
             android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
 
