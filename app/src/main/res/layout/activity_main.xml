@@ -10,14 +10,14 @@
         android:onClick="runPlayMovieSurfaceActivity"
         android:text="@string/mainMenuPlayMovieString"/>
 
-    <!-- <Button
+    <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="start|bottom"
         android:onClick="runBenchmarkingActivity"
         android:text="@string/mainMenuBenchmarkingString"/>
 
-    <Button
+    <!-- <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="start|bottom"
