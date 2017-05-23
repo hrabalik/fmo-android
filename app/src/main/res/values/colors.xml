@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="defaultButtonTextColor">#bebebe</color>
     <color name="recordManualStopped">#bebebe</color>
     <color name="recordManualRunning">#de4d4d</color>
     <color name="recordAutomaticStopped">#4dbade</color>

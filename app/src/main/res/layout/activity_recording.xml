@@ -25,9 +25,29 @@
             android:id="@+id/recording_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
             android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
             android:textAppearance="@android:style/TextAppearance.Material.Large"/>
+
+        <Button
+            android:id="@+id/recording_clear_button"
+            android:layout_width="60dip"
+            android:layout_height="60dip"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentStart="true"
+            android:drawableEnd="@drawable/clear_detections"
+            android:onClick="onClearDetections"
+            android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
+
+        <Button
+            android:id="@+id/recording_settings_button"
+            android:layout_width="60dip"
+            android:layout_height="60dip"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:drawableStart="@drawable/settings"
+            android:onClick="onOpenMenu"
+            android:textAppearance="@android:style/TextAppearance.Material.Medium"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -44,8 +64,7 @@
                 android:text="@string/recordingManualStopped"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordManualStopped"
-                android:visibility="gone"
-                tools:ignore="RelativeOverlap"/>
+                android:visibility="gone"/>
 
             <Button
                 android:id="@+id/recording_manual_running"
@@ -56,8 +75,7 @@
                 android:text="@string/recordingManualRunning"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordManualRunning"
-                android:visibility="gone"
-                tools:ignore="RelativeOverlap"/>
+                android:visibility="gone"/>
 
             <Button
                 android:id="@+id/recording_automatic_stopped"
@@ -68,8 +86,7 @@
                 android:text="@string/recordingAutomaticStopped"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordAutomaticStopped"
-                android:visibility="gone"
-                tools:ignore="RelativeOverlap"/>
+                android:visibility="gone"/>
 
             <Button
                 android:id="@+id/recording_automatic_running"
@@ -80,55 +97,7 @@
                 android:text="@string/recordingAutomaticRunning"
                 android:textAppearance="@android:style/TextAppearance.Material.Large"
                 android:textColor="@color/recordAutomaticRunning"
-                android:visibility="gone"
-                tools:ignore="RelativeOverlap"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true">
-
-            <ToggleButton
-                android:id="@+id/recording_preview_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="onPreviewToggle"
-                android:textOff="@string/previewToggleOff"
-                android:textOn="@string/previewToggleOn"/>
-
-            <ToggleButton
-                android:id="@+id/recording_record_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textOn="@string/recordToggleOn"
-                android:textOff="@string/recordToggleOff"
-                android:onClick="onRecordToggle"/>
-
-            <ToggleButton
-                android:id="@+id/recording_hires_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textOn="@string/hiresToggleOn"
-                android:textOff="@string/hiresToggleOff"
-                android:onClick="onHiresToggle"/>
-
-            <ToggleButton
-                android:id="@+id/recording_auto_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textOn="@string/autoToggleOn"
-                android:textOff="@string/autoToggleOff"
-                android:onClick="onAutoToggle"/>
-
-            <ToggleButton
-                android:id="@+id/recording_detect_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textOn="@string/detectToggleOn"
-                android:textOff="@string/detectToggleOff"
-                android:onClick="onDetectToggle"/>
+                android:visibility="gone"/>
         </LinearLayout>
     </RelativeLayout>
 </merge>

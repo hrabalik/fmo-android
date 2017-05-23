@@ -55,11 +55,11 @@ class Track {
         Lib.generateCurve(mLatest, mColorRGBA.rgba, b);
     }
 
-    void generateLabel(FontRenderer fontRender, float hs, float ws, float top, int i) {
+    void generateLabel(FontRenderer fontRender, float hs, float ws, float left, float top, int i) {
         if (mVelocityNumFrames != 0) {
             float velocity = mVelocityDistanceMax;
-            String str = String.format(Locale.US, "%3.1f", velocity);
-            fontRender.addString(str, ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
+            String str = String.format(Locale.US, "%5.1f", velocity);
+            fontRender.addString(str, left + ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
         }
     }
 }

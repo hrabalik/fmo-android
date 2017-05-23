@@ -21,6 +21,7 @@
     <string name="recordingManualRunning">REC</string>
     <string name="recordingAutomaticStopped">AUTO</string>
     <string name="recordingAutomaticRunning">AUTO</string>
+    <string name="clearDetections">CLEAR</string>
     <string name="previewToggleOn">PRE ON</string>
     <string name="previewToggleOff">PRE OFF</string>
     <string name="recordToggleOn">REC ON</string>

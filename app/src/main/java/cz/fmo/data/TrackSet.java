@@ -104,27 +104,27 @@ public class TrackSet {
             }
 
             Color.RGBA color = new Color.RGBA();
-            float hs = ((float) height) / 20.f;
+            float hs = ((float) height) / 18.f;
             float ws = hs * FontRenderer.CHAR_STEP_X;
-            float mid = height / 2.f;
             int items = mTracks.size();
-            float top = mid - 0.5f * (items + 1) * hs;
+            float top = 1.f * hs;
+            float left = 1.f * hs;
 
             // draw box and header
-            color.rgba[0] = 0.0f;
-            color.rgba[1] = 0.0f;
-            color.rgba[2] = 0.0f;
-            color.rgba[3] = 0.5f;
-            fontRender.addRectangle(0, mid - 0.5f * (items + 1) * hs, 7 * ws, (items + 1) * hs, color);
-            color.rgba[0] = 0.5f;
-            color.rgba[1] = 0.5f;
-            color.rgba[2] = 0.5f;
-            color.rgba[3] = 1.0f;
-            fontRender.addString("px/fr", ws, top + 0.5f * hs, hs, color);
+            color.rgba[0] = 0.350f;
+            color.rgba[1] = 0.350f;
+            color.rgba[2] = 0.350f;
+            color.rgba[3] = 1.000f;
+            fontRender.addRectangle(left, top, 7 * ws, (items + 1) * hs, color);
+            color.rgba[0] = 0.745f;
+            color.rgba[1] = 0.745f;
+            color.rgba[2] = 0.745f;
+            color.rgba[3] = 1.000f;
+            fontRender.addString("px/fr", left + ws, top + 0.5f * hs, hs, color);
 
             // draw speeds
             for (int i = 0; i < items; i++) {
-                mTracks.get(i).generateLabel(fontRender, hs, ws, top, i);
+                mTracks.get(i).generateLabel(fontRender, hs, ws, left, top, i);
             }
         }
     }

@@ -2,6 +2,7 @@ package cz.fmo;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -56,7 +57,7 @@ public final class RecordingActivity extends Activity {
     protected void onCreate(android.os.Bundle savedBundle) {
         super.onCreate(savedBundle);
         mConfig = new Config(this);
-        mGUI.init(mConfig);
+        mGUI.init();
         mGUI.update(GUIUpdate.ALL);
     }
 
@@ -336,6 +337,14 @@ public final class RecordingActivity extends Activity {
         mGUI.update(GUIUpdate.BUTTONS);
     }
 
+    public void onClearDetections(View toggle) {
+        TrackSet.getInstance().clear();
+    }
+
+    public void onOpenMenu(View toggle) {
+        startActivity(new Intent(this, MenuActivity.class));
+    }
+
     /**
      * Ceases any saving operation, scheduled or in progress.
      */
@@ -435,6 +444,7 @@ public final class RecordingActivity extends Activity {
             if (hasMessages(CAMERA_ERROR)) return;
             sendMessage(obtainMessage(CAMERA_ERROR));
         }
+
         @Override
         public void handleMessage(android.os.Message msg) {
             RecordingActivity activity = mActivity.get();
@@ -480,7 +490,7 @@ public final class RecordingActivity extends Activity {
         /**
          * Prepares all static UI elements.
          */
-        void init(Config config) {
+        void init() {
             setContentView(R.layout.activity_recording);
             mPreview = (SurfaceView) findViewById(R.id.recording_preview);
             mPreview.getHolder().addCallback(this);
@@ -496,13 +506,6 @@ public final class RecordingActivity extends Activity {
             mManualRunningButton = (Button) findViewById(R.id.recording_manual_running);
             mAutomaticStoppedButton = (Button) findViewById(R.id.recording_automatic_stopped);
             mAutomaticRunningButton = (Button) findViewById(R.id.recording_automatic_running);
-            ((ToggleButton) findViewById(R.id.recording_preview_toggle)).setChecked(config.preview);
-            ((ToggleButton) findViewById(R.id.recording_record_toggle)).setChecked(config.record);
-            ((ToggleButton) findViewById(R.id.recording_hires_toggle)).setChecked(config.hires);
-            ((ToggleButton) findViewById(R.id.recording_auto_toggle)).setChecked(config.automatic);
-            ((ToggleButton) findViewById(R.id.recording_detect_toggle)).setChecked(config.detect);
-            findViewById(R.id.recording_auto_toggle).setVisibility(config.record ? View.VISIBLE :
-                    View.GONE);
         }
 
         /**
@@ -559,7 +562,6 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
         }
 
         @Override
