@@ -342,7 +342,7 @@ public final class RecordingActivity extends Activity {
     }
 
     public void onOpenMenu(View toggle) {
-        startActivity(new Intent(this, MenuActivity.class));
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
     /**

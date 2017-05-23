@@ -1,6 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="cz.fmo">
-
 
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -28,21 +28,18 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Main">
-
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
             android:theme="@style/Main"/>
-
         <activity
             android:name=".MenuActivity"
             android:configChanges="orientation|screenSize"
             android:label="Settings"
             android:screenOrientation="landscape"
             android:theme="@style/Menu"/>
-
         <activity
             android:name=".RecordingActivity"
             android:configChanges=""
@@ -51,24 +48,22 @@
             android:theme="@style/Recording">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
+
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
         <activity
             android:name=".BenchmarkingActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Benchmark"
             android:screenOrientation="landscape"
             android:theme="@style/Benchmarking"/>
-
         <activity
             android:name=".PlaybackActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Playback"
             android:screenOrientation="landscape"
             android:theme="@style/Playback"/>
-
         <activity
             android:name="com.android.grafika.PlayMovieSurfaceActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
@@ -77,8 +72,17 @@
             android:theme="@style/PlayMovieSurfaceActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
+
                 <data android:scheme="fmo-movie"/>
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings"
+            android:parentActivityName=".RecordingActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="cz.fmo.RecordingActivity"/>
         </activity>
     </application>
 
