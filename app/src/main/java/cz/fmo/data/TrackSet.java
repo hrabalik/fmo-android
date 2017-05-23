@@ -22,7 +22,6 @@ public class TrackSet {
     private int mWidth = 1;  // width of the source image (not necessarily the screen width)
     private int mHeight = 1; // height of the source image (not necessarily the screen height)
     private int mTrackCounter = 0;
-    private static final float[] HUES = {0.f, 45.f, 90.f, 135.f, 180.f, 225.f, 270.f, 315.f};
 
     private TrackSet() {
     }
@@ -61,8 +60,7 @@ public class TrackSet {
                 if (track == null) {
                     // no predecessor/track not found: make a new track
                     mTrackCounter++;
-                    float hue = HUES[mTrackCounter % 8] + 24.56f;
-                    track = new Track(hue);
+                    track = new Track();
                     // shift to erase the oldest track
                     if (mTracks.size() == NUM_TRACKS) {
                         mTracks.remove(0);
@@ -100,6 +98,11 @@ public class TrackSet {
 
     public void generateLabels(FontRenderer fontRender, int height) {
         synchronized (mLock) {
+            if (mTracks.isEmpty()) {
+                // don't show anything if there's no tracks
+                return;
+            }
+
             Color.RGBA color = new Color.RGBA();
             float hs = ((float) height) / 20.f;
             float ws = hs * FontRenderer.CHAR_STEP_X;
@@ -107,6 +110,7 @@ public class TrackSet {
             int items = mTracks.size();
             float top = mid - 0.5f * (items + 1) * hs;
 
+            // draw box and header
             color.rgba[0] = 0.0f;
             color.rgba[1] = 0.0f;
             color.rgba[2] = 0.0f;
@@ -118,6 +122,7 @@ public class TrackSet {
             color.rgba[3] = 1.0f;
             fontRender.addString("px/fr", ws, top + 0.5f * hs, hs, color);
 
+            // draw speeds
             for (int i = 0; i < items; i++) {
                 mTracks.get(i).generateLabel(fontRender, hs, ws, top, i);
             }

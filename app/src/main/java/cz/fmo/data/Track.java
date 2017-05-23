@@ -13,11 +13,14 @@ import cz.fmo.util.Color;
  */
 class Track {
     private Lib.Detection mLatest;
+    private float mLatestDx = 0;
+    private float mLatestDy = 0;
     private Color.HSV mColorHSV = new Color.HSV();
     private Color.RGBA mColorRGBA = new Color.RGBA();
     private long mLastDetectionTime;
-    private float velocityDistance = 0;
-    private int velocityNumFrames = 0;
+    private float mVelocityDistanceMax = 0;
+    private float mVelocityDistanceSum = 0;
+    private int mVelocityNumFrames = 0;
 
     Lib.Detection getLatest() {
         return mLatest;
@@ -26,23 +29,22 @@ class Track {
     void setLatest(Lib.Detection latest) {
         if (mLatest != null) {
             // calculate speed stats for each segment
-            double dx = latest.centerX - mLatest.centerX;
-            double dy = latest.centerY - mLatest.centerY;
-            velocityDistance += Math.sqrt(dx * dx + dy * dy);
-            velocityNumFrames++;
+            mLatestDx = latest.centerX - mLatest.centerX;
+            mLatestDy = latest.centerY - mLatest.centerY;
+            float distance = (float) Math.sqrt(mLatestDx * mLatestDx + mLatestDy * mLatestDy);
+            mVelocityDistanceMax = Math.max(mVelocityDistanceMax, distance);
+            mVelocityDistanceSum += distance;
+            mVelocityNumFrames++;
         }
 
         mLastDetectionTime = System.nanoTime();
         mLatest = latest;
     }
 
-    Track(float hue) {
-        mColorHSV.hsv[0] = hue;
-        mColorHSV.hsv[1] = 0.8f;
-    }
-
     private void updateColor() {
+        if (mLatestDx == 0 && mLatestDy == 0) return;
         float sinceDetectionSec = ((float)(System.nanoTime() - mLastDetectionTime)) / 1e9f;
+        mColorHSV.hsv[0] = (mLatestDx > 0) ? 100.f : 200.f;
         mColorHSV.hsv[1] = Math.min(1.0f, .2f + 0.4f * sinceDetectionSec);
         mColorHSV.hsv[2] = Math.max(0.6f, 1.f - 0.3f * sinceDetectionSec);
         Color.convert(mColorHSV, mColorRGBA);
@@ -54,8 +56,8 @@ class Track {
     }
 
     void generateLabel(FontRenderer fontRender, float hs, float ws, float top, int i) {
-        if (velocityNumFrames != 0) {
-            float velocity = velocityDistance / velocityNumFrames;
+        if (mVelocityNumFrames != 0) {
+            float velocity = mVelocityDistanceMax;
             String str = String.format(Locale.US, "%3.1f", velocity);
             fontRender.addString(str, ws, top + (i + 1.5f) * hs, hs, mColorRGBA);
         }
