@@ -14,7 +14,7 @@ import cz.fmo.util.Color;
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
  */
 public class TrackSet {
-    private static final int NUM_TRACKS = 8;
+    private static final int NUM_TRACKS = 2;
     private final Object mLock = new Object();
     private final ArrayList<Track> mTracks = new ArrayList<>();
     private SparseArray<Track> mCurrentTrackMap = new SparseArray<>();
