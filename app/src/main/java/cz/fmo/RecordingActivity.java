@@ -245,17 +245,23 @@ public final class RecordingActivity extends Activity {
         mStatus = Status.STOPPED;
     }
 
-    public void onForceAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
-        if (mSaveMovie == null) return;
+    private void triggerAutomaticRecording() {
         if (mStatus != Status.RUNNING) return;
+        if (mSaveMovie == null) return;
+        if (!mConfig.automatic) return;
 
-        if (mSaveTask != null) {
-            mSaveTask.terminate();
-            mSaveTask = null;
+        boolean extended = (mSaveTask != null) && mSaveTask.extend();
+
+        if (!extended) {
+            File outFile = mFileMan.open(FILENAME);
+            mSaveTask = new AutomaticRecordingTask(AUTOMATIC_MARGIN, outFile, mSaveMovie);
         }
 
-        File outFile = mFileMan.open(FILENAME);
-        mSaveTask = new AutomaticRecordingTask(AUTOMATIC_MARGIN, outFile, mSaveMovie);
+        mGUI.update(GUIUpdate.BUTTONS); // GUI thread only
+    }
+
+    public void onForceAutomaticRecording(@SuppressWarnings("UnusedParameters") View view) {
+        triggerAutomaticRecording();
     }
 
     public void onStartManualRecording(@SuppressWarnings("UnusedParameters") View view) {
@@ -277,9 +283,12 @@ public final class RecordingActivity extends Activity {
     }
 
     private void onSaveCompleted(File file, boolean success) {
+        stopSaving();
+
         if (success) {
             mFileMan.newMedia(file);
         }
+
         mSaveTask = null;
         mGUI.update(GUIUpdate.BUTTONS);
     }
@@ -373,6 +382,7 @@ public final class RecordingActivity extends Activity {
             EncodeThread.Callback, SaveThread.Callback, CameraThread.Callback {
         private static final int LOG = 1;
         private static final int CAMERA_ERROR = 2;
+        private static final int TRIGGER_AUTO_RECORD = 3;
         private static final int SAVE_COMPLETED = 4;
         private static final int UPDATE_GUI = 5;
         private final WeakReference<RecordingActivity> mActivity;
@@ -394,6 +404,7 @@ public final class RecordingActivity extends Activity {
             CameraThread cam = activity.mCamera;
             if (cam == null) return;
             TrackSet.getInstance().addDetections(detections, cam.getWidth(), cam.getHeight());
+            sendMessage(obtainMessage(TRIGGER_AUTO_RECORD));
         }
 
         @Override
@@ -424,7 +435,6 @@ public final class RecordingActivity extends Activity {
             if (hasMessages(CAMERA_ERROR)) return;
             sendMessage(obtainMessage(CAMERA_ERROR));
         }
-
         @Override
         public void handleMessage(android.os.Message msg) {
             RecordingActivity activity = mActivity.get();
@@ -438,6 +448,9 @@ public final class RecordingActivity extends Activity {
                 case CAMERA_ERROR:
                     activity.mStatus = Status.CAMERA_ERROR;
                     activity.mGUI.update(GUIUpdate.ALL);
+                    break;
+                case TRIGGER_AUTO_RECORD:
+                    activity.triggerAutomaticRecording();
                     break;
                 case SAVE_COMPLETED:
                     activity.onSaveCompleted((File) msg.obj, msg.arg1 == 1);

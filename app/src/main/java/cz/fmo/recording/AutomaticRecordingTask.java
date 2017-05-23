@@ -85,26 +85,6 @@ public class AutomaticRecordingTask implements SaveThread.Task {
         return true;
     }
 
-    public boolean extend() {
-        synchronized (mLock) {
-            if (mFinished) return false;
-            if (!extendImpl()) {
-                error();
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean extendImpl() {
-        synchronized (mBuf) {
-            if (mBuf.empty()) return false;
-            long nowUs = latestUs(mBuf);
-            mEndUs = nowUs + mMarginUs;
-        }
-        return true;
-    }
-
     private boolean writeFrames() {
         boolean finish = false;
         int last;
@@ -162,5 +142,26 @@ public class AutomaticRecordingTask implements SaveThread.Task {
         }
 
         mHandler.cancelTask(this);
+    }
+
+    @Override
+    public boolean extend() {
+        synchronized (mLock) {
+            if (mFinished) return false;
+            if (!extendImpl()) {
+                error();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean extendImpl() {
+         synchronized (mBuf) {
+            if (mBuf.empty()) return false;
+            long nowUs = latestUs(mBuf);
+            mEndUs = nowUs + mMarginUs;
+        }
+        return true;
     }
 }

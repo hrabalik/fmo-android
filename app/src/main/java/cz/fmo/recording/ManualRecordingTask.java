@@ -121,4 +121,9 @@ public class ManualRecordingTask implements SaveThread.Task {
         }
         mThread.sendCallback(mFile, mFramesWritten > 0);
     }
+
+    @Override
+    public boolean extend() {
+        return false;
+    }
 }

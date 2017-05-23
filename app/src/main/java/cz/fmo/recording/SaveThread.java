@@ -14,7 +14,6 @@ import cz.fmo.util.GenericThread;
  */
 public class SaveThread extends GenericThread<SaveThreadHandler> {
     static final int OUTPUT_FORMAT = MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4;
-    static final float MIN_MARGIN_SEC = 1.f;
     private final CyclicBuffer mBuf;
     private final ByteBuffer mBufCache;
     private final MediaCodec.BufferInfo mInfoCache;
@@ -56,14 +55,26 @@ public class SaveThread extends GenericThread<SaveThreadHandler> {
     }
 
     public interface Task {
+        /**
+         * Performs a part of the task. This method is to be called by SaveThreadHandler only.
+         */
         void perform();
 
+        /**
+         * Immediately stops the task. Any further calls to perform() will be ignored.
+         */
         void terminate();
+
+        /**
+         * Requests that the time of finishing the task is postponed.
+         *
+         * @return whether the task has been successfully extended
+         */
+        boolean extend();
     }
 
     @SuppressWarnings("UnusedParameters")
     public interface Callback {
         void saveCompleted(File file, boolean success);
     }
-
 }
