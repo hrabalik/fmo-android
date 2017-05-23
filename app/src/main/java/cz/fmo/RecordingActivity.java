@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -34,6 +35,7 @@ import cz.fmo.util.FileManager;
  * The main activity, facilitating video preview, encoding and saving.
  */
 public final class RecordingActivity extends Activity {
+    private static final String LOG_TAG = "FMO";
     private static final float BUFFER_SECONDS = 8;
     private static final float AUTOMATIC_MARGIN = 2;
     private static final int PREVIEW_SLOWDOWN_FRAMES = 59;
@@ -380,7 +382,6 @@ public final class RecordingActivity extends Activity {
      */
     private static class Handler extends android.os.Handler implements Lib.Callback,
             EncodeThread.Callback, SaveThread.Callback, CameraThread.Callback {
-        private static final int LOG = 1;
         private static final int CAMERA_ERROR = 2;
         private static final int TRIGGER_AUTO_RECORD = 3;
         private static final int SAVE_COMPLETED = 4;
@@ -393,8 +394,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void log(String message) {
-            removeMessages(LOG);
-            sendMessage(obtainMessage(LOG, message));
+            Log.i(LOG_TAG, message);
         }
 
         @Override
@@ -441,10 +441,6 @@ public final class RecordingActivity extends Activity {
             if (activity == null) return;
 
             switch (msg.what) {
-                case LOG:
-                    activity.mGUI.logString = (String) msg.obj;
-                    activity.mGUI.update(GUIUpdate.LABELS);
-                    break;
                 case CAMERA_ERROR:
                     activity.mStatus = Status.CAMERA_ERROR;
                     activity.mGUI.update(GUIUpdate.ALL);
@@ -466,7 +462,6 @@ public final class RecordingActivity extends Activity {
      * A subclass that handles visual elements -- buttons, labels, and suchlike.
      */
     private class GUI implements SurfaceHolder.Callback {
-        String logString;
         private SurfaceView mPreview;
         private boolean mPreviewReady = false;
 
@@ -528,7 +523,7 @@ public final class RecordingActivity extends Activity {
             } else if (mStatus == Status.STORAGE_PERMISSION_ERROR) {
                 text = mErrorPermissionStorage;
             } else {
-                text = logString;
+                text = "";
             }
 
             //noinspection StringEquality
