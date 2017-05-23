@@ -6,4 +6,8 @@
     <Preference android:title="@string/runVideoPlayer">
         <intent android:action="com.android.grafika.PlayMovieSurfaceActivity"/>
     </Preference>
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="disableDetection"
+        android:title="@string/prefDisableDetection"/>
 </PreferenceScreen>

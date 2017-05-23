@@ -14,7 +14,6 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -56,7 +55,6 @@ public final class RecordingActivity extends Activity {
     @Override
     protected void onCreate(android.os.Bundle savedBundle) {
         super.onCreate(savedBundle);
-        mConfig = new Config(this);
         mGUI.init();
         mGUI.update(GUIUpdate.ALL);
     }
@@ -141,6 +139,9 @@ public final class RecordingActivity extends Activity {
             return;
         }
 
+        // get configuration settings
+        mConfig = new Config(this);
+
         // load assets
         Assets.getInstance().load(this);
 
@@ -150,7 +151,7 @@ public final class RecordingActivity extends Activity {
             int preferWidth = 1280;
             int preferHeight = 720;
 
-            if (mConfig.hires) {
+            if (mConfig.highResolution) {
                 preferWidth = 1920;
                 preferHeight = 1080;
             }
@@ -164,11 +165,11 @@ public final class RecordingActivity extends Activity {
                 mGUI.getPreviewWidth(), mGUI.getPreviewHeight());
         mCamera.addTarget(mPreviewTarget);
 
-        if (!mConfig.preview) {
+        if (mConfig.slowPreview) {
             mPreviewTarget.setSlowdown(PREVIEW_SLOWDOWN_FRAMES);
         }
 
-        if (mConfig.record) {
+        if (mConfig.recordMode != Config.RecordMode.OFF) {
             // make a suitably-sized cyclic buffer
             CyclicBuffer buffer = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
                     BUFFER_SECONDS);
@@ -184,10 +185,10 @@ public final class RecordingActivity extends Activity {
 
             // only allow encoding in automatic mode; manual mode starts encoding once the recording
             // button is pressed
-            setEncodingEnabled(mConfig.automatic);
+            setEncodingEnabled(mConfig.recordMode == Config.RecordMode.AUTOMATIC);
         }
 
-        if (mConfig.detect) {
+        if (!mConfig.disableDetection) {
             // C++ initialization
             Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
         }
@@ -251,7 +252,7 @@ public final class RecordingActivity extends Activity {
     private void triggerAutomaticRecording() {
         if (mStatus != Status.RUNNING) return;
         if (mSaveMovie == null) return;
-        if (!mConfig.automatic) return;
+        if (mConfig.recordMode != Config.RecordMode.AUTOMATIC) return;
 
         boolean extended = (mSaveTask != null) && mSaveTask.extend();
 
@@ -293,47 +294,6 @@ public final class RecordingActivity extends Activity {
         }
 
         mSaveTask = null;
-        mGUI.update(GUIUpdate.BUTTONS);
-    }
-
-    public void onPreviewToggle(View toggle) {
-        mConfig.preview = ((ToggleButton) toggle).isChecked();
-        mConfig.apply();
-
-        if (mConfig.preview) {
-            mPreviewTarget.setSlowdown(0);
-        } else {
-            mPreviewTarget.setSlowdown(PREVIEW_SLOWDOWN_FRAMES);
-        }
-    }
-
-    public void onRecordToggle(View toggle) {
-        mConfig.record = ((ToggleButton) toggle).isChecked();
-        mConfig.commit();
-        recreate();
-    }
-
-    public void onHiresToggle(View toggle) {
-        mConfig.hires = ((ToggleButton) toggle).isChecked();
-        mConfig.commit();
-        recreate();
-    }
-
-    public void onDetectToggle(View toggle) {
-        mConfig.detect = ((ToggleButton) toggle).isChecked();
-        mConfig.apply();
-
-        if (mConfig.detect) {
-            Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mHandler);
-        } else {
-            Lib.detectionStop();
-        }
-    }
-
-    public void onAutoToggle(View toggle) {
-        mConfig.automatic = ((ToggleButton) toggle).isChecked();
-        mConfig.apply();
-        setEncodingEnabled(mConfig.automatic);
         mGUI.update(GUIUpdate.BUTTONS);
     }
 
@@ -538,7 +498,7 @@ public final class RecordingActivity extends Activity {
 
         private void updateRecordingButtons() {
             {
-                boolean relevant = mConfig.record && !mConfig.automatic;
+                boolean relevant = mConfig.recordMode == Config.RecordMode.MANUAL;
                 boolean stopped = relevant && mSaveTask == null;
                 boolean running = relevant && mSaveTask != null;
                 mManualStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);
@@ -546,7 +506,7 @@ public final class RecordingActivity extends Activity {
             }
 
             {
-                boolean relevant = mConfig.record && mConfig.automatic;
+                boolean relevant = mConfig.recordMode == Config.RecordMode.AUTOMATIC;
                 boolean stopped = relevant && mSaveTask == null;
                 boolean running = relevant && mSaveTask != null;
                 mAutomaticStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);

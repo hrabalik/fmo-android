@@ -18,4 +18,9 @@
         android:entryValues="@array/prefRecordModeValues"
         android:key="recordMode"
         android:title="@string/prefRecordMode"/>
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="slowPreview"
+        android:summary="@string/prefSlowPreviewSummary"
+        android:title="@string/prefSlowPreview"/>
 </PreferenceScreen>

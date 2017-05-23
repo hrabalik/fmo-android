@@ -66,12 +66,15 @@
         <item>1</item>
         <item>2</item>
     </string-array>
+    <string name="prefSlowPreview">Slow preview</string>
+    <string name="prefSlowPreviewSummary">Update only once in 2 seconds</string>
 
     <string name="prefHeaderVelocity">Velocity estimation</string>
 
     <string name="prefHeaderAdvanced">Advanced</string>
     <string name="runBenchmark">Run benchmark</string>
     <string name="runVideoPlayer">Run video player</string>
+    <string name="prefDisableDetection">Disable FMO detection</string>
 
     <!-- Strings related to Settings -->
 
