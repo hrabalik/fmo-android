@@ -83,10 +83,7 @@ public class SettingsActivity extends PreferenceActivity {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || CapturePreferenceFragment.class.getName().equals(fragmentName)
                 || VelocityPreferenceFragment.class.getName().equals(fragmentName)
-                || AdvancedPreferenceFragment.class.getName().equals(fragmentName)
-                || GeneralPreferenceFragment.class.getName().equals(fragmentName)
-                || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
-                || NotificationPreferenceFragment.class.getName().equals(fragmentName);
+                || AdvancedPreferenceFragment.class.getName().equals(fragmentName);
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -139,36 +136,6 @@ public class SettingsActivity extends PreferenceActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.setXmlResourceId(R.xml.pref_advanced);
             super.onCreate(savedInstanceState);
-        }
-    }
-
-    public static class GeneralPreferenceFragment extends PreferenceFragmentBase {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.setXmlResourceId(R.xml.pref_general);
-            super.onCreate(savedInstanceState);
-            bindPreferenceSummaryToValue(findPreference("example_text"));
-            bindPreferenceSummaryToValue(findPreference("example_list"));
-        }
-    }
-
-    public static class NotificationPreferenceFragment extends PreferenceFragmentBase {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.setXmlResourceId(R.xml.pref_notification);
-            super.onCreate(savedInstanceState);
-            setHasOptionsMenu(true);
-            bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
-        }
-    }
-
-    public static class DataSyncPreferenceFragment extends PreferenceFragmentBase {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.setXmlResourceId(R.xml.pref_data_sync);
-            super.onCreate(savedInstanceState);
-            setHasOptionsMenu(true);
-            bindPreferenceSummaryToValue(findPreference("sync_frequency"));
         }
     }
 }
