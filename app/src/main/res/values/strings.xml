@@ -70,6 +70,41 @@
     <string name="prefSlowPreviewSummary">Update only once in 2 seconds</string>
 
     <string name="prefHeaderVelocity">Velocity estimation</string>
+    <string name="prefVelocityEstimationMode">Velocity estimation mode</string>
+    <string-array name="prefVelocityEstimationModeNames">
+        <item>Image plane [px/fr]</item>
+        <item>Real-world [m/s]</item>
+        <item>Real-world [km/h]</item>
+        <item>Real-world [mph]</item>
+    </string-array>
+    <string-array name="prefVelocityEstimationModeValues">
+        <item>pxfr</item>
+        <item>ms</item>
+        <item>kmh</item>
+        <item>mph</item>
+    </string-array>
+    <string name="prefVelocityEstimationModeDefault">pxfr</string>
+    <string name="prefObjectDiameterPicker">Object size based on sport</string>
+    <string-array name="prefObjectDiameterPickerNames">
+        <item>Ping pong</item>
+        <item>Tennis</item>
+        <item>Baseball</item>
+        <item>Golf</item>
+        <item>Floorball</item>
+        <item>Custom object size</item>
+    </string-array>
+    <string-array name="prefObjectDiameterPickerValues">
+        <item>0.040</item>
+        <item>0.067</item>
+        <item>0.073</item>
+        <item>0.04267</item>
+        <item>0.072</item>
+        <item>0</item>
+    </string-array>
+    <string name="prefObjectDiameterCustom">Custom object diameter [m]</string>
+    <string name="prefObjectDiameterCustomDefault">1.00</string>
+    <string name="prefFrameRate">Precise frame rate [Hz]</string>
+    <string name="prefFrameRateDefault">30.00</string>
 
     <string name="prefHeaderAdvanced">Advanced</string>
     <string name="runBenchmark">Run benchmark</string>

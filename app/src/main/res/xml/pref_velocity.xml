@@ -1,4 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <ListPreference
+        android:defaultValue="@string/prefVelocityEstimationModeDefault"
+        android:entries="@array/prefVelocityEstimationModeNames"
+        android:entryValues="@array/prefVelocityEstimationModeValues"
+        android:key="velocityEstimationMode"
+        android:title="@string/prefVelocityEstimationMode"/>
+    <ListPreference
+        android:defaultValue="0"
+        android:entries="@array/prefObjectDiameterPickerNames"
+        android:entryValues="@array/prefObjectDiameterPickerValues"
+        android:key="objectDiameterPicker"
+        android:title="@string/prefObjectDiameterPicker"/>
+    <EditTextPreference
+        android:defaultValue="@string/prefObjectDiameterCustomDefault"
+        android:inputType="numberDecimal"
+        android:key="objectDiameterCustom"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:title="@string/prefObjectDiameterCustom"/>
+    <EditTextPreference
+        android:defaultValue="@string/prefFrameRateDefault"
+        android:inputType="numberDecimal"
+        android:key="frameRate"
+        android:maxLines="1"
+        android:singleLine="true"
+        android:title="@string/prefFrameRate"/>
 </PreferenceScreen>
