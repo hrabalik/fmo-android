@@ -41,15 +41,11 @@ public class PreviewCameraTarget extends CameraThread.Target {
         // draw frame as background
         thread.getCameraFrameRenderer().drawCameraFrame();
 
-        // draw tracks
+        // draw tracks and labels
         TriangleStripRenderer tsRender = thread.getTriangleStripRenderer();
-        TrackSet.getInstance().generateCurves(tsRender.getBuffers());
-        tsRender.drawTriangleStrip();
-
-        // draw fonts
         FontRenderer fontRender = thread.getFontRenderer();
-        fontRender.clear();
-        TrackSet.getInstance().generateLabels(fontRender, mHeight);
+        TrackSet.getInstance().generateTracksAndLabels(tsRender, fontRender, mHeight);
+        tsRender.drawTriangleStrip();
         fontRender.drawText(mWidth, mHeight);
     }
 }

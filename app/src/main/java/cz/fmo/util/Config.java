@@ -16,7 +16,7 @@ public final class Config {
 
     public Config(Context ctx) {
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(ctx);
-        frontFacing = p.getString("facing", "2").equals("1");
+        frontFacing = getFrontFacing(p);
         highResolution = p.getString("resolution", "1").equals("2");
         recordMode = getRecordMode(p);
         slowPreview = p.getBoolean("slowPreview", false);
@@ -24,6 +24,10 @@ public final class Config {
         objectRadius = getObjectRadius(p);
         frameRate = getFloatFromString(p, "frameRate", "30.00");
         disableDetection = p.getBoolean("disableDetection", false);
+    }
+
+    private boolean getFrontFacing(SharedPreferences p) {
+        return p.getString("cameraFacing", "rear").equals("front");
     }
 
     private RecordMode getRecordMode(SharedPreferences p) {

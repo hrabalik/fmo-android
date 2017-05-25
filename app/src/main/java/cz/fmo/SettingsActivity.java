@@ -119,7 +119,7 @@ public class SettingsActivity extends PreferenceActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.setXmlResourceId(R.xml.pref_capture);
             super.onCreate(savedInstanceState);
-            bindToSummaryUpdater(findPreference("facing"), sSummaryUpdater);
+            bindToSummaryUpdater(findPreference("cameraFacing"), sSummaryUpdater);
             bindToSummaryUpdater(findPreference("resolution"), sSummaryUpdater);
             bindToSummaryUpdater(findPreference("recordMode"), sSummaryUpdater);
         }

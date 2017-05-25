@@ -142,23 +142,14 @@ public final class RecordingActivity extends Activity {
         // get configuration settings
         mConfig = new Config(this);
 
-        // load assets
+        // set up assets
         Assets.getInstance().load(this);
 
-        // configure camera
-        {
-            // calculate preferred dimensions based on settings
-            int preferWidth = 1280;
-            int preferHeight = 720;
+        // set up track set
+        TrackSet.getInstance().setConfig(mConfig);
 
-            if (mConfig.highResolution) {
-                preferWidth = 1920;
-                preferHeight = 1080;
-            }
-
-            // create a dedicated camera input thread
-            mCamera = new CameraThread(mHandler, preferWidth, preferHeight);
-        }
+        // create a dedicated camera input thread
+        mCamera = new CameraThread(mHandler, mConfig);
 
         // add preview as camera target
         mPreviewTarget = new PreviewCameraTarget(mGUI.getPreviewSurface(),

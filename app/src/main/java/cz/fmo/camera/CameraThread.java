@@ -9,6 +9,7 @@ import cz.fmo.graphics.CameraFrameRenderer;
 import cz.fmo.graphics.EGL;
 import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.TriangleStripRenderer;
+import cz.fmo.util.Config;
 import cz.fmo.util.GenericThread;
 
 /**
@@ -31,10 +32,10 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
      * Precondition: camera permission must be granted, otherwise the camera initialization will
      * fail.
      */
-    public CameraThread(@Nullable Callback cb, int preferWidth, int preferHeight) {
+    public CameraThread(@Nullable Callback cb, Config config) {
         super("CameraThread");
         mCb = cb;
-        mCapture = new CameraCapture(mCb, preferWidth, preferHeight);
+        mCapture = new CameraCapture(mCb, config);
     }
 
     /**

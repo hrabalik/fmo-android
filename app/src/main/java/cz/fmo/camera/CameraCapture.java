@@ -8,6 +8,8 @@ import android.media.MediaFormat;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import cz.fmo.util.Config;
+
 /**
  * A class encapsulating android.hardware.Camera.
  * <p>
@@ -20,8 +22,6 @@ import android.support.annotation.Nullable;
 @SuppressWarnings("deprecation")
 class CameraCapture implements Camera.PreviewCallback {
     private static final String MIME_TYPE = "video/avc";
-    private static final int PREFER_WIDTH = 1920; // pixels
-    private static final int PREFER_HEIGHT = 1080; // pixels
     private static final float PREFER_FRAME_RATE = 30.f; // frames per second
     private static final int PREFER_BIT_RATE = 6 * 1024 * 1024; // bits per second
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
@@ -30,6 +30,7 @@ class CameraCapture implements Camera.PreviewCallback {
     private final Callback mCb;
     private final int mPreferWidth;
     private final int mPreferHeight;
+    private final boolean mPreferFrontFacing;
     private Camera mCamera;
     private Camera.Size mSize = null;
     private float mFrameRate = 0;
@@ -40,10 +41,11 @@ class CameraCapture implements Camera.PreviewCallback {
      * Selects a suitable camera and opens it. The provided callback is used to report errors and
      * provide image data.
      */
-    CameraCapture(@Nullable Callback cb, int preferWidth, int preferHeight) {
+    CameraCapture(@Nullable Callback cb, Config config) {
         mCb = cb;
-        mPreferWidth = preferWidth;
-        mPreferHeight = preferHeight;
+        mPreferWidth = config.highResolution ? 1920 : 1280;
+        mPreferHeight = config.highResolution ? 1080 : 720;
+        mPreferFrontFacing = config.frontFacing;
         int bestCam = selectCamera();
 
         if (bestCam < 0) {
@@ -208,12 +210,14 @@ class CameraCapture implements Camera.PreviewCallback {
      */
     private int selectCamera() {
         int nCam = Camera.getNumberOfCameras();
+        int preferredFacing = mPreferFrontFacing ? Camera.CameraInfo.CAMERA_FACING_FRONT :
+                Camera.CameraInfo.CAMERA_FACING_BACK;
         if (nCam == 0) return -1;
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
 
         for (int i = 0; i < nCam; i++) {
             Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.orientation == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (cameraInfo.facing == preferredFacing) {
                 // you might want to keep the chosen CameraInfo object, if interested in proper
                 // camera rotation relative to screen
                 return i;

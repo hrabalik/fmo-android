@@ -37,15 +37,16 @@
     <!-- Strings related to actual settings -->
 
     <string name="prefHeaderCapture">Video capture</string>
-    <string name="prefFacing">Camera direction</string>
-    <string-array name="prefFacingNames">
+    <string name="prefCameraFacing">Camera direction</string>
+    <string-array name="prefCameraFacingNames">
         <item>Front-facing</item>
-        <item>Back-facing</item>
+        <item>Rear-facing</item>
     </string-array>
-    <string-array name="prefFacingValues">
-        <item>1</item>
-        <item>2</item>
+    <string-array name="prefCameraFacingValues">
+        <item>front</item>
+        <item>rear</item>
     </string-array>
+    <string name="prefCameraFacingDefault">rear</string>
     <string name="prefResolution">Resolution</string>
     <string-array name="prefResolutionNames">
         <item>720p</item>

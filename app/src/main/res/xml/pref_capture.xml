@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <ListPreference
-        android:defaultValue="2"
-        android:entries="@array/prefFacingNames"
-        android:entryValues="@array/prefFacingValues"
-        android:key="facing"
-        android:title="@string/prefFacing"/>
+        android:defaultValue="@string/prefCameraFacingDefault"
+        android:entries="@array/prefCameraFacingNames"
+        android:entryValues="@array/prefCameraFacingValues"
+        android:key="cameraFacing"
+        android:title="@string/prefCameraFacing"/>
     <ListPreference
         android:defaultValue="1"
         android:entries="@array/prefResolutionNames"
