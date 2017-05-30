@@ -48,7 +48,7 @@ public final class Config {
 
     private boolean getGray(SharedPreferences p) {
         return p.getString("colorSpace", "yuv").equals("gray");
-    }0
+    }
 
     private VelocityEstimationMode getVelocityEstimationMode(SharedPreferences p) {
         String s = p.getString("velocityEstimationMode", "pxfr");
