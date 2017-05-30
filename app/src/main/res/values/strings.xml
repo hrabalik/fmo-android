@@ -34,8 +34,7 @@
     <string name="detectToggleOff">DET OFF</string>
     <string name="settings">Settings</string>
 
-    <!-- Strings related to actual settings -->
-
+    <!-- Capture settings -->
     <string name="prefHeaderCapture">Video capture</string>
     <string name="prefCameraFacing">Camera direction</string>
     <string-array name="prefCameraFacingNames">
@@ -70,6 +69,32 @@
     <string name="prefSlowPreview">Slow preview</string>
     <string name="prefSlowPreviewSummary">Update only once in 2 seconds</string>
 
+    <!-- Detection settings -->
+    <string name="prefHeaderDetection">Detection</string>
+    <string name="prefColorSpace">Color space</string>
+    <string-array name="prefColorSpaceNames">
+        <item>Gray</item>
+        <item>Color (YCbCr)</item>
+    </string-array>
+    <string-array name="prefColorSpaceValues">
+        <item>gray</item>
+        <item>yuv</item>
+    </string-array>
+    <string name="prefColorSpaceDefault">yuv</string>
+    <string name="prefProcRes">Processing resolution</string>
+    <string-array name="prefProcResNames">
+        <item>Low (for nearby objects)</item>
+        <item>Default</item>
+        <item>High (for distant objects)</item>
+    </string-array>
+    <string-array name="prefProcResValues">
+        <item>150</item>
+        <item>300</item>
+        <item>600</item>
+    </string-array>
+    <string name="prefProcResDefault">300</string>
+
+    <!-- Velocity estimation settings -->
     <string name="prefHeaderVelocity">Velocity estimation</string>
     <string name="prefVelocityEstimationMode">Velocity estimation mode</string>
     <string-array name="prefVelocityEstimationModeNames">
@@ -107,33 +132,9 @@
     <string name="prefFrameRate">Precise frame rate [Hz]</string>
     <string name="prefFrameRateDefault">30.00</string>
 
+    <!-- Advanced settings -->
     <string name="prefHeaderAdvanced">Advanced</string>
     <string name="runBenchmark">Run benchmark</string>
     <string name="runVideoPlayer">Run video player</string>
     <string name="prefDisableDetection">Disable FMO detection</string>
-
-    <!-- Strings related to Settings -->
-
-    <!-- Example General settings -->
-    <string name="pref_header_general">General</string>
-
-    <string name="pref_title_social_recommendations">Enable social recommendations</string>
-    <string name="pref_description_social_recommendations">Recommendations for people to contact
-        based on your message history
-    </string>
-
-    <string name="pref_title_display_name">Display name</string>
-    <string name="pref_default_display_name">John Smith</string>
-
-    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
-    <string-array name="pref_example_list_titles">
-        <item>Always</item>
-        <item>When possible</item>
-        <item>Never</item>
-    </string-array>
-    <string-array name="pref_example_list_values">
-        <item>1</item>
-        <item>0</item>
-        <item>-1</item>
-    </string-array>
 </resources>

@@ -4,6 +4,10 @@
         android:icon="@drawable/settings_capture"
         android:title="@string/prefHeaderCapture"/>
     <header
+        android:fragment="cz.fmo.SettingsActivity$DetectionPreferenceFragment"
+        android:icon="@drawable/settings_detection"
+        android:title="@string/prefHeaderDetection"/>
+    <header
         android:fragment="cz.fmo.SettingsActivity$VelocityPreferenceFragment"
         android:icon="@drawable/settings_velocity"
         android:title="@string/prefHeaderVelocity"/>

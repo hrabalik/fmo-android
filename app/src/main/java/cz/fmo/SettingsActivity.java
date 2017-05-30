@@ -66,6 +66,7 @@ public class SettingsActivity extends PreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || CapturePreferenceFragment.class.getName().equals(fragmentName)
+                || DetectionPreferenceFragment.class.getName().equals(fragmentName)
                 || VelocityPreferenceFragment.class.getName().equals(fragmentName)
                 || AdvancedPreferenceFragment.class.getName().equals(fragmentName);
     }
@@ -122,6 +123,16 @@ public class SettingsActivity extends PreferenceActivity {
             bindToSummaryUpdater(findPreference("cameraFacing"), sSummaryUpdater);
             bindToSummaryUpdater(findPreference("resolution"), sSummaryUpdater);
             bindToSummaryUpdater(findPreference("recordMode"), sSummaryUpdater);
+        }
+    }
+
+    public static class DetectionPreferenceFragment extends PreferenceFragmentBase {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.setXmlResourceId(R.xml.pref_detection);
+            super.onCreate(savedInstanceState);
+            bindToSummaryUpdater(findPreference("colorSpace"), sSummaryUpdater);
+            bindToSummaryUpdater(findPreference("procRes"), sSummaryUpdater);
         }
     }
 

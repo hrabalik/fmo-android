@@ -9,6 +9,8 @@ public final class Config {
     public final boolean highResolution;
     public final RecordMode recordMode;
     public final boolean slowPreview;
+    public final boolean gray;
+    public final int procRes;
     public final VelocityEstimationMode velocityEstimationMode;
     public final float objectRadius;
     public final float frameRate;
@@ -20,6 +22,8 @@ public final class Config {
         highResolution = p.getString("resolution", "1").equals("2");
         recordMode = getRecordMode(p);
         slowPreview = p.getBoolean("slowPreview", false);
+        gray = getGray(p);
+        procRes = (int) getFloatFromString(p, "procRes", "300");
         velocityEstimationMode = getVelocityEstimationMode(p);
         objectRadius = getObjectRadius(p);
         frameRate = getFloatFromString(p, "frameRate", "30.00");
@@ -41,6 +45,10 @@ public final class Config {
                 return RecordMode.OFF;
         }
     }
+
+    private boolean getGray(SharedPreferences p) {
+        return p.getString("colorSpace", "yuv").equals("gray");
+    }0
 
     private VelocityEstimationMode getVelocityEstimationMode(SharedPreferences p) {
         String s = p.getString("velocityEstimationMode", "pxfr");

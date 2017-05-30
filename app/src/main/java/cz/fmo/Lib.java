@@ -1,5 +1,7 @@
 package cz.fmo;
 
+import android.support.annotation.NonNull;
+
 import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.TriangleStripRenderer;
 
@@ -9,7 +11,15 @@ public final class Lib {
         System.loadLibrary("fmo-android");
     }
 
-    public static native void detectionStart(int width, int height, Callback cb);
+    /**
+     * @param width input image width
+     * @param height input image height
+     * @param procRes maximum height of downscaled (processing-resolution) image
+     * @param gray do the processing in gray scale
+     * @param cb callback to report events to
+     */
+    public static native void detectionStart(int width, int height, int procRes, boolean gray,
+                                             @NonNull Callback cb);
 
     public static native void detectionFrame(byte[] dataYUV420SP);
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:defaultValue="@string/prefColorSpaceDefault"
+        android:entries="@array/prefColorSpaceNames"
+        android:entryValues="@array/prefColorSpaceValues"
+        android:key="colorSpace"
+        android:title="@string/prefColorSpace"/>
+    <ListPreference
+        android:defaultValue="@string/prefProcResDefault"
+        android:entries="@array/prefProcResNames"
+        android:entryValues="@array/prefProcResValues"
+        android:key="procRes"
+        android:title="@string/prefProcRes"/>
+</PreferenceScreen>
