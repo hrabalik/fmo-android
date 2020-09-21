@@ -23,6 +23,7 @@ jobs:
 
     steps:
       - checkout
+      - ./gradlew
 
       # Download and cache dependencies
       - restore_cache:
