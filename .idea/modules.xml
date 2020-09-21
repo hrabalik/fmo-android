@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/fmo-android.iml" filepath="$PROJECT_DIR$/fmo-android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="fmo-android/app" />
+      <module fileurl="file://$PROJECT_DIR$/fmo-android.iml" filepath="$PROJECT_DIR$/fmo-android.iml" group="fmo-android" />
     </modules>
   </component>
 </project>

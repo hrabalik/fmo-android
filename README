@@ -1,4 +1,0 @@
-Separately download OpenCV SDK 3.2.0+ for Android: http://opencv.org/downloads.html
-
-Extract the folder named OpenCV-android-sdk from the downloaded archive into the root directory of
-the project (where this README file is).
