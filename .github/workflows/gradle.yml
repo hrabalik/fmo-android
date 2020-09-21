@@ -30,3 +30,7 @@ jobs:
       run: ./gradlew build -x lint
     - name: Test with Gradle
       run: ./gradlew test
+    - name: Android Emulator
+      # You may pin to the exact commit or the version.
+      # uses: vgaidarji/android-github-actions-emulator@30c50f42518922e01004c2152911bb458d33ff3b
+      uses: vgaidarji/android-github-actions-emulator@v1.0.1
