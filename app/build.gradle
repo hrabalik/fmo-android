@@ -43,14 +43,14 @@ android {
 sourceSets {
     test {
         java {
-            srcDirs = ["src/test"]  // Note @Peter's comment below
+            srcDirs = ["src/test"]
         }
     }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:25.2.0'
-    compile 'com.android.support:support-v4:25.3.1'
+    compile 'com.android.support:appcompat-v7:26.1.0'
+    compile 'com.android.support:support-v4:26.1.0'
     testCompile 'junit:junit:4.12'
 }
