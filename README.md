@@ -1,4 +1,6 @@
 # PA
+![Java CI with Gradle](https://github.com/sverbach/fmo-android/workflows/Java%20CI%20with%20Gradle/badge.svg?branch=master)
+
 Projektarbeit 2020 Mobile Table Tennis Tracking System (M3TS)
 
 ## Ziel
