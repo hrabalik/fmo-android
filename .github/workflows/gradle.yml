@@ -28,5 +28,17 @@ jobs:
       run: echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "ndk;16.1.4479499" --sdk_root=${ANDROID_SDK_ROOT}
     - name: Build with Gradle
       run: ./gradlew build -x lint
-    - name: Test with Gradle
+    - name: Run Unit Tests
       run: ./gradlew test
+    - name: Run Unit and Instrumentation Tests with Coverage Report
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 29
+        ndk: 16.1.4479499
+        cmake: 3.6.4111459
+        script: ./gradlew jacocoTestReport
+    - name: Push to SonarQube
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./gradlew sonarqube
