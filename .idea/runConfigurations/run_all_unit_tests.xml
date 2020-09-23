@@ -2,6 +2,7 @@
   <configuration default="false" name="run all unit tests" type="AndroidJUnit" factoryName="Android JUnit">
     <module name="app" />
     <useClassPathOnly />
+    <extension name="coverage" track_test_folders="true" runner="jacoco" />
     <option name="MAIN_CLASS_NAME" value="" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="directory" />

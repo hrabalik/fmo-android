@@ -45,6 +45,10 @@ public final class BenchmarkingActivity extends Activity {
 
         @Override
         public void onObjectsDetected(Lib.Detection[] detections) {
+            /*
+             * No object detection in benchmark screen.
+             */
+            throw new UnsupportedOperationException();
         }
 
         @Override
