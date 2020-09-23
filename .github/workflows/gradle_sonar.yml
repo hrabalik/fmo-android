@@ -25,7 +25,7 @@ jobs:
     - name: Run Unit and Instrumentation Tests with Coverage Report
       uses: reactivecircus/android-emulator-runner@v2
       with:
-        api-level: 30
+        api-level: 26
         ndk: 16.1.4479499
         cmake: 3.6.4111459
         script: ./gradlew jacocoTestReport
