@@ -28,8 +28,8 @@ Es werden Unit Tests (JUnit 4, Mockito, PowerMock) sowie Instrumentation Tests (
 ### CI
 Bei jedem Push / PR in den master werden 2 Github Workflows getriggert:
 
-- **Build and Run** - Buildet das Projekt und lässt Unit Tests durchlaufen
-- **Create Coverage Report and Push to SonarQube** - Lässt Unit und Instrumentation Tests laufen (benötigt Android Emulator) und erstellt mit JaCoCo einen Coverage Report, welcher anschliessend auf SonarQube geladen wird.
+- **Build** - Buildet das Projekt
+- **Unit and Instrumentation Tests** - Lässt Unit und Instrumentation Tests laufen (benötigt Android Emulator) und erstellt mit JaCoCo einen Coverage Report, welcher anschliessend auf SonarQube geladen wird.
 
 Link zur Übersicht der Workflows: https://github.com/sverbach/m3ts/actions
 ### SonarQube
