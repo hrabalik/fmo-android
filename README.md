@@ -22,7 +22,18 @@ Mögliche Tracking Libraries
 Die Lösung soll unter dem **Android** Betriebssystem lauffähig sein.
 
 ## Testkonzept
-**TODO CI/CD** test
+Das Testkonzept setzt sich zusammen aus CI und Code Test Coverage Monitoring in SonarQube.
+Es werden Unit Tests (JUnit 4, Mockito, PowerMock) sowie Instrumentation Tests (JUnit 4, Mockito, Android Runner) erstellt um den Quellcode zu testen.
+
+### CI
+Bei jedem Push / PR in den master werden 2 Github Workflows getriggert:
+
+- **Build and Run** - Buildet das Projekt und lässt Unit Tests durchlaufen
+- **Create Coverage Report and Push to SonarQube** - Lässt Unit und Instrumentation Tests laufen (benötigt Android Emulator) und erstellt mit JaCoCo einen Coverage Report, welcher anschliessend auf SonarQube geladen wird.
+
+Link zur Übersicht der Workflows: https://github.com/sverbach/m3ts/actions
+### SonarQube
+Link zum Dashboard: https://sonarcloud.io/dashboard?id=sverbach_fmo-android
 
 ## Abgrenzungen
 Für das Tracken des Spiels und die Berechnung der Ballposition darf lediglich ein Smartphone verwendet werden.
