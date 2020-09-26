@@ -1,7 +1,6 @@
-# PA
-![Java CI with Gradle](https://github.com/sverbach/fmo-android/workflows/Java%20CI%20with%20Gradle/badge.svg?branch=master)
-
-Projektarbeit 2020 Mobile Table Tennis Tracking System (M3TS)
+# PA - Mobile Table Tennis Tracking System (M3TS)
+![Build](https://github.com/sverbach/m3ts/workflows/Build/badge.svg)
+![Unit and Instrumentation Tests](https://github.com/sverbach/m3ts/workflows/Unit%20and%20Instrumentation%20Tests/badge.svg)
 
 ## Ziel
 Ziel der Arbeit ist es, ein mobiles App zu entwickeln, welches den Punktestand eines Tischtennis-Spiels tracked und anzeigt / ausgibt. Das Tracking und Anzeigen des Matches soll in Echtzeit durchgeführt werden.
