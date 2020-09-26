@@ -6,11 +6,12 @@ jacoco {
 }
 tasks.withType(Test) {
     jacoco.includeNoLocationClasses = true
+    jacoco.excludes = ['jdk.internal.*']
 }
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "25.0.2"
+    buildToolsVersion "29.0.2"
     ndkVersion "16.1.4479499"
 
     defaultConfig {
@@ -31,7 +32,7 @@ android {
             }
         }
         ndk {
-            abiFilters 'armeabi-v7a' // build for v7 only
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64' // build for v7 only
         }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }

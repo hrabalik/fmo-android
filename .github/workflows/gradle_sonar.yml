@@ -28,6 +28,7 @@ jobs:
         api-level: 26
         ndk: 16.1.4479499
         cmake: 3.6.4111459
+        profile: Nexus 6
         script: ./gradlew jacocoTestReport
     - name: Push to SonarQube
       env:
