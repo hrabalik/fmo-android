@@ -17,8 +17,10 @@ Für das Tracking des Balles soll eine Library verwendet werden.
 Mögliche Tracking Libraries 
 - [fmo-android](https://github.com/hrabalik/fmo-android "fast moving objects algorithm")
 - [detection / tracking mittels Farbfilterung](https://www.pyimagesearch.com/2015/09/14/ball-tracking-with-opencv/)
-- [Home surveillance and motion detection] (https://www.pyimagesearch.com/2015/06/01/home-surveillance-and-motion-detection-with-the-raspberry-pi-python-and-opencv/)
-- [FastMCD] (https://github.com/vcg-uvic/fastMCD)
+- [Home surveillance and motion detection](https://www.pyimagesearch.com/2015/06/01/home-surveillance-and-motion-detection-with-the-raspberry-pi-python-and-opencv/)
+- [FastMCD](https://github.com/vcg-uvic/fastMCD)
+- [TTNet](https://github.com/maudzung/TTNet-Real-time-Analysis-System-for-Table-Tennis-Pytorch)
+- [YoloV3 with Darknet](https://pjreddie.com/darknet/yolo/)
 
 
 Die Lösung soll unter dem **Android** Betriebssystem lauffähig sein.
