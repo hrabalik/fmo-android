@@ -146,15 +146,17 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         return mCapture.getFrameRate();
     }
 
-    CameraFrameRenderer getCameraFrameRenderer() {
+    public CameraFrameRenderer getCameraFrameRenderer() {
         return mCameraFrameRenderer;
     }
 
-    TriangleStripRenderer getTriangleStripRenderer() {
+    public TriangleStripRenderer getTriangleStripRenderer() {
         return mTriangleStripRenderer;
     }
 
-    FontRenderer getFontRenderer() { return mFontRenderer; }
+    public FontRenderer getFontRenderer() {
+        return mFontRenderer;
+    }
 
     public interface Callback extends CameraCapture.Callback {
         void onCameraRender();
@@ -178,7 +180,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         /**
          * Additionally changes the surface to render to. Must be used before initEGL() is called.
          */
-        protected void setSurface(Surface surface) {
+        public void setSurface(Surface surface) {
             mSurface = surface;
         }
 
@@ -186,12 +188,12 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
          * Create the associated EGL.Surface. For that, the EGL context must be already established
          * on this thread.
          */
-        void initEGL(EGL egl) {
+        public void initEGL(EGL egl) {
             mEglSurface = egl.makeSurface(mSurface);
             mEglSurface.makeCurrent();
         }
 
-        void release() {
+        public void release() {
             if (mEglSurface != null) {
                 mEglSurface.release();
                 mEglSurface = null;
@@ -201,7 +203,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         /**
          * Draw onto the target surface using OpenGL (high level).
          */
-        void render(CameraThread thread) {
+        public void render(CameraThread thread) {
             mEglSurface.makeCurrent();
             GLES20.glViewport(0, 0, mWidth, mHeight);
             renderImpl(thread);
@@ -211,7 +213,7 @@ public class CameraThread extends GenericThread<CameraThreadHandler> {
         /**
          * Draw onto the target surface using OpenGL (low level).
          */
-        abstract void renderImpl(CameraThread thread);
+        public abstract void renderImpl(CameraThread thread);
     }
 
 }

@@ -22,7 +22,6 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.view.Surface;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -47,7 +46,8 @@ class MoviePlayer {
     private boolean mLoop;
     private int mVideoWidth;
     private int mVideoHeight;
-
+    private int mFrameRate;
+    private final PlayMovieDetectionCallback mDataCallback;
 
     /**
      * Constructs a MoviePlayer.
@@ -57,16 +57,14 @@ class MoviePlayer {
      * @param frameCallback Callback object, used to pace output.
      * @throws IOException
      */
-    public MoviePlayer(File sourceFile, Surface outputSurface, FrameCallback frameCallback)
+    public MoviePlayer(File sourceFile, Surface outputSurface, FrameCallback frameCallback, PlayMovieDetectionCallback dataCallback)
             throws IOException {
         mSourceFile = sourceFile;
         mOutputSurface = outputSurface;
         mFrameCallback = frameCallback;
+        mDataCallback = dataCallback;
 
         // Pop the file open and pull out the video characteristics.
-        // TODO: consider leaving the extractor open.  Should be able to just seek back to
-        //       the start after each iteration of play.  Need to rearrange the API a bit --
-        //       currently play() is taking an all-in-one open+work+release approach.
         MediaExtractor extractor = null;
         try {
             extractor = new MediaExtractor();
@@ -76,10 +74,10 @@ class MoviePlayer {
                 throw new RuntimeException("No video track found in " + mSourceFile);
             }
             extractor.selectTrack(trackIndex);
-
             MediaFormat format = extractor.getTrackFormat(trackIndex);
             mVideoWidth = format.getInteger(MediaFormat.KEY_WIDTH);
             mVideoHeight = format.getInteger(MediaFormat.KEY_HEIGHT);
+            mFrameRate = format.getInteger(MediaFormat.KEY_FRAME_RATE);
             if (VERBOSE) {
                 Log.d("Video size is " + mVideoWidth + "x" + mVideoHeight);
             }
@@ -88,6 +86,18 @@ class MoviePlayer {
                 extractor.release();
             }
         }
+    }
+
+    public int getmFrameRate() {
+        return mFrameRate;
+    }
+
+    public int getVideoWidth() {
+        return mVideoWidth;
+    }
+
+    public int getVideoHeight() {
+        return mVideoHeight;
     }
 
     /**
@@ -243,6 +253,8 @@ class MoviePlayer {
 
         final int TIMEOUT_USEC = 10000;
         ByteBuffer[] decoderInputBuffers = decoder.getInputBuffers();
+        ByteBuffer[] decoderOutputBuffers = decoder.getOutputBuffers();
+        byte[] frame = new byte[decoderOutputBuffers[0].remaining()];
         int inputChunk = 0;
         long firstInputTimeNsec = -1;
 
@@ -262,9 +274,10 @@ class MoviePlayer {
                     if (firstInputTimeNsec == -1) {
                         firstInputTimeNsec = System.nanoTime();
                     }
-                    ByteBuffer inputBuf = decoderInputBuffers[inputBufIndex];
+
                     // Read the sample data into the ByteBuffer.  This neither respects nor
                     // updates inputBuf's position, limit, etc.
+                    ByteBuffer inputBuf = decoderInputBuffers[inputBufIndex];
                     int chunkSize = extractor.readSampleData(inputBuf, 0);
                     if (chunkSize < 0) {
                         // End of stream -- send empty frame with EOS flag set.
@@ -326,7 +339,14 @@ class MoviePlayer {
                             outputDone = true;
                         }
                     }
-
+                    // get a copy of the Data from encoder to pass it to Lib
+                    try {
+                        ByteBuffer readOnlyCopyOfBuffer = decoder.getOutputBuffer(decoderStatus);
+                        readOnlyCopyOfBuffer.get(frame);
+                        mDataCallback.onEncodedFrame(frame);
+                    } catch (Exception ex) {
+                        System.out.println(ex.getMessage());
+                    }
                     boolean doRender = (mBufferInfo.size != 0);
 
                     // As soon as we call releaseOutputBuffer, the buffer will be forwarded

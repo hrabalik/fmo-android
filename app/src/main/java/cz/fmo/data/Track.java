@@ -12,7 +12,7 @@ import cz.fmo.util.Config;
  * A series of objects detected in consecutive frames that are considered to be the same object
  * captured at different times.
  */
-class Track {
+public class Track {
     private final Config mConfig;
     private Lib.Detection mLatest;
     private float mLatestDx = 0;
@@ -27,8 +27,12 @@ class Track {
         mConfig = config;
     }
 
-    Lib.Detection getLatest() {
+    public Lib.Detection getLatest() {
         return mLatest;
+    }
+
+    public Color.RGBA getColor() {
+        return mColorRGBA;
     }
 
     void setLatest(Lib.Detection latest) {
@@ -67,7 +71,7 @@ class Track {
         mLatest = latest;
     }
 
-    private void updateColor() {
+    public void updateColor() {
         if (mLatestDx == 0 && mLatestDy == 0) return;
         float sinceDetectionSec = ((float) (System.nanoTime() - mLastDetectionTime)) / 1e9f;
         mColorHSV.hsv[0] = (mLatestDx > 0) ? 100.f : 200.f;

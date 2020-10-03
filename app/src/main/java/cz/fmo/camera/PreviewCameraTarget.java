@@ -5,7 +5,6 @@ import android.view.Surface;
 import cz.fmo.data.TrackSet;
 import cz.fmo.graphics.FontRenderer;
 import cz.fmo.graphics.TriangleStripRenderer;
-import cz.fmo.util.Color;
 
 /**
  * Camera target that can be set up to drop most of the frames, saving on battery. Draws not only
@@ -30,14 +29,14 @@ public class PreviewCameraTarget extends CameraThread.Target {
     }
 
     @Override
-    void render(CameraThread thread) {
+    public void render(CameraThread thread) {
         if (++mCounter < mSlowdown) return;
         mCounter = 0;
         super.render(thread);
     }
 
     @Override
-    void renderImpl(CameraThread thread) {
+    public void renderImpl(CameraThread thread) {
         // draw frame as background
         thread.getCameraFrameRenderer().drawCameraFrame();
 

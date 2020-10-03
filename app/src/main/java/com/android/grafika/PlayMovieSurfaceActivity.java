@@ -17,8 +17,14 @@
 package com.android.grafika;
 
 import android.app.Activity;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.opengl.GLES20;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,9 +36,14 @@ import android.widget.Button;
 import android.widget.Spinner;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
+import cz.fmo.Lib;
 import cz.fmo.R;
+import cz.fmo.data.Track;
+import cz.fmo.data.TrackSet;
 import cz.fmo.graphics.EGL;
+import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
 
 /**
@@ -71,22 +82,28 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         SurfaceHolder.Callback, MoviePlayer.PlayerFeedback {
     private final FileManager mFileMan = new FileManager(this);
     private SurfaceView mSurfaceView;
+    private SurfaceView mSurfaceTrack;
     private String[] mMovieFiles;
     private int mSelectedMovie;
     private boolean mShowStopLabel;
     private MoviePlayer.PlayTask mPlayTask;
     private boolean mSurfaceHolderReady = false;
+    private Handler mHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_movie_surface);
 
-        mSurfaceView = (SurfaceView) findViewById(R.id.playMovie_surface);
+        mSurfaceView = findViewById(R.id.playMovie_surface);
         mSurfaceView.getHolder().addCallback(this);
-
+        mHandler = new Handler(this);
+        mSurfaceTrack = findViewById(R.id.playTracks_surface);
+        mSurfaceTrack.setZOrderOnTop(true);
+        mSurfaceTrack.getHolder().addCallback(this);
+        mSurfaceTrack.getHolder().setFormat(PixelFormat.TRANSPARENT);
         // Populate file-selection spinner.
-        Spinner spinner = (Spinner) findViewById(R.id.playMovieFile_spinner);
+        Spinner spinner = findViewById(R.id.playMovieFile_spinner);
         // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
         // for the widget itself.
         mMovieFiles = mFileMan.listMP4();
@@ -96,7 +113,6 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         // Apply the adapter to the spinner.
         spinner.setAdapter(adapter);
         spinner.setOnItemSelectedListener(this);
-
         updateControls();
     }
 
@@ -120,6 +136,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             stopPlayback();
             mPlayTask.waitForStop();
         }
+        Lib.detectionStop();
     }
 
     @Override
@@ -189,7 +206,13 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             MoviePlayer player;
             try {
                 player = new MoviePlayer(mFileMan.open(mMovieFiles[mSelectedMovie]), surface,
-                        callback);
+                        callback, mHandler);
+                mHandler.setVideoHeight(player.getVideoHeight());
+                mHandler.setVideoWidth(player.getVideoWidth());
+                Config mConfig = new Config(this);
+                TrackSet.getInstance().setConfig(mConfig);
+                Lib.detectionStart(player.getVideoWidth(), player.getVideoHeight(), mConfig.procRes, mConfig.gray, mHandler);
+
             } catch (IOException ioe) {
                 Log.e("Unable to play movie", ioe);
                 surface.release();
@@ -225,7 +248,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
      * Updates the on-screen controls to reflect the current state of the app.
      */
     private void updateControls() {
-        Button play = (Button) findViewById(R.id.play_stop_button);
+        Button play = findViewById(R.id.play_stop_button);
         if (mShowStopLabel) {
             play.setText(R.string.stop_button_text);
         } else {
@@ -253,5 +276,97 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         win.swapBuffers();
         win.release();
         egl.release();
+    }
+
+    private static class Handler extends android.os.Handler implements Lib.Callback, PlayMovieDetectionCallback {
+        private final WeakReference<PlayMovieSurfaceActivity> mActivity;
+        private int canvasWidth, canvasHeight;
+        private Canvas canvas;
+        private Paint p;
+        private int videoWidth, videoHeight;
+
+        Handler(@NonNull PlayMovieSurfaceActivity activity) {
+            mActivity = new WeakReference<>(activity);
+            TrackSet.getInstance().clear();
+            p = new Paint();
+        }
+
+        public void setVideoHeight(int videoHeight) {
+            this.videoHeight = videoHeight;
+        }
+
+        public void setVideoWidth(int videoWidth) {
+            this.videoWidth = videoWidth;
+        }
+
+        @Override
+        public void onEncodedFrame(byte[] dataYUV420SP) {
+            try {
+                Lib.detectionFrame(dataYUV420SP);
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+            }
+        }
+
+        @Override
+        public void log(String message) {
+            System.out.println(message);
+        }
+
+        @Override
+        public void onObjectsDetected(Lib.Detection[] detections) {
+            TrackSet set = TrackSet.getInstance();
+            set.addDetections(detections, this.videoWidth, this.videoHeight);
+            PlayMovieSurfaceActivity activity = mActivity.get();
+            if (activity == null) {
+                return;
+            }
+            if (activity.mSurfaceHolderReady) {
+                SurfaceHolder surfaceHolder = activity.mSurfaceTrack.getHolder();
+                canvas = surfaceHolder.lockCanvas();
+                if (canvas == null) {
+                    return;
+                }
+                if (canvasWidth == 0 || canvasHeight == 0) {
+                    canvasWidth = canvas.getWidth();
+                    canvasHeight = canvas.getHeight();
+                }
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                drawAllTracks(canvas, set);
+                surfaceHolder.unlockCanvasAndPost(canvas);
+            }
+        }
+
+        private void drawAllTracks(Canvas canvas, TrackSet set) {
+            for (Track t : set.getTracks()) {
+                t.updateColor();
+                Lib.Detection pre = t.getLatest();
+                cz.fmo.util.Color.RGBA r = t.getColor();
+                int c = Color.argb(255, Math.round(r.rgba[0] * 255), Math.round(r.rgba[1] * 255), Math.round(r.rgba[2] * 255));
+                p.setColor(c);
+                p.setStrokeWidth(pre.radius);
+                while (pre != null) {
+                    canvas.drawCircle(scaleX(pre.centerX), scaleY(pre.centerY), pre.radius, p);
+                    if (pre.predecessor != null) {
+                        int x1 = scaleX(pre.centerX);
+                        int x2 = scaleX(pre.predecessor.centerX);
+                        int y1 = scaleY(pre.centerY);
+                        int y2 = scaleY(pre.predecessor.centerY);
+                        canvas.drawLine(x1, y1, x2, y2, p);
+                    }
+                    pre = pre.predecessor;
+                }
+            }
+        }
+
+        private int scaleY(int value) {
+            float relPercentage = ((float) value) / ((float) this.videoHeight);
+            return Math.round(relPercentage * this.canvasHeight);
+        }
+
+        private int scaleX(int value) {
+            float relPercentage = ((float) value) / ((float) this.videoWidth);
+            return Math.round(relPercentage * this.canvasWidth);
+        }
     }
 }

@@ -86,6 +86,8 @@ public class TrackSet {
         }
     }
 
+    public ArrayList<Track> getTracks() {return mTracks;}
+
     public void generateTracksAndLabels(TriangleStripRenderer tsRender, FontRenderer fontRender,
                                         int imageHeight) {
         synchronized (mLock) {

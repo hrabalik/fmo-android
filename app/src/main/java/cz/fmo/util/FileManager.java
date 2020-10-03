@@ -29,8 +29,7 @@ public final class FileManager {
             return fallbackPublicDir();
         }
 
-        File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-
+        File path =  new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath()+"/Camera/");
         if (!path.exists()) {
             if (!path.mkdirs()) {
                 return fallbackPublicDir();

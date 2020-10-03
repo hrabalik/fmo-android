@@ -31,7 +31,7 @@ class DummyCameraTarget extends CameraThread.Target {
     }
 
     @Override
-    void release() {
+    public void release() {
         super.release();
 
         if (mTex != null) {
@@ -43,7 +43,7 @@ class DummyCameraTarget extends CameraThread.Target {
     }
 
     @Override
-    void renderImpl(CameraThread thread) {
+    public void renderImpl(CameraThread thread) {
         thread.getCameraFrameRenderer().drawCameraFrame();
     }
 }

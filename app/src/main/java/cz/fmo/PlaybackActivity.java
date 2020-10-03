@@ -24,7 +24,6 @@ public class PlaybackActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("video/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-
         if (intent.resolveActivity(getPackageManager()) != null) {
             startActivityForResult(intent, INTENT_REQUEST_VIDEO_FILE);
         } else {
