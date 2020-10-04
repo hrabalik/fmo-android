@@ -59,5 +59,12 @@ public final class Lib {
 
         // Java-specific
         public Detection predecessor;
+
+        @Override
+        public String toString() {
+            return String.format("id:%d; predecessorId:%d; centerX:%d; centerY:%d; directionX:%f; " +
+                    "directionY:%f; length:%f; radius:%f; velocity:%f;", id, predecessorId, centerX,
+                    centerY, directionX, directionY, length, radius, velocity);
+        }
     }
 }

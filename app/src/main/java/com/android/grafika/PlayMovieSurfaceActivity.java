@@ -315,6 +315,10 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
         @Override
         public void onObjectsDetected(Lib.Detection[] detections) {
+            System.out.println("detections:");
+            for (Lib.Detection detection : detections) {
+                System.out.println(detection);
+            }
             TrackSet set = TrackSet.getInstance();
             set.addDetections(detections, this.videoWidth, this.videoHeight);
             PlayMovieSurfaceActivity activity = mActivity.get();
