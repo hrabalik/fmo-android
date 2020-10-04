@@ -320,7 +320,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                 System.out.println(detection);
             }
             TrackSet set = TrackSet.getInstance();
-            set.addDetections(detections, this.videoWidth, this.videoHeight);
+            set.addDetections(detections, this.videoWidth, this.videoHeight); // after this, object direction is updated
             PlayMovieSurfaceActivity activity = mActivity.get();
             if (activity == null) {
                 return;

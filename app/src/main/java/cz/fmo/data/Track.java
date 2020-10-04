@@ -41,6 +41,9 @@ public class Track {
             mLatestDx = latest.centerX - mLatest.centerX;
             mLatestDy = latest.centerY - mLatest.centerY;
 
+            latest.directionY = mLatestDy / Math.abs(mLatestDy); // -1 => object is going down | 1 => object going up
+            latest.directionX = mLatestDx / Math.abs(mLatestDx); // -1 => object going left | 1 => object going right
+
             float velocity = latest.velocity;
 
             // for real-world estimation, apply a formula
