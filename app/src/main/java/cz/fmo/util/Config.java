@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-public final class Config {
+public class Config {
     public final boolean frontFacing;
     public final boolean highResolution;
     public final RecordMode recordMode;

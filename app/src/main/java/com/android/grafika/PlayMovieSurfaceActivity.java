@@ -42,6 +42,8 @@ import cz.fmo.Lib;
 import cz.fmo.R;
 import cz.fmo.data.Track;
 import cz.fmo.data.TrackSet;
+import cz.fmo.events.EventDetectionCallback;
+import cz.fmo.events.EventDetector;
 import cz.fmo.graphics.EGL;
 import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
@@ -136,7 +138,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             stopPlayback();
             mPlayTask.waitForStop();
         }
-        Lib.detectionStop();
+        mHandler.stopDetections();
     }
 
     @Override
@@ -207,12 +209,9 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             try {
                 player = new MoviePlayer(mFileMan.open(mMovieFiles[mSelectedMovie]), surface,
                         callback, mHandler);
-                mHandler.setVideoHeight(player.getVideoHeight());
-                mHandler.setVideoWidth(player.getVideoWidth());
                 Config mConfig = new Config(this);
-                TrackSet.getInstance().setConfig(mConfig);
-                Lib.detectionStart(player.getVideoWidth(), player.getVideoHeight(), mConfig.procRes, mConfig.gray, mHandler);
-
+                mHandler.init(mConfig, player.getVideoWidth(), player.getVideoHeight());
+                mHandler.startDetections();
             } catch (IOException ioe) {
                 Log.e("Unable to play movie", ioe);
                 surface.release();
@@ -220,7 +219,6 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             }
 
             mPlayTask = new MoviePlayer.PlayTask(player, this, true);
-
             mShowStopLabel = true;
             updateControls();
             mPlayTask.execute();
@@ -278,12 +276,14 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         egl.release();
     }
 
-    private static class Handler extends android.os.Handler implements Lib.Callback, PlayMovieDetectionCallback {
+    private static class Handler extends android.os.Handler implements EventDetectionCallback, PlayMovieDetectionCallback {
         private final WeakReference<PlayMovieSurfaceActivity> mActivity;
+        private EventDetector eventDetector;
         private int canvasWidth, canvasHeight;
         private Canvas canvas;
         private Paint p;
         private int videoWidth, videoHeight;
+        private Config config;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
             mActivity = new WeakReference<>(activity);
@@ -291,12 +291,19 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             p = new Paint();
         }
 
-        public void setVideoHeight(int videoHeight) {
-            this.videoHeight = videoHeight;
+        private void init(Config config, int srcWidth, int srcHeight) {
+            this.videoWidth = srcWidth;
+            this.videoHeight = srcHeight;
+            this.config = config;
+            eventDetector = new EventDetector(config, srcWidth, srcHeight, this, TrackSet.getInstance());
         }
 
-        public void setVideoWidth(int videoWidth) {
-            this.videoWidth = videoWidth;
+        private void startDetections() {
+            Lib.detectionStart(this.videoWidth, this.videoHeight, this.config.procRes, this.config.gray, eventDetector);
+        }
+
+        private void stopDetections() {
+            Lib.detectionStop();
         }
 
         @Override
@@ -309,18 +316,25 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         @Override
-        public void log(String message) {
-            System.out.println(message);
+        public void onBounce() {
+            // update game logic
+            // then display game state to some views
         }
 
         @Override
-        public void onObjectsDetected(Lib.Detection[] detections) {
-            System.out.println("detections:");
-            for (Lib.Detection detection : detections) {
-                System.out.println(detection);
-            }
-            TrackSet set = TrackSet.getInstance();
-            set.addDetections(detections, this.videoWidth, this.videoHeight); // after this, object direction is updated
+        public void onSideChange(boolean isRightSide) {
+            // update game logic
+            // then display game state to some views
+        }
+
+        @Override
+        public void onBallOutOfFrame(boolean isRightSide) {
+            // update game logic
+            // then display game state to some views
+        }
+
+        @Override
+        public void onStrikeFound(TrackSet tracks) {
             PlayMovieSurfaceActivity activity = mActivity.get();
             if (activity == null) {
                 return;
@@ -336,7 +350,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                     canvasHeight = canvas.getHeight();
                 }
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                drawAllTracks(canvas, set);
+                drawAllTracks(canvas, tracks);
                 surfaceHolder.unlockCanvasAndPost(canvas);
             }
         }
