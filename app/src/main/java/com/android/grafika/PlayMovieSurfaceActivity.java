@@ -34,6 +34,7 @@ import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
@@ -85,6 +86,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     private final FileManager mFileMan = new FileManager(this);
     private SurfaceView mSurfaceView;
     private SurfaceView mSurfaceTrack;
+    private TextView mShotSideText;
     private String[] mMovieFiles;
     private int mSelectedMovie;
     private boolean mShowStopLabel;
@@ -96,7 +98,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_movie_surface);
-
+        mShotSideText = findViewById(R.id.txtSide);
         mSurfaceView = findViewById(R.id.playMovie_surface);
         mSurfaceView.getHolder().addCallback(this);
         mHandler = new Handler(this);
@@ -284,10 +286,12 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         private Paint p;
         private int videoWidth, videoHeight;
         private Config config;
+        private TrackSet tracks;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
             mActivity = new WeakReference<>(activity);
-            TrackSet.getInstance().clear();
+            tracks = TrackSet.getInstance();
+            tracks.clear();
             p = new Paint();
         }
 
@@ -295,7 +299,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             this.videoWidth = srcWidth;
             this.videoHeight = srcHeight;
             this.config = config;
-            eventDetector = new EventDetector(config, srcWidth, srcHeight, this, TrackSet.getInstance());
+            eventDetector = new EventDetector(config, srcWidth, srcHeight, this, tracks);
         }
 
         private void startDetections() {
@@ -322,9 +326,22 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         @Override
-        public void onSideChange(boolean isRightSide) {
+        public void onSideChange(final boolean isRightSide) {
             // update game logic
             // then display game state to some views
+            final PlayMovieSurfaceActivity activity = mActivity.get();
+            final TextView mShotSideText = activity.mShotSideText;
+            this.post(new Runnable() {
+                @Override
+                public void run() {
+                    String txt = "Left Side";
+                    if (isRightSide) {
+                        txt = "Right Side";
+                    }
+                    mShotSideText.setText(txt);
+                }
+            });
+
         }
 
         @Override

@@ -5,14 +5,15 @@ import cz.fmo.data.TrackSet;
 import cz.fmo.util.Config;
 
 public class EventDetector implements Lib.Callback {
-    private final Config config;
+    private static final int SIDE_CHANGE_DETECTION_SPEED = 2;
     private final TrackSet tracks;
     private final EventDetectionCallback callback;
     private int srcWidth;
     private int srcHeight;
+    private float lastXDirection;
+    public long countFrame;
 
     public EventDetector(Config config, int srcWidth, int srcHeight, EventDetectionCallback callback, TrackSet tracks) {
-        this.config = config;
         this.srcHeight = srcHeight;
         this.srcWidth = srcWidth;
         this.callback = callback;
@@ -32,8 +33,16 @@ public class EventDetector implements Lib.Callback {
         for (Lib.Detection detection : detections) {
             System.out.println(detection);
         } */
+        countFrame++;
         tracks.addDetections(detections, this.srcWidth, this.srcHeight); // after this, object direction is updated
         // TODO: Filter / combine tracks, find bounces, side changes and outOfFrames
         callback.onStrikeFound(tracks);
+        if (countFrame%SIDE_CHANGE_DETECTION_SPEED == 0 && tracks.getTracks().size() == 1) {
+            float curDirectionX = tracks.getTracks().get(0).getLatest().directionX;
+            if (lastXDirection != curDirectionX) {
+                callback.onSideChange(curDirectionX < 0);
+            }
+            lastXDirection = curDirectionX;
+        }
     }
 }

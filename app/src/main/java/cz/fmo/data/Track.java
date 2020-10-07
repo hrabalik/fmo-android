@@ -35,6 +35,10 @@ public class Track {
         return mColorRGBA;
     }
 
+    public long getLastDetectionTime() {
+        return mLastDetectionTime;
+    }
+
     void setLatest(Lib.Detection latest) {
         if (mLatest != null) {
             // calculate speed stats for each segment

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.android.grafika.PlayMovieSurfaceActivity">
 
@@ -42,6 +41,32 @@
             android:layout_alignBottom="@+id/play_stop_button"
             android:layout_alignTop="@id/play_stop_button"
             android:layout_toEndOf="@id/play_stop_button" />
+
+        <TextView
+            android:id="@+id/txtLabelSide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/play_stop_button"
+            android:layout_alignBottom="@+id/play_stop_button"
+            android:layout_toEndOf="@id/playMovieFile_spinner"
+            android:text="Ball shot from:"
+            android:textAlignment="viewStart"
+            android:textColor="#FF0000"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/txtSide"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/play_stop_button"
+            android:layout_alignBottom="@+id/play_stop_button"
+            android:layout_toEndOf="@id/txtLabelSide"
+            android:text="None"
+            android:textAlignment="textStart"
+            android:layout_marginLeft="10dp"
+            android:textColor="#FF0000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 

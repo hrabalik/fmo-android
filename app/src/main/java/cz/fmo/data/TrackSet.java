@@ -3,6 +3,7 @@ package cz.fmo.data;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import cz.fmo.Lib;
 import cz.fmo.graphics.FontRenderer;
@@ -15,6 +16,7 @@ import cz.fmo.util.Config;
  * Latest detected tracks that are meant to be kept on screen to allow inspection by the user.
  */
 public class TrackSet {
+    private static final int FRAMES_UNTIL_OLD_TRACK_REMOVAL = 3;
     private static final int NUM_TRACKS = 2;
     private final Object mLock = new Object();
     private final ArrayList<Track> mTracks = new ArrayList<>();
@@ -26,6 +28,7 @@ public class TrackSet {
     private int mTrackCounter = 0;
 
     private TrackSet() {
+
     }
 
     public static TrackSet getInstance() {
@@ -51,7 +54,6 @@ public class TrackSet {
             if (mConfig == null) return;
             mWidth = width;
             mHeight = height;
-
             // swap the maps
             {
                 SparseArray<Track> temp = mCurrentTrackMap;
@@ -60,6 +62,7 @@ public class TrackSet {
             }
 
             mCurrentTrackMap.clear();
+            this.filterOutOldTracks();
             for (Lib.Detection detection : detections) {
                 if (detection.id < 0) {
                     throw new RuntimeException("ID of a detection not specified");
@@ -71,10 +74,7 @@ public class TrackSet {
                     // no predecessor/track not found: make a new track
                     mTrackCounter++;
                     track = new Track(mConfig);
-                    // shift to erase the oldest track
-                    if (mTracks.size() == NUM_TRACKS) {
-                        mTracks.remove(0);
-                    }
+
                     // add the track to the list
                     mTracks.add(track);
                 }
@@ -172,6 +172,28 @@ public class TrackSet {
             mTracks.clear();
             mPreviousTrackMap.clear();
             mCurrentTrackMap.clear();
+        }
+    }
+
+    private void filterOutOldTracks() {
+        // filter out tracks which were not updated after n Frames (n=FRAMES_UNTIL_OLD_TRACK_REMOVAL)
+        long maxTimeDeltaForOldestTrack = (long)(FRAMES_UNTIL_OLD_TRACK_REMOVAL/mConfig.frameRate*Math.pow(1000,3));
+        if (mTracks.size()>=NUM_TRACKS) {
+            Iterator it = mTracks.iterator();
+            long currentTimeNano = System.nanoTime();
+            while(it.hasNext()) {
+                Track t = (Track) it.next();
+                if (t.getLastDetectionTime()<=currentTimeNano-maxTimeDeltaForOldestTrack) {
+                    it.remove();
+                    break;
+                }
+            }
+        } else if (mTracks.size() == 1) {
+            Track t = mTracks.get(0);
+            long currentTimeNano = System.nanoTime();
+            if (t.getLastDetectionTime()<=currentTimeNano-maxTimeDeltaForOldestTrack) {
+                mTracks.clear();
+            }
         }
     }
 
