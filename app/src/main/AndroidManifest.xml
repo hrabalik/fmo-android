@@ -41,17 +41,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".BenchmarkingActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="Benchmark"
-            android:screenOrientation="landscape"
-            android:theme="@style/Benchmarking">
-            <intent-filter>
-                <action android:name="cz.fmo.BenchmarkingActivity"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </activity>
-        <activity
             android:name=".PlaybackActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="Playback"
