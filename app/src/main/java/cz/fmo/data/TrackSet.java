@@ -3,7 +3,9 @@ package cz.fmo.data;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import cz.fmo.Lib;
 import cz.fmo.graphics.FontRenderer;
@@ -25,11 +27,8 @@ public class TrackSet {
     private SparseArray<Track> mPreviousTrackMap = new SparseArray<>();
     private int mWidth = 1;  // width of the source image (not necessarily the screen width)
     private int mHeight = 1; // height of the source image (not necessarily the screen height)
-    private int mTrackCounter = 0;
 
-    private TrackSet() {
-
-    }
+    private TrackSet() {}
 
     public static TrackSet getInstance() {
         return SingletonHolder.instance;
@@ -72,7 +71,6 @@ public class TrackSet {
                 Track track = mPreviousTrackMap.get(detection.predecessorId);
                 if (track == null) {
                     // no predecessor/track not found: make a new track
-                    mTrackCounter++;
                     track = new Track(mConfig);
 
                     // add the track to the list
@@ -86,7 +84,7 @@ public class TrackSet {
         }
     }
 
-    public ArrayList<Track> getTracks() {return mTracks;}
+    public List<Track> getTracks() {return Collections.unmodifiableList(mTracks);}
 
     public void generateTracksAndLabels(TriangleStripRenderer tsRender, FontRenderer fontRender,
                                         int imageHeight) {
@@ -142,7 +140,7 @@ public class TrackSet {
 
         // pick a label based on mode
         String label;
-        switch(mConfig.velocityEstimationMode) {
+        switch(mConfig.getVelocityEstimationMode()) {
             default:
             case PX_FR:
                 label = "px/fr";
@@ -177,22 +175,14 @@ public class TrackSet {
 
     private void filterOutOldTracks() {
         // filter out tracks which were not updated after n Frames (n=FRAMES_UNTIL_OLD_TRACK_REMOVAL)
-        long maxTimeDeltaForOldestTrack = (long)(FRAMES_UNTIL_OLD_TRACK_REMOVAL/mConfig.frameRate*Math.pow(1000,3));
-        if (mTracks.size()>=NUM_TRACKS) {
-            Iterator it = mTracks.iterator();
-            long currentTimeNano = System.nanoTime();
-            while(it.hasNext()) {
-                Track t = (Track) it.next();
-                if (t.getLastDetectionTime()<=currentTimeNano-maxTimeDeltaForOldestTrack) {
-                    it.remove();
-                    break;
-                }
-            }
-        } else if (mTracks.size() == 1) {
-            Track t = mTracks.get(0);
-            long currentTimeNano = System.nanoTime();
+        long maxTimeDeltaForOldestTrack = (long)(FRAMES_UNTIL_OLD_TRACK_REMOVAL/ mConfig.getFrameRate() * Math.pow(1000,3));
+        Iterator<Track> it = mTracks.iterator();
+        long currentTimeNano = System.nanoTime();
+        while(it.hasNext()) {
+            Track t = it.next();
             if (t.getLastDetectionTime()<=currentTimeNano-maxTimeDeltaForOldestTrack) {
-                mTracks.clear();
+                it.remove();
+                break;
             }
         }
     }

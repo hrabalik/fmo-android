@@ -45,9 +45,9 @@ class CameraCapture implements Camera.PreviewCallback {
      */
     CameraCapture(@Nullable Callback cb, Config config) {
         mCb = cb;
-        mPreferWidth = config.highResolution ? 1920 : 1280;
-        mPreferHeight = config.highResolution ? 1080 : 720;
-        mPreferFrontFacing = config.frontFacing;
+        mPreferWidth = config.isHighResolution() ? 1920 : 1280;
+        mPreferHeight = config.isHighResolution() ? 1080 : 720;
+        mPreferFrontFacing = config.isFrontFacing();
         int bestCam = selectCamera();
 
         if (bestCam < 0) {

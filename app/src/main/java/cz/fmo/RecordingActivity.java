@@ -156,11 +156,11 @@ public final class RecordingActivity extends Activity {
                 mGUI.getPreviewWidth(), mGUI.getPreviewHeight());
         mCamera.addTarget(mPreviewTarget);
 
-        if (mConfig.slowPreview) {
+        if (mConfig.isSlowPreview()) {
             mPreviewTarget.setSlowdown(PREVIEW_SLOWDOWN_FRAMES);
         }
 
-        if (mConfig.recordMode != Config.RecordMode.OFF) {
+        if (mConfig.getRecordMode() != Config.RecordMode.OFF) {
             // make a suitably-sized cyclic buffer
             CyclicBuffer buffer = new CyclicBuffer(mCamera.getBitRate(), mCamera.getFrameRate(),
                     BUFFER_SECONDS);
@@ -176,13 +176,13 @@ public final class RecordingActivity extends Activity {
 
             // only allow encoding in automatic mode; manual mode starts encoding once the recording
             // button is pressed
-            setEncodingEnabled(mConfig.recordMode == Config.RecordMode.AUTOMATIC);
+            setEncodingEnabled(mConfig.getRecordMode() == Config.RecordMode.AUTOMATIC);
         }
 
-        if (!mConfig.disableDetection) {
+        if (!mConfig.isDisableDetection()) {
             // C++ initialization
-            Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mConfig.procRes,
-                    mConfig.gray, mHandler);
+            Lib.detectionStart(mCamera.getWidth(), mCamera.getHeight(), mConfig.getProcRes(),
+                    mConfig.isGray(), mHandler);
         }
 
         // refresh GUI
@@ -244,7 +244,7 @@ public final class RecordingActivity extends Activity {
     private void triggerAutomaticRecording() {
         if (mStatus != Status.RUNNING) return;
         if (mSaveMovie == null) return;
-        if (mConfig.recordMode != Config.RecordMode.AUTOMATIC) return;
+        if (mConfig.getRecordMode() != Config.RecordMode.AUTOMATIC) return;
 
         boolean extended = (mSaveTask != null) && mSaveTask.extend();
 
@@ -490,7 +490,7 @@ public final class RecordingActivity extends Activity {
 
         private void updateRecordingButtons() {
             {
-                boolean relevant = mConfig.recordMode == Config.RecordMode.MANUAL;
+                boolean relevant = mConfig.getRecordMode() == Config.RecordMode.MANUAL;
                 boolean stopped = relevant && mSaveTask == null;
                 boolean running = relevant && mSaveTask != null;
                 mManualStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);
@@ -498,7 +498,7 @@ public final class RecordingActivity extends Activity {
             }
 
             {
-                boolean relevant = mConfig.recordMode == Config.RecordMode.AUTOMATIC;
+                boolean relevant = mConfig.getRecordMode() == Config.RecordMode.AUTOMATIC;
                 boolean stopped = relevant && mSaveTask == null;
                 boolean running = relevant && mSaveTask != null;
                 mAutomaticStoppedButton.setVisibility(stopped ? View.VISIBLE : View.GONE);

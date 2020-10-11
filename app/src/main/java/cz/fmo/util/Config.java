@@ -5,16 +5,16 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 public class Config {
-    public final boolean frontFacing;
-    public final boolean highResolution;
-    public final RecordMode recordMode;
-    public final boolean slowPreview;
-    public final boolean gray;
-    public final int procRes;
-    public final VelocityEstimationMode velocityEstimationMode;
-    public final float objectRadius;
-    public final float frameRate;
-    public final boolean disableDetection;
+    private final boolean frontFacing;
+    private final boolean highResolution;
+    private final RecordMode recordMode;
+    private final boolean slowPreview;
+    private final boolean gray;
+    private final int procRes;
+    private final VelocityEstimationMode velocityEstimationMode;
+    private final float objectRadius;
+    private final float frameRate;
+    private final boolean disableDetection;
 
     public Config(Context ctx) {
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(ctx);
@@ -82,6 +82,46 @@ public class Config {
         }
 
         return diameter;
+    }
+
+    public float getFrameRate() {
+        return frameRate;
+    }
+
+    public VelocityEstimationMode getVelocityEstimationMode() {
+        return velocityEstimationMode;
+    }
+
+    public int getProcRes() {
+        return procRes;
+    }
+
+    public boolean isFrontFacing() {
+        return frontFacing;
+    }
+
+    public boolean isHighResolution() {
+        return highResolution;
+    }
+
+    public RecordMode getRecordMode() {
+        return recordMode;
+    }
+
+    public boolean isSlowPreview() {
+        return slowPreview;
+    }
+
+    public boolean isGray() {
+        return gray;
+    }
+
+    public float getObjectRadius() {
+        return objectRadius;
+    }
+
+    public boolean isDisableDetection() {
+        return disableDetection;
     }
 
     public enum RecordMode {

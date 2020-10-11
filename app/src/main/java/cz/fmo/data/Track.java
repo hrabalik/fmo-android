@@ -51,12 +51,12 @@ public class Track {
             float velocity = latest.velocity;
 
             // for real-world estimation, apply a formula
-            if (mConfig.velocityEstimationMode != Config.VelocityEstimationMode.PX_FR) {
-                velocity *= (mConfig.objectRadius / latest.radius) * mConfig.frameRate;
+            if (mConfig.getVelocityEstimationMode() != Config.VelocityEstimationMode.PX_FR) {
+                velocity *= (mConfig.getObjectRadius() / latest.radius) * mConfig.getFrameRate();
             }
 
             // convert m/s to other units
-            switch (mConfig.velocityEstimationMode) {
+            switch (mConfig.getVelocityEstimationMode()) {
                 default:
                 case PX_FR:
                 case M_S:

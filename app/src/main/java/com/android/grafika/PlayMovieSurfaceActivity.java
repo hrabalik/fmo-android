@@ -303,7 +303,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         private void startDetections() {
-            Lib.detectionStart(this.videoWidth, this.videoHeight, this.config.procRes, this.config.gray, eventDetector);
+            Lib.detectionStart(this.videoWidth, this.videoHeight, this.config.getProcRes(), this.config.isGray(), eventDetector);
         }
 
         private void stopDetections() {
