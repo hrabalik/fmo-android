@@ -22,6 +22,7 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.view.Surface;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -358,7 +359,7 @@ class MoviePlayer {
                     }
                     decoder.releaseOutputBuffer(decoderStatus, doRender);
 
-                    if (doLoop) {
+                    if (doLoop && frameCallback != null) {
                         Log.d("Reached EOS, looping");
                         extractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
                         inputDone = false;
@@ -458,6 +459,8 @@ class MoviePlayer {
                         mStopLock.wait();
                     } catch (InterruptedException ie) {
                         // discard
+                        Log.e(ie.getMessage(), ie);
+                        Thread.currentThread().interrupt();
                     }
                 }
             }

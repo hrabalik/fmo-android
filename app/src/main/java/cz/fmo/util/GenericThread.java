@@ -30,7 +30,7 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
             Looper.prepare();
             mHandler = makeHandler();
             setup(mHandler);
-            mLock.notify();
+            mLock.notifyAll();
         }
         Looper.loop();
         synchronized (mLock) {
@@ -56,8 +56,9 @@ public abstract class GenericThread<H extends android.os.Handler> extends Thread
             while (mHandler == null) {
                 try {
                     mLock.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Interrupted");
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    com.android.grafika.Log.e(ie.getMessage(), ie);
                 }
             }
         }

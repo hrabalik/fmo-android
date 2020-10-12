@@ -209,7 +209,8 @@ public final class RecordingActivity extends Activity {
             try {
                 mCamera.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted when closing CameraThread");
+                Thread.currentThread().interrupt();
+                com.android.grafika.Log.e("Interrupted when closing CameraThread", ie);
             }
             mCamera = null;
         }
@@ -221,7 +222,8 @@ public final class RecordingActivity extends Activity {
             try {
                 mSaveMovie.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted when closing SaveThread");
+                Thread.currentThread().interrupt();
+                com.android.grafika.Log.e("Interrupted when closing SaveThread", ie);
             }
             mSaveMovie = null;
         }
@@ -231,7 +233,8 @@ public final class RecordingActivity extends Activity {
             try {
                 mEncode.join();
             } catch (InterruptedException ie) {
-                throw new RuntimeException("Interrupted when closing EncodeThread");
+                Thread.currentThread().interrupt();
+                com.android.grafika.Log.e("Interrupted when closing EncodeThread", ie);
             }
             mEncode = null;
         }
@@ -481,8 +484,7 @@ public final class RecordingActivity extends Activity {
                 text = "";
             }
 
-            //noinspection StringEquality
-            if (mStatusTextLast != text) {
+            if (mStatusTextLast != null && !mStatusTextLast.equals(text)) {
                 mStatusText.setText(text);
                 mStatusTextLast = text;
             }
