@@ -5,7 +5,6 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -28,7 +27,6 @@ class CameraCapture implements Camera.PreviewCallback {
     private static final int PREFER_I_FRAME_INTERVAL = 1; // seconds
     private static final int IMAGE_FORMAT = ImageFormat.NV21;
     private static final int BITS_PER_PIXEL = ImageFormat.getBitsPerPixel(IMAGE_FORMAT);
-    private static final String PREVIEW_VIDEO_PATH = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getPath() + "/Camera/1701.mp4";
     private final Callback mCb;
     private final int mPreferWidth;
     private final int mPreferHeight;

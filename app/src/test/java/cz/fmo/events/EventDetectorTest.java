@@ -1,7 +1,12 @@
 package cz.fmo.events;
 
+import com.android.grafika.Log;
+
+import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
 
 import cz.fmo.Lib;
 import cz.fmo.data.Track;
@@ -10,7 +15,6 @@ import cz.fmo.util.Config;
 import helper.DetectionGenerator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -28,6 +32,7 @@ public class EventDetectorTest {
 
     @Before
     public void prepare() {
+        Awaitility.setDefaultPollDelay(10, TimeUnit.MILLISECONDS);
         mockConfig = mock(Config.class);
         mockTracks = mock(TrackSet.class);
         mockCallback = mock(EventDetectionCallback.class);
@@ -93,12 +98,12 @@ public class EventDetectorTest {
 
     private void invokeOnObjectDetectedWithDelay(Lib.Detection[] allDetections, EventDetector ev) {
         int delay = 1000/FRAME_RATE;
-        for (int i = 0; i<allDetections.length; i++) {
-            ev.onObjectsDetected(new Lib.Detection[]{allDetections[i]});
+        for (Lib.Detection detection : allDetections) {
+            ev.onObjectsDetected(new Lib.Detection[]{detection});
             try {
                 Thread.sleep(delay);
-            } catch (InterruptedException ex) {
-                fail();
+            } catch (InterruptedException ie) {
+                Log.e(ie.getMessage(), ie);
             }
         }
     }

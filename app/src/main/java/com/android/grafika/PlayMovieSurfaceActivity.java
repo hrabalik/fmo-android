@@ -179,6 +179,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
+        // Can ignore this event
     }
 
     /**
@@ -281,10 +282,11 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     private static class Handler extends android.os.Handler implements EventDetectionCallback, PlayMovieDetectionCallback {
         private final WeakReference<PlayMovieSurfaceActivity> mActivity;
         private EventDetector eventDetector;
-        private int canvasWidth, canvasHeight;
-        private Canvas canvas;
+        private int canvasWidth;
+        private int canvasHeight;
         private Paint p;
-        private int videoWidth, videoHeight;
+        private int videoWidth;
+        private int videoHeight;
         private Config config;
         private TrackSet tracks;
 
@@ -315,7 +317,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             try {
                 Lib.detectionFrame(dataYUV420SP);
             } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                Log.e(ex.getMessage(), ex);
             }
         }
 
@@ -358,7 +360,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             }
             if (activity.mSurfaceHolderReady) {
                 SurfaceHolder surfaceHolder = activity.mSurfaceTrack.getHolder();
-                canvas = surfaceHolder.lockCanvas();
+                Canvas canvas = surfaceHolder.lockCanvas();
                 if (canvas == null) {
                     return;
                 }

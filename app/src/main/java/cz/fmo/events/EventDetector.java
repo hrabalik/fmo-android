@@ -11,7 +11,7 @@ public class EventDetector implements Lib.Callback {
     private int srcWidth;
     private int srcHeight;
     private float lastXDirection;
-    public long countFrame;
+    private long countFrame;
 
     public EventDetector(Config config, int srcWidth, int srcHeight, EventDetectionCallback callback, TrackSet tracks) {
         this.srcHeight = srcHeight;
@@ -23,7 +23,7 @@ public class EventDetector implements Lib.Callback {
 
     @Override
     public void log(String message) {
-
+        // Lib logs will be ignored for now
     }
 
     @Override
@@ -37,7 +37,7 @@ public class EventDetector implements Lib.Callback {
         tracks.addDetections(detections, this.srcWidth, this.srcHeight); // after this, object direction is updated
         // TODO: Filter / combine tracks, find bounces, side changes and outOfFrames
         callback.onStrikeFound(tracks);
-        if (countFrame%SIDE_CHANGE_DETECTION_SPEED == 0 && tracks.getTracks().size() == 1) {
+        if (countFrame % SIDE_CHANGE_DETECTION_SPEED == 0 && tracks.getTracks().size() == 1) {
             float curDirectionX = tracks.getTracks().get(0).getLatest().directionX;
             if (lastXDirection != curDirectionX) {
                 callback.onSideChange(curDirectionX < 0);

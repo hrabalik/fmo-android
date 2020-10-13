@@ -419,6 +419,8 @@ public final class RecordingActivity extends Activity {
                 case UPDATE_GUI:
                     activity.mGUI.update((GUIUpdate) msg.obj);
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -516,6 +518,7 @@ public final class RecordingActivity extends Activity {
 
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            // No need for implementation
         }
 
         @Override

@@ -41,6 +41,8 @@ public class CameraThreadHandler extends android.os.Handler implements SurfaceTe
             case FRAME:
                 thread.frameAvailable();
                 break;
+            default:
+                break;
         }
     }
 }
