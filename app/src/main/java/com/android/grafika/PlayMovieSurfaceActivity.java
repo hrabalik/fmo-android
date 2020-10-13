@@ -347,9 +347,8 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         @Override
-        public void onBallOutOfFrame(boolean isRightSide) {
-            // update game logic
-            // then display game state to some views
+        public void onNearlyOutOfFrame(Lib.Detection detection) {
+
         }
 
         @Override
