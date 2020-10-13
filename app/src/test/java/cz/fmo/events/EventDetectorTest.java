@@ -2,11 +2,8 @@ package cz.fmo.events;
 
 import com.android.grafika.Log;
 
-import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
 
 import cz.fmo.Lib;
 import cz.fmo.data.Track;
@@ -32,7 +29,6 @@ public class EventDetectorTest {
 
     @Before
     public void prepare() {
-        Awaitility.setDefaultPollDelay(10, TimeUnit.MILLISECONDS);
         mockConfig = mock(Config.class);
         mockTracks = mock(TrackSet.class);
         mockCallback = mock(EventDetectionCallback.class);
