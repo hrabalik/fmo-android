@@ -90,7 +90,24 @@ public class EventDetectorTest {
         verify(mockCallback, times(1)).onSideChange(false);
     }
 
-
+    @Test
+    public void testOnNearlyOutOfFrame() {
+        EventDetector ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, TrackSet.getInstance());
+        Lib.Detection[] nearlyOutOfFrame;
+        for(int i = 0; i < 10; i++) {
+            nearlyOutOfFrame = DetectionGenerator.makeNearlyOutOfFrameDetections(ev.getNearlyOutOfFrameThresholds(), SOME_WIDTH, SOME_HEIGHT);
+            for(Lib.Detection detection : nearlyOutOfFrame) {
+                invokeOnObjectDetectedWithDelay(new Lib.Detection[]{detection}, ev);
+                verify(mockCallback, times(1)).onNearlyOutOfFrame(detection);
+                ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, TrackSet.getInstance());
+            }
+        }
+        Lib.Detection[] detectionsInFrame = DetectionGenerator.makeDetectionsInXDirection(true);
+        invokeOnObjectDetectedWithDelay(detectionsInFrame, ev);
+        for(int i = 0; i < detectionsInFrame.length; i++) {
+            verify(mockCallback, times(0)).onNearlyOutOfFrame(detectionsInFrame[i]);
+        }
+    }
 
     private void invokeOnObjectDetectedWithDelay(Lib.Detection[] allDetections, EventDetector ev) {
         int delay = 1000/FRAME_RATE;
