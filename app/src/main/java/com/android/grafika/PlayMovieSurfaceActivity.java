@@ -289,6 +289,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         private int videoHeight;
         private Config config;
         private TrackSet tracks;
+        private Lib.Detection latestNearlyOutOfFrame;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
             mActivity = new WeakReference<>(activity);
@@ -348,7 +349,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
         @Override
         public void onNearlyOutOfFrame(Lib.Detection detection) {
-
+            latestNearlyOutOfFrame = detection;
         }
 
         @Override
@@ -392,6 +393,15 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                     }
                     pre = pre.predecessor;
                 }
+            }
+            drawLatestOutOfFrameDetection(canvas);
+        }
+
+        private void drawLatestOutOfFrameDetection(Canvas canvas) {
+            if(latestNearlyOutOfFrame != null) {
+                p.setColor(Color.rgb(255,165,0));
+                p.setStrokeWidth(latestNearlyOutOfFrame.radius);
+                canvas.drawCircle(scaleX(latestNearlyOutOfFrame.centerX), scaleY(latestNearlyOutOfFrame.centerY), latestNearlyOutOfFrame.radius, p);
             }
         }
 

@@ -46,7 +46,7 @@ public class EventDetector implements Lib.Callback {
         detectionCount++;
         tracks.addDetections(detections, this.srcWidth, this.srcHeight); // after this, object direction is updated
 
-        if(tracks.getTracks().size() != 0) {
+        if(!tracks.getTracks().isEmpty()) {
             Lib.Detection latestDetection = tracks.getTracks().get(0).getLatest();
             // TODO: Filter / combine tracks, find bounces, side changes and outOfFrames
             callback.onStrikeFound(tracks);
