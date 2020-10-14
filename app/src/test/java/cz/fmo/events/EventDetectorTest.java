@@ -1,7 +1,5 @@
 package cz.fmo.events;
 
-import com.android.grafika.Log;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,15 +46,16 @@ public class EventDetectorTest {
     public void testUpdateTrackSetOnObjectsDetected() {
         EventDetector ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT,mockCallback, mockTracks);
         Lib.Detection[] someDetections = new Lib.Detection[0];
-        ev.onObjectsDetected(someDetections);
-        verify(mockTracks, times(1)).addDetections(someDetections, SOME_WIDTH, SOME_HEIGHT);
+        long detectionTime = System.nanoTime();
+        ev.onObjectsDetected(someDetections, detectionTime);
+        verify(mockTracks, times(1)).addDetections(someDetections, SOME_WIDTH, SOME_HEIGHT, detectionTime);
     }
 
     @Test
     public void testOnStrikeFound() {
         EventDetector ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, realTrackSet);
         Lib.Detection[] strikeDetections = DetectionGenerator.makeDetectionsInXDirection(true);
-        invokeOnObjectDetectedWithDelay(strikeDetections, ev);
+        invokeOnObjectDetectedWithDelay(strikeDetections, ev, 0);
 
         // assert that we have now one track with all detections in it
         verify(mockCallback, times(strikeDetections.length)).onStrikeFound(realTrackSet);
@@ -77,15 +76,15 @@ public class EventDetectorTest {
         Lib.Detection[] strikeDetectionsRight = DetectionGenerator.makeDetectionsInXDirection(true);
         Lib.Detection[] strikeDetectionsLeft = DetectionGenerator.makeDetectionsInXDirection(false);
         // object is getting shot from left to right side
-        invokeOnObjectDetectedWithDelay(strikeDetectionsRight, ev);
+        invokeOnObjectDetectedWithDelay(strikeDetectionsRight, ev, 0);
         verify(mockCallback, times(0)).onSideChange(true);
         verify(mockCallback, times(1)).onSideChange(false);
         // object is getting shot from right to left side
-        invokeOnObjectDetectedWithDelay(strikeDetectionsLeft, ev);
+        invokeOnObjectDetectedWithDelay(strikeDetectionsLeft, ev, strikeDetectionsRight.length);
         verify(mockCallback, times(1)).onSideChange(true);
         verify(mockCallback, times(1)).onSideChange(false);
         // object again getting shot from right to left side (same direction "edge" case) - no more side change call
-        invokeOnObjectDetectedWithDelay(strikeDetectionsLeft, ev);
+        invokeOnObjectDetectedWithDelay(strikeDetectionsLeft, ev, strikeDetectionsLeft.length+strikeDetectionsRight.length);
         verify(mockCallback, times(1)).onSideChange(true);
         verify(mockCallback, times(1)).onSideChange(false);
     }
@@ -97,27 +96,24 @@ public class EventDetectorTest {
         for(int i = 0; i < 10; i++) {
             nearlyOutOfFrame = DetectionGenerator.makeNearlyOutOfFrameDetections(ev.getNearlyOutOfFrameThresholds(), SOME_WIDTH, SOME_HEIGHT);
             for(Lib.Detection detection : nearlyOutOfFrame) {
-                invokeOnObjectDetectedWithDelay(new Lib.Detection[]{detection}, ev);
+                invokeOnObjectDetectedWithDelay(new Lib.Detection[]{detection}, ev, i);
                 verify(mockCallback, times(1)).onNearlyOutOfFrame(detection);
                 ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, TrackSet.getInstance());
             }
         }
         Lib.Detection[] detectionsInFrame = DetectionGenerator.makeDetectionsInXDirection(true);
-        invokeOnObjectDetectedWithDelay(detectionsInFrame, ev);
-        for(int i = 0; i < detectionsInFrame.length; i++) {
-            verify(mockCallback, times(0)).onNearlyOutOfFrame(detectionsInFrame[i]);
+        invokeOnObjectDetectedWithDelay(detectionsInFrame, ev, 0);
+        for (Lib.Detection detection : detectionsInFrame) {
+            verify(mockCallback, times(0)).onNearlyOutOfFrame(detection);
         }
     }
 
-    private void invokeOnObjectDetectedWithDelay(Lib.Detection[] allDetections, EventDetector ev) {
-        int delay = 1000/FRAME_RATE;
+    private void invokeOnObjectDetectedWithDelay(Lib.Detection[] allDetections, EventDetector ev, int nStartFramesDelay) {
+        int delay = 1000/FRAME_RATE * 1000 * 1000;
+        long detectionTime = System.nanoTime() + nStartFramesDelay * delay;
         for (Lib.Detection detection : allDetections) {
-            ev.onObjectsDetected(new Lib.Detection[]{detection});
-            try {
-                Thread.sleep(delay);
-            } catch (InterruptedException ie) {
-                Log.e(ie.getMessage(), ie);
-            }
+            detectionTime = detectionTime + delay;
+            ev.onObjectsDetected(new Lib.Detection[]{detection}, detectionTime);
         }
     }
 }

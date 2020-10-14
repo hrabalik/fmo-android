@@ -37,14 +37,14 @@ public class EventDetector implements Lib.Callback {
     }
 
     @Override
-    public void onObjectsDetected(Lib.Detection[] detections) {
+    public void onObjectsDetected(Lib.Detection[] detections, long detectionTime) {
         // Pls only uncomment for debugging, slows down the video -> detection gets worse
         /* System.out.println("detections:");
         for (Lib.Detection detection : detections) {
             System.out.println(detection);
         } */
         detectionCount++;
-        tracks.addDetections(detections, this.srcWidth, this.srcHeight); // after this, object direction is updated
+        tracks.addDetections(detections, this.srcWidth, this.srcHeight, detectionTime); // after this, object direction is updated
 
         if(!tracks.getTracks().isEmpty()) {
             Lib.Detection latestDetection = tracks.getTracks().get(0).getLatest();

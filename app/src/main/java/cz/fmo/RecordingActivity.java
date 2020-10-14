@@ -362,12 +362,12 @@ public final class RecordingActivity extends Activity {
         }
 
         @Override
-        public void onObjectsDetected(Lib.Detection[] detections) {
+        public void onObjectsDetected(Lib.Detection[] detections, long detectionTime) {
             RecordingActivity activity = mActivity.get();
             if (activity == null) return;
             CameraThread cam = activity.mCamera;
             if (cam == null) return;
-            TrackSet.getInstance().addDetections(detections, cam.getWidth(), cam.getHeight());
+            TrackSet.getInstance().addDetections(detections, cam.getWidth(), cam.getHeight(), detectionTime);
             sendMessage(obtainMessage(TRIGGER_AUTO_RECORD));
         }
 

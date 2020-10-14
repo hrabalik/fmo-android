@@ -48,7 +48,7 @@ public class TrackSet {
      * @param width  width of the source image (not the screen)
      * @param height height of the source image (not the screen)
      */
-    public void addDetections(Lib.Detection[] detections, int width, int height) {
+    public void addDetections(Lib.Detection[] detections, int width, int height, long detectionTime) {
         synchronized (mLock) {
             if (mConfig == null) return;
             mWidth = width;
@@ -61,7 +61,7 @@ public class TrackSet {
             }
 
             mCurrentTrackMap.clear();
-            this.filterOutOldTracks();
+            this.filterOutOldTracks(detectionTime);
             for (Lib.Detection detection : detections) {
                 if (detection.id < 0) {
                     throw new RuntimeException("ID of a detection not specified");
@@ -78,7 +78,7 @@ public class TrackSet {
                 }
 
                 detection.predecessor = track.getLatest();
-                track.setLatest(detection);
+                track.setLatest(detection, detectionTime);
                 mCurrentTrackMap.put(detection.id, track);
             }
         }
@@ -173,14 +173,13 @@ public class TrackSet {
         }
     }
 
-    private void filterOutOldTracks() {
+    private void filterOutOldTracks(long currentTime) {
         // filter out tracks which were not updated after n Frames (n=FRAMES_UNTIL_OLD_TRACK_REMOVAL)
         long maxTimeDeltaForOldestTrack = (long)(FRAMES_UNTIL_OLD_TRACK_REMOVAL/ mConfig.getFrameRate() * Math.pow(1000,3));
         Iterator<Track> it = mTracks.iterator();
-        long currentTimeNano = System.nanoTime();
         while(it.hasNext()) {
             Track t = it.next();
-            if (t.getLastDetectionTime()<=currentTimeNano-maxTimeDeltaForOldestTrack) {
+            if (t.getLastDetectionTime()<=currentTime-maxTimeDeltaForOldestTrack) {
                 it.remove();
                 break;
             }

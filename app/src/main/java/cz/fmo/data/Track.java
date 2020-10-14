@@ -39,7 +39,7 @@ public class Track {
         return mLastDetectionTime;
     }
 
-    void setLatest(Lib.Detection latest) {
+    void setLatest(Lib.Detection latest, long detectionTime) {
         if (mLatest != null) {
             // calculate speed stats for each segment
             mLatestDx = (float) latest.centerX - mLatest.centerX;
@@ -74,7 +74,7 @@ public class Track {
             mVelocityNumFrames++;
         }
 
-        mLastDetectionTime = System.nanoTime();
+        mLastDetectionTime = detectionTime;
         mLatest = latest;
     }
 
