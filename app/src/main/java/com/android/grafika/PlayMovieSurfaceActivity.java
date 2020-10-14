@@ -21,6 +21,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.opengl.GLES20;
 import android.os.Bundle;
@@ -37,7 +38,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.util.Properties;
 
 import cz.fmo.Lib;
 import cz.fmo.R;
@@ -46,6 +49,7 @@ import cz.fmo.data.TrackSet;
 import cz.fmo.events.EventDetectionCallback;
 import cz.fmo.events.EventDetector;
 import cz.fmo.graphics.EGL;
+import cz.fmo.tabletennis.Table;
 import cz.fmo.util.Config;
 import cz.fmo.util.FileManager;
 
@@ -101,11 +105,11 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         mShotSideText = findViewById(R.id.txtSide);
         mSurfaceView = findViewById(R.id.playMovie_surface);
         mSurfaceView.getHolder().addCallback(this);
-        mHandler = new Handler(this);
         mSurfaceTrack = findViewById(R.id.playTracks_surface);
         mSurfaceTrack.setZOrderOnTop(true);
         mSurfaceTrack.getHolder().addCallback(this);
         mSurfaceTrack.getHolder().setFormat(PixelFormat.TRANSPARENT);
+        mHandler = new Handler(this);
         // Populate file-selection spinner.
         Spinner spinner = findViewById(R.id.playMovieFile_spinner);
         // Need to create one of these fancy ArrayAdapter thingies, and specify the generic layout
@@ -175,6 +179,23 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         mSelectedMovie = spinner.getSelectedItemPosition();
 
         Log.d("onItemSelected: " + mSelectedMovie + " '" + mMovieFiles[mSelectedMovie] + "'");
+        trySettingTableLocationFromXML(mMovieFiles[mSelectedMovie]);
+    }
+
+    /**
+     * Tries to load the table location from an xml file from assets.
+     * @param videoFileName - Full name of video file in phones Camera dir. Example: "bounce_back_1.mp4"
+     */
+    private void trySettingTableLocationFromXML(String videoFileName) {
+        String fileNameWithoutExtension = videoFileName.split("\\.")[0];
+        try (InputStream is = getAssets().open(fileNameWithoutExtension+".xml")) {
+            Properties properties = new Properties();
+            properties.loadFromXML(is);
+            mHandler.setTable(Table.makeTableFromProperties(properties));
+            Log.d("found new table!");
+        } catch (IOException ex) {
+            Log.e(ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -202,11 +223,13 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             Log.d("starting movie");
             SpeedControlCallback callback = new SpeedControlCallback();
             SurfaceHolder holder = mSurfaceView.getHolder();
+            SurfaceHolder holderTracks = mSurfaceTrack.getHolder();
             Surface surface = holder.getSurface();
 
             // Don't leave the last frame of the previous video hanging on the screen.
             // Looks weird if the aspect ratio changes.
             clearSurface(surface);
+            mHandler.clearCanvas(holderTracks);
 
             MoviePlayer player;
             try {
@@ -289,6 +312,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         private int videoHeight;
         private Config config;
         private TrackSet tracks;
+        private Table table;
         private Lib.Detection latestNearlyOutOfFrame;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
@@ -307,10 +331,15 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
         private void startDetections() {
             Lib.detectionStart(this.videoWidth, this.videoHeight, this.config.getProcRes(), this.config.isGray(), eventDetector);
+
         }
 
         private void stopDetections() {
             Lib.detectionStop();
+        }
+
+        private void setTable(Table table) {
+            this.table = table;
         }
 
         @Override
@@ -364,13 +393,43 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                 if (canvas == null) {
                     return;
                 }
-                if (canvasWidth == 0 || canvasHeight == 0) {
+                if (this.canvasWidth == 0 || this.canvasHeight == 0) {
                     canvasWidth = canvas.getWidth();
                     canvasHeight = canvas.getHeight();
                 }
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+                drawTable(canvas);
                 drawAllTracks(canvas, tracks);
                 surfaceHolder.unlockCanvasAndPost(canvas);
+            }
+        }
+
+        private void clearCanvas(SurfaceHolder surfaceHolder) {
+            Canvas canvas = surfaceHolder.lockCanvas();
+            if (canvas == null) {
+                return;
+            }
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            surfaceHolder.unlockCanvasAndPost(canvas);
+        }
+
+        private void drawTable(Canvas canvas) {
+            if (this.table != null) {
+                Point[] corners = table.getCorners();
+                for (int i = 0; i<corners.length; i++) {
+                    Point c1 = corners[i];
+                    Point c2;
+                    if (i < corners.length-1) {
+                        c2 = corners[i+1];
+                    } else {
+                        c2 = corners[0];
+                    }
+                    c1 = scalePoint(c1);
+                    c2 = scalePoint(c2);
+                    p.setColor(Color.CYAN);
+                    p.setStrokeWidth(5f);
+                    canvas.drawLine(c1.x, c1.y, c2.x, c2.y, p);
+                }
             }
         }
 
@@ -413,6 +472,10 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         private int scaleX(int value) {
             float relPercentage = ((float) value) / ((float) this.videoWidth);
             return Math.round(relPercentage * this.canvasWidth);
+        }
+
+        private Point scalePoint(Point p) {
+            return new Point(scaleX(p.x), scaleY(p.y));
         }
     }
 }

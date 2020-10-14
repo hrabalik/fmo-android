@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>table location (4 corners) of test video "bounce_back_1.mp4"</comment>
+    <entry key="c1_x">45</entry>
+    <entry key="c1_y">904</entry>
+    <entry key="c2_x">1810</entry>
+    <entry key="c2_y">921</entry>
+    <entry key="c3_x">1388</entry>
+    <entry key="c3_y">723</entry>
+    <entry key="c4_x">471</entry>
+    <entry key="c4_y">709</entry>
+</properties>
