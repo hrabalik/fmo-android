@@ -37,6 +37,10 @@ public class EventDetector implements Lib.Callback {
     }
 
     @Override
+    public void onObjectsDetected(Lib.Detection[] detections) {
+        this.onObjectsDetected(detections, System.nanoTime());
+    }
+
     public void onObjectsDetected(Lib.Detection[] detections, long detectionTime) {
         // Pls only uncomment for debugging, slows down the video -> detection gets worse
         /* System.out.println("detections:");

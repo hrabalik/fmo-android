@@ -42,7 +42,7 @@ public final class Lib {
     public interface Callback {
         void log(String message);
 
-        void onObjectsDetected(Detection[] detections, long detectionTime);
+        void onObjectsDetected(Detection[] detections);
     }
 
     @SuppressWarnings("unused")
