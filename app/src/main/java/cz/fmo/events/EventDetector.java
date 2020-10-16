@@ -8,6 +8,7 @@ import helper.DirectionY;
 
 public class EventDetector implements Lib.Callback {
     private static final int SIDE_CHANGE_DETECTION_SPEED = 2;
+    private static final int BOUNCE_DETECTION_SPEED = 1;
     private static final double PERCENTAGE_OF_NEARLY_OUT_OF_FRAME = 0.1;
     private final TrackSet tracks;
     private final EventDetectionCallback callback;
@@ -55,19 +56,35 @@ public class EventDetector implements Lib.Callback {
             if(isNearlyOutOfFrame(latestDetection)) {
                 callback.onNearlyOutOfFrame(latestDetection);
             }
-            if (detectionCount % SIDE_CHANGE_DETECTION_SPEED == 0 && tracks.getTracks().size() == 1) {
-                float curDirectionX = latestDetection.directionX;
-                if (lastXDirection != curDirectionX) {
-                    callback.onSideChange(curDirectionX < 0);
-                }
-                lastXDirection = curDirectionX;
-                float curDirectionY = tracks.getTracks().get(0).getLatest().directionY;
-                if (lastYDirection > 0 && curDirectionY < 0) {
-                    callback.onBounce();
-                }
-                lastYDirection = curDirectionY;
+            if (isOnSideChange(latestDetection.directionX)) {
+                callback.onSideChange(latestDetection.directionX < 0);
+            }
+            else if (isBounce(latestDetection.directionY)) {
+                callback.onBounce();
             }
         }
+    }
+
+    private boolean isOnSideChange(float directionX) {
+        boolean isOnSideChange = false;
+        if (detectionCount % SIDE_CHANGE_DETECTION_SPEED == 0) {
+            if (lastXDirection != directionX) {
+                isOnSideChange = true;
+            }
+            lastXDirection = directionX;
+        }
+        return isOnSideChange;
+    }
+
+    private boolean isBounce(float directionY) {
+        boolean isBounce = false;
+        if (detectionCount % BOUNCE_DETECTION_SPEED == 0) {
+            if (lastYDirection > 0 && directionY < 0) {
+                isBounce = true;
+            }
+        }
+        lastYDirection = directionY;
+        return isBounce;
     }
 
     private boolean isNearlyOutOfFrame(Lib.Detection detection) {
