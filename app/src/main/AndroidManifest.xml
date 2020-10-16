@@ -41,12 +41,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".PlaybackActivity"
-            android:configChanges="orientation|keyboardHidden|screenSize"
-            android:label="Playback"
-            android:screenOrientation="landscape"
-            android:theme="@style/Playback"/>
-        <activity
             android:name=".SettingsActivity"
             android:label="@string/settings"
             android:parentActivityName=".RecordingActivity"

@@ -1,13 +1,17 @@
 package cz.fmo.tabletennis;
 
 import android.graphics.Point;
+import android.support.annotation.NonNull;
 
 import java.util.Properties;
 
 public class Table {
     private Point[] corners;
 
-    public Table(Point[] corners) {
+    public Table(@NonNull Point[] corners) {
+        if (corners.length != 4) {
+           throw new NotFourCornersException(corners.length);
+        }
         this.corners = corners;
     }
 
@@ -41,5 +45,12 @@ public class Table {
             corners[i-1] = new Point(x,y);
         }
         return new Table(corners);
+    }
+
+    static class NotFourCornersException extends RuntimeException {
+        private static final String MESSAGE = "Table needs 4 points as corners, you provided: ";
+        NotFourCornersException(int amountOfCorners) {
+            super(MESSAGE + amountOfCorners);
+        }
     }
 }
