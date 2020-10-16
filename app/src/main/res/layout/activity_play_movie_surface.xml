@@ -68,6 +68,33 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/txtLabelBounce"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/play_stop_button"
+            android:layout_alignBottom="@+id/play_stop_button"
+            android:layout_toEndOf="@id/txtSide"
+            android:text="Bounce count:"
+            android:layout_marginLeft="10dp"
+            android:textAlignment="viewStart"
+            android:textColor="#FF0000"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/txtBounce"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/play_stop_button"
+            android:layout_alignBottom="@+id/play_stop_button"
+            android:layout_toEndOf="@id/txtLabelBounce"
+            android:text="0"
+            android:layout_marginLeft="10dp"
+            android:textAlignment="textStart"
+            android:textColor="#FF0000"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
     </RelativeLayout>
 
 </merge>

@@ -91,6 +91,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     private SurfaceView mSurfaceView;
     private SurfaceView mSurfaceTrack;
     private TextView mShotSideText;
+    private TextView mBounceCountText;
     private String[] mMovieFiles;
     private int mSelectedMovie;
     private boolean mShowStopLabel;
@@ -103,6 +104,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_movie_surface);
         mShotSideText = findViewById(R.id.txtSide);
+        mBounceCountText = findViewById(R.id.txtBounce);
         mSurfaceView = findViewById(R.id.playMovie_surface);
         mSurfaceView.getHolder().addCallback(this);
         mSurfaceTrack = findViewById(R.id.playTracks_surface);
@@ -355,6 +357,16 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         public void onBounce() {
             // update game logic
             // then display game state to some views
+            final PlayMovieSurfaceActivity activity = mActivity.get();
+            final TextView mBounceCountText = activity.mBounceCountText;
+            final int newBounceCount = Integer.parseInt(mBounceCountText.getText().toString()) + 1;
+            this.post(new Runnable() {
+                @Override
+                public void run() {
+                    String txt = String.valueOf(newBounceCount);
+                    mBounceCountText.setText(txt);
+                }
+            });
         }
 
         @Override
