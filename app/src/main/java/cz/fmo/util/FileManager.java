@@ -76,7 +76,9 @@ public final class FileManager {
                 return p.matcher(name).matches();
             }
         });
-        Arrays.sort(out);
+        if (out.length>0) {
+            Arrays.sort(out);
+        }
         return out;
     }
 }
