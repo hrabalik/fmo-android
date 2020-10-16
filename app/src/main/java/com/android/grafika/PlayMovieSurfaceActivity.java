@@ -181,6 +181,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
+        // Can ignore this event
     }
 
     /**
@@ -283,12 +284,14 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     private static class Handler extends android.os.Handler implements EventDetectionCallback, PlayMovieDetectionCallback {
         private final WeakReference<PlayMovieSurfaceActivity> mActivity;
         private EventDetector eventDetector;
-        private int canvasWidth, canvasHeight;
-        private Canvas canvas;
+        private int canvasWidth;
+        private int canvasHeight;
         private Paint p;
-        private int videoWidth, videoHeight;
+        private int videoWidth;
+        private int videoHeight;
         private Config config;
         private TrackSet tracks;
+        private Lib.Detection latestNearlyOutOfFrame;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
             mActivity = new WeakReference<>(activity);
@@ -317,7 +320,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             try {
                 Lib.detectionFrame(dataYUV420SP);
             } catch (Exception ex) {
-                System.out.println(ex.getMessage());
+                Log.e(ex.getMessage(), ex);
             }
         }
 
@@ -357,9 +360,8 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         @Override
-        public void onBallOutOfFrame(boolean isRightSide) {
-            // update game logic
-            // then display game state to some views
+        public void onNearlyOutOfFrame(Lib.Detection detection) {
+            latestNearlyOutOfFrame = detection;
         }
 
         @Override
@@ -370,7 +372,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             }
             if (activity.mSurfaceHolderReady) {
                 SurfaceHolder surfaceHolder = activity.mSurfaceTrack.getHolder();
-                canvas = surfaceHolder.lockCanvas();
+                Canvas canvas = surfaceHolder.lockCanvas();
                 if (canvas == null) {
                     return;
                 }
@@ -403,6 +405,15 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                     }
                     pre = pre.predecessor;
                 }
+            }
+            drawLatestOutOfFrameDetection(canvas);
+        }
+
+        private void drawLatestOutOfFrameDetection(Canvas canvas) {
+            if(latestNearlyOutOfFrame != null) {
+                p.setColor(Color.rgb(255,165,0));
+                p.setStrokeWidth(latestNearlyOutOfFrame.radius);
+                canvas.drawCircle(scaleX(latestNearlyOutOfFrame.centerX), scaleY(latestNearlyOutOfFrame.centerY), latestNearlyOutOfFrame.radius, p);
             }
         }
 

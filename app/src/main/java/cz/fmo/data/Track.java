@@ -42,8 +42,8 @@ public class Track {
     void setLatest(Lib.Detection latest) {
         if (mLatest != null) {
             // calculate speed stats for each segment
-            mLatestDx = latest.centerX - mLatest.centerX;
-            mLatestDy = latest.centerY - mLatest.centerY;
+            mLatestDx = (float) latest.centerX - mLatest.centerX;
+            mLatestDy = (float) latest.centerY - mLatest.centerY;
 
             latest.directionY = mLatestDy / Math.abs(mLatestDy); // -1 => object is going down | 1 => object going up
             latest.directionX = mLatestDx / Math.abs(mLatestDx); // -1 => object going left | 1 => object going right

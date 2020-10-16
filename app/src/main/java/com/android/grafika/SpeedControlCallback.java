@@ -110,6 +110,8 @@ class SpeedControlCallback implements MoviePlayer.FrameCallback {
                         Thread.sleep(sleepTimeUsec / 1000, (int) (sleepTimeUsec % 1000) * 1000);
                     }
                 } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    Log.e(ie.getMessage(), ie);
                 }
                 nowUsec = System.nanoTime() / 1000;
             }

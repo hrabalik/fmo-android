@@ -51,6 +51,8 @@ public class SaveThreadHandler extends android.os.Handler {
                 SaveThread.Task task = (SaveThread.Task) msg.obj;
                 task.perform();
                 break;
+            default:
+                break;
         }
     }
 }

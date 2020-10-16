@@ -1,5 +1,7 @@
 package cz.fmo.events;
 
+import com.android.grafika.Log;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -10,7 +12,6 @@ import cz.fmo.util.Config;
 import helper.DetectionGenerator;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -89,16 +90,33 @@ public class EventDetectorTest {
         verify(mockCallback, times(1)).onSideChange(false);
     }
 
-
+    @Test
+    public void testOnNearlyOutOfFrame() {
+        EventDetector ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, TrackSet.getInstance());
+        Lib.Detection[] nearlyOutOfFrame;
+        for(int i = 0; i < 10; i++) {
+            nearlyOutOfFrame = DetectionGenerator.makeNearlyOutOfFrameDetections(ev.getNearlyOutOfFrameThresholds(), SOME_WIDTH, SOME_HEIGHT);
+            for(Lib.Detection detection : nearlyOutOfFrame) {
+                invokeOnObjectDetectedWithDelay(new Lib.Detection[]{detection}, ev);
+                verify(mockCallback, times(1)).onNearlyOutOfFrame(detection);
+                ev = new EventDetector(mockConfig, SOME_WIDTH, SOME_HEIGHT, mockCallback, TrackSet.getInstance());
+            }
+        }
+        Lib.Detection[] detectionsInFrame = DetectionGenerator.makeDetectionsInXDirection(true);
+        invokeOnObjectDetectedWithDelay(detectionsInFrame, ev);
+        for(int i = 0; i < detectionsInFrame.length; i++) {
+            verify(mockCallback, times(0)).onNearlyOutOfFrame(detectionsInFrame[i]);
+        }
+    }
 
     private void invokeOnObjectDetectedWithDelay(Lib.Detection[] allDetections, EventDetector ev) {
         int delay = 1000/FRAME_RATE;
-        for (int i = 0; i<allDetections.length; i++) {
-            ev.onObjectsDetected(new Lib.Detection[]{allDetections[i]});
+        for (Lib.Detection detection : allDetections) {
+            ev.onObjectsDetected(new Lib.Detection[]{detection});
             try {
                 Thread.sleep(delay);
-            } catch (InterruptedException ex) {
-                fail();
+            } catch (InterruptedException ie) {
+                Log.e(ie.getMessage(), ie);
             }
         }
     }

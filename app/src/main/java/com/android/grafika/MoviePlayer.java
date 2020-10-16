@@ -22,6 +22,7 @@ import android.media.MediaFormat;
 import android.os.Handler;
 import android.os.Message;
 import android.view.Surface;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -48,6 +49,11 @@ class MoviePlayer {
     private int mVideoHeight;
     private int mFrameRate;
     private final PlayMovieDetectionCallback mDataCallback;
+    private int inputChunk;
+    private long firstInputTimeNsec;
+    private boolean inputDone;
+    private boolean outputDone;
+    private static final int TIMEOUT_USEC = 10000;
 
     /**
      * Constructs a MoviePlayer.
@@ -251,122 +257,143 @@ class MoviePlayer {
         // If you want to experiment, set the VERBOSE flag to true and watch the behavior
         // in logcat.  Use "logcat -v threadtime" to see sub-second timing.
 
-        final int TIMEOUT_USEC = 10000;
         ByteBuffer[] decoderInputBuffers = decoder.getInputBuffers();
         ByteBuffer[] decoderOutputBuffers = decoder.getOutputBuffers();
         byte[] frame = new byte[decoderOutputBuffers[0].remaining()];
-        int inputChunk = 0;
-        long firstInputTimeNsec = -1;
+        inputChunk = 0;
+        firstInputTimeNsec = -1;
 
-        boolean outputDone = false;
-        boolean inputDone = false;
+        outputDone = false;
+        inputDone = false;
         while (!outputDone) {
-            if (VERBOSE) Log.d("loop");
             if (mIsStopRequested) {
                 Log.d("Stop requested");
                 return;
             }
 
-            // Feed more data to the decoder.
+            // Feed more data to the decoder. (input)
             if (!inputDone) {
-                int inputBufIndex = decoder.dequeueInputBuffer(TIMEOUT_USEC);
-                if (inputBufIndex >= 0) {
-                    if (firstInputTimeNsec == -1) {
-                        firstInputTimeNsec = System.nanoTime();
-                    }
-
-                    // Read the sample data into the ByteBuffer.  This neither respects nor
-                    // updates inputBuf's position, limit, etc.
-                    ByteBuffer inputBuf = decoderInputBuffers[inputBufIndex];
-                    int chunkSize = extractor.readSampleData(inputBuf, 0);
-                    if (chunkSize < 0) {
-                        // End of stream -- send empty frame with EOS flag set.
-                        decoder.queueInputBuffer(inputBufIndex, 0, 0, 0L,
-                                MediaCodec.BUFFER_FLAG_END_OF_STREAM);
-                        inputDone = true;
-                        if (VERBOSE) Log.d("sent input EOS");
-                    } else {
-                        if (extractor.getSampleTrackIndex() != trackIndex) {
-                            Log.w("WEIRD: got sample from track " +
-                                    extractor.getSampleTrackIndex() + ", expected " + trackIndex);
-                        }
-                        long presentationTimeUs = extractor.getSampleTime();
-                        decoder.queueInputBuffer(inputBufIndex, 0, chunkSize,
-                                presentationTimeUs, 0 /*flags*/);
-                        if (VERBOSE) {
-                            Log.d("submitted frame " + inputChunk + " to dec, size=" +
-                                    chunkSize);
-                        }
-                        inputChunk++;
-                        extractor.advance();
-                    }
-                } else {
-                    if (VERBOSE) Log.d("input buffer not available");
-                }
+                feedDataToDecoder(decoder, extractor, decoderInputBuffers, trackIndex);
             }
 
+            // Release data from the decoder. (output)
             if (!outputDone) {
-                int decoderStatus = decoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
-                if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                    // no output available yet
-                    if (VERBOSE) Log.d("no output from decoder available");
-                } else if (decoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    // not important for us, since we're using Surface
-                    if (VERBOSE) Log.d("decoder output buffers changed");
-                } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat newFormat = decoder.getOutputFormat();
-                    if (VERBOSE) Log.d("decoder output format changed: " + newFormat);
-                } else if (decoderStatus < 0) {
-                    throw new RuntimeException(
-                            "unexpected result from decoder.dequeueOutputBuffer: " +
-                                    decoderStatus);
-                } else { // decoderStatus >= 0
-                    if (firstInputTimeNsec != 0) {
-                        // Log the delay from the first buffer of input to the first buffer
-                        // of output.
-                        long nowNsec = System.nanoTime();
-                        Log.d("startup lag " + ((nowNsec - firstInputTimeNsec) / 1000000.0) + " ms");
-                        firstInputTimeNsec = 0;
-                    }
-                    boolean doLoop = false;
-                    if (VERBOSE) Log.d("surface decoder given buffer " + decoderStatus +
-                            " (size=" + mBufferInfo.size + ")");
-                    if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        if (VERBOSE) Log.d("output EOS");
-                        if (mLoop) {
-                            doLoop = true;
-                        } else {
-                            outputDone = true;
-                        }
-                    }
-                    // get a copy of the Data from encoder to pass it to Lib
-                    try {
-                        ByteBuffer readOnlyCopyOfBuffer = decoder.getOutputBuffer(decoderStatus);
-                        readOnlyCopyOfBuffer.get(frame);
-                        mDataCallback.onEncodedFrame(frame);
-                    } catch (Exception ex) {
-                        System.out.println(ex.getMessage());
-                    }
-                    boolean doRender = (mBufferInfo.size != 0);
+                releaseDataFromDecoder(decoder, extractor, frameCallback, frame);
+            }
+        }
+    }
 
-                    // As soon as we call releaseOutputBuffer, the buffer will be forwarded
-                    // to SurfaceTexture to convert to a texture.  We can't control when it
-                    // appears on-screen, but we can manage the pace at which we release
-                    // the buffers.
-                    if (doRender && frameCallback != null) {
-                        frameCallback.preRender(mBufferInfo.presentationTimeUs);
-                    }
-                    decoder.releaseOutputBuffer(decoderStatus, doRender);
-
-                    if (doLoop) {
-                        Log.d("Reached EOS, looping");
-                        extractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
-                        inputDone = false;
-                        decoder.flush();    // reset decoder state
-                        frameCallback.loopReset();
-                    }
+    private void releaseDataFromDecoder(MediaCodec decoder, MediaExtractor extractor, FrameCallback frameCallback, byte[] frame) {
+        int decoderStatus = decoder.dequeueOutputBuffer(mBufferInfo, TIMEOUT_USEC);
+        if (decoderStatus >= 0) {
+            if (firstInputTimeNsec != 0) {
+                // Log the delay from the first buffer of input to the first buffer
+                // of output.
+                long nowNsec = System.nanoTime();
+                Log.d("startup lag " + ((nowNsec - firstInputTimeNsec) / 1000000.0) + " ms");
+                firstInputTimeNsec = 0;
+            }
+            boolean doLoop = false;
+            if ((mBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                if (mLoop) {
+                    doLoop = true;
+                } else {
+                    outputDone = true;
                 }
             }
+            copyFrameAndPassItToCallback(decoder, decoderStatus, frame);
+            releaseOutputBufferWithPreRender(decoder, frameCallback, decoderStatus);
+            if (doLoop && frameCallback != null) {
+                Log.d("Reached EOS, looping");
+                extractor.seekTo(0, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
+                inputDone = false;
+                decoder.flush();    // reset decoder state
+                frameCallback.loopReset();
+            }
+        } else {
+            logDecoderStatus(decoderStatus, decoder);
+        }
+    }
+
+    private void feedDataToDecoder(MediaCodec decoder, MediaExtractor extractor, ByteBuffer[] decoderInputBuffers, int trackIndex) {
+        int inputBufIndex = decoder.dequeueInputBuffer(TIMEOUT_USEC);
+        if (inputBufIndex >= 0) {
+            if (firstInputTimeNsec == -1) {
+                firstInputTimeNsec = System.nanoTime();
+            }
+
+            // Read the sample data into the ByteBuffer.  This neither respects nor
+            // updates inputBuf's position, limit, etc.
+            ByteBuffer inputBuf = decoderInputBuffers[inputBufIndex];
+            int chunkSize = extractor.readSampleData(inputBuf, 0);
+            if (chunkSize < 0) {
+                // End of stream -- send empty frame with EOS flag set.
+                decoder.queueInputBuffer(inputBufIndex, 0, 0, 0L,
+                        MediaCodec.BUFFER_FLAG_END_OF_STREAM);
+                inputDone = true;
+            } else {
+                logUnexpectedSampleTrack(extractor, trackIndex);
+                long presentationTimeUs = extractor.getSampleTime();
+                decoder.queueInputBuffer(inputBufIndex, 0, chunkSize,
+                        presentationTimeUs, 0 /*flags*/);
+                logFrameIfVerboseSet(chunkSize, inputChunk);
+                inputChunk++;
+                extractor.advance();
+            }
+        }
+    }
+
+    private void logUnexpectedSampleTrack(MediaExtractor extractor, int trackIndex) {
+        if (extractor.getSampleTrackIndex() != trackIndex) {
+            Log.w("WEIRD: got sample from track " +
+                    extractor.getSampleTrackIndex() + ", expected " + trackIndex);
+        }
+    }
+
+    private void logFrameIfVerboseSet(int chunkSize, int inputChunk) {
+        if (VERBOSE) {
+            Log.d("submitted frame " + inputChunk + " to dec, size=" +
+                    chunkSize);
+        }
+    }
+
+    private void logDecoderStatus(int decoderStatus, MediaCodec decoder) {
+        if (decoderStatus == MediaCodec.INFO_TRY_AGAIN_LATER) {
+            // no output available yet
+            if (VERBOSE) Log.d("no output from decoder available");
+        } else if (decoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+            // not important for us, since we're using Surface
+            if (VERBOSE) Log.d("decoder output buffers changed");
+        } else if (decoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+            MediaFormat newFormat = decoder.getOutputFormat();
+            if (VERBOSE) Log.d("decoder output format changed: " + newFormat);
+        } else if (decoderStatus < 0) {
+            throw new RuntimeException(
+                    "unexpected result from decoder.dequeueOutputBuffer: " +
+                            decoderStatus);
+        }
+    }
+
+    private void releaseOutputBufferWithPreRender(MediaCodec decoder, FrameCallback frameCallback, int decoderStatus) {
+        // As soon as we call releaseOutputBuffer, the buffer will be forwarded
+        // to SurfaceTexture to convert to a texture.  We can't control when it
+        // appears on-screen, but we can manage the pace at which we release
+        // the buffers.
+        boolean doRender = (mBufferInfo.size != 0);
+        if (doRender && frameCallback != null) {
+            frameCallback.preRender(mBufferInfo.presentationTimeUs);
+        }
+        decoder.releaseOutputBuffer(decoderStatus, doRender);
+    }
+
+    private void copyFrameAndPassItToCallback(MediaCodec decoder, int decoderStatus, byte[] frame) {
+        // get a copy of the Data from encoder to pass it to Lib
+        try {
+            ByteBuffer readOnlyCopyOfBuffer = decoder.getOutputBuffer(decoderStatus);
+            readOnlyCopyOfBuffer.get(frame);
+            mDataCallback.onEncodedFrame(frame);
+        } catch (Exception ex) {
+            Log.e(ex.getMessage(), ex);
         }
     }
 
@@ -412,7 +439,6 @@ class MoviePlayer {
         private final PlayerFeedback mFeedback;
         private final LocalHandler mLocalHandler;
         private final boolean mDoLoop;
-        private Thread mThread;
         private boolean mStopped = false;
 
         /**
@@ -433,7 +459,7 @@ class MoviePlayer {
          */
         public void execute() {
             mPlayer.setLoopMode(mDoLoop);
-            mThread = new Thread(this, "Movie Player");
+            Thread mThread = new Thread(this, "Movie Player");
             mThread.start();
         }
 
@@ -458,6 +484,8 @@ class MoviePlayer {
                         mStopLock.wait();
                     } catch (InterruptedException ie) {
                         // discard
+                        Log.e(ie.getMessage(), ie);
+                        Thread.currentThread().interrupt();
                     }
                 }
             }
@@ -486,14 +514,11 @@ class MoviePlayer {
             @Override
             public void handleMessage(Message msg) {
                 int what = msg.what;
-
-                switch (what) {
-                    case MSG_PLAY_STOPPED:
-                        PlayerFeedback fb = (PlayerFeedback) msg.obj;
-                        fb.playbackStopped();
-                        break;
-                    default:
-                        throw new RuntimeException("Unknown msg " + what);
+                if (msg.what == MSG_PLAY_STOPPED) {
+                    PlayerFeedback fb = (PlayerFeedback) msg.obj;
+                    fb.playbackStopped();
+                } else {
+                    throw new RuntimeException("Unknown msg " + what);
                 }
             }
         }

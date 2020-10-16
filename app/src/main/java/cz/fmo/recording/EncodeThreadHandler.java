@@ -41,6 +41,8 @@ public class EncodeThreadHandler extends android.os.Handler {
             case FLUSH:
                 thread.flush();
                 break;
+            default:
+                break;
         }
     }
 }
