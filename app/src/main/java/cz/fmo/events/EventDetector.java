@@ -17,7 +17,6 @@ public class EventDetector implements Lib.Callback {
     private int srcHeight;
     private float lastXDirection;
     private float lastYDirection;
-    public long countFrame;
     private long detectionCount;
 
     public EventDetector(Config config, int srcWidth, int srcHeight, EventDetectionCallback callback, TrackSet tracks) {
@@ -45,17 +44,11 @@ public class EventDetector implements Lib.Callback {
     }
 
     public void onObjectsDetected(Lib.Detection[] detections, long detectionTime) {
-        // Pls only uncomment for debugging, slows down the video -> detection gets worse
-        /* System.out.println("detections:");
-        for (Lib.Detection detection : detections) {
-            System.out.println(detection);
-        } */
         detectionCount++;
         tracks.addDetections(detections, this.srcWidth, this.srcHeight, detectionTime); // after this, object direction is updated
 
-        if(!tracks.getTracks().isEmpty()) {
+        if(tracks.getTracks().size() == 1) {
             Lib.Detection latestDetection = tracks.getTracks().get(0).getLatest();
-            // TODO: Filter / combine tracks, find bounces, side changes and outOfFrames
             callback.onStrikeFound(tracks);
             if(isNearlyOutOfFrame(latestDetection)) {
                 callback.onNearlyOutOfFrame(latestDetection);

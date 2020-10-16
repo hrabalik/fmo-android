@@ -90,6 +90,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
     private final FileManager mFileMan = new FileManager(this);
     private SurfaceView mSurfaceView;
     private SurfaceView mSurfaceTrack;
+    private SurfaceView mSurfaceTable;
     private TextView mShotSideText;
     private TextView mBounceCountText;
     private String[] mMovieFiles;
@@ -107,10 +108,13 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         mBounceCountText = findViewById(R.id.txtBounce);
         mSurfaceView = findViewById(R.id.playMovie_surface);
         mSurfaceView.getHolder().addCallback(this);
-        mSurfaceTrack = findViewById(R.id.playTracks_surface);
+        mSurfaceTrack = findViewById(R.id.playMovie_surfaceTracks);
         mSurfaceTrack.setZOrderOnTop(true);
         mSurfaceTrack.getHolder().addCallback(this);
         mSurfaceTrack.getHolder().setFormat(PixelFormat.TRANSPARENT);
+        mSurfaceTable = findViewById(R.id.playMovie_surfaceTable);
+        mSurfaceTable.getHolder().addCallback(this);
+        mSurfaceTable.getHolder().setFormat(PixelFormat.TRANSPARENT);
         mHandler = new Handler(this);
         // Populate file-selection spinner.
         Spinner spinner = findViewById(R.id.playMovieFile_spinner);
@@ -315,12 +319,14 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         private Config config;
         private TrackSet tracks;
         private Table table;
+        private boolean hasNewTable;
         private Lib.Detection latestNearlyOutOfFrame;
 
         Handler(@NonNull PlayMovieSurfaceActivity activity) {
             mActivity = new WeakReference<>(activity);
             tracks = TrackSet.getInstance();
             tracks.clear();
+            hasNewTable = true;
             p = new Paint();
         }
 
@@ -333,7 +339,6 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
 
         private void startDetections() {
             Lib.detectionStart(this.videoWidth, this.videoHeight, this.config.getProcRes(), this.config.isGray(), eventDetector);
-
         }
 
         private void stopDetections() {
@@ -341,7 +346,10 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         }
 
         private void setTable(Table table) {
-            this.table = table;
+            if (table != null) {
+                hasNewTable = true;
+                this.table = table;
+            }
         }
 
         @Override
@@ -410,7 +418,10 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                     canvasHeight = canvas.getHeight();
                 }
                 canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-                drawTable(canvas);
+                if (hasNewTable) {
+                    drawTable(activity);
+                    hasNewTable = false;
+                }
                 drawAllTracks(canvas, tracks);
                 surfaceHolder.unlockCanvasAndPost(canvas);
             }
@@ -425,24 +436,29 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
 
-        private void drawTable(Canvas canvas) {
-            if (this.table != null) {
-                Point[] corners = table.getCorners();
-                for (int i = 0; i<corners.length; i++) {
-                    Point c1 = corners[i];
-                    Point c2;
-                    if (i < corners.length-1) {
-                        c2 = corners[i+1];
-                    } else {
-                        c2 = corners[0];
-                    }
-                    c1 = scalePoint(c1);
-                    c2 = scalePoint(c2);
-                    p.setColor(Color.CYAN);
-                    p.setStrokeWidth(5f);
-                    canvas.drawLine(c1.x, c1.y, c2.x, c2.y, p);
-                }
+        private void drawTable(PlayMovieSurfaceActivity activity) {
+            SurfaceHolder surfaceHolderTable = activity.mSurfaceTable.getHolder();
+            Canvas canvas = surfaceHolderTable.lockCanvas();
+            if (canvas == null) {
+                return;
             }
+            canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+            Point[] corners = table.getCorners();
+            for (int i = 0; i<corners.length; i++) {
+                Point c1 = corners[i];
+                Point c2;
+                if (i < corners.length-1) {
+                    c2 = corners[i+1];
+                } else {
+                    c2 = corners[0];
+                }
+                c1 = scalePoint(c1);
+                c2 = scalePoint(c2);
+                p.setColor(Color.CYAN);
+                p.setStrokeWidth(5f);
+                canvas.drawLine(c1.x, c1.y, c2.x, c2.y, p);
+            }
+            surfaceHolderTable.unlockCanvasAndPost(canvas);
         }
 
         private void drawAllTracks(Canvas canvas, TrackSet set) {

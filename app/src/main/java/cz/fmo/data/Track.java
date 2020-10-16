@@ -45,7 +45,7 @@ public class Track {
             mLatestDx = (float) latest.centerX - mLatest.centerX;
             mLatestDy = (float) latest.centerY - mLatest.centerY;
 
-            latest.directionY = mLatestDy / Math.abs(mLatestDy); // -1 => object is going down | 1 => object going up
+            latest.directionY = mLatestDy / Math.abs(mLatestDy); // 1 => object is going down | -1 => object going up
             latest.directionX = mLatestDx / Math.abs(mLatestDx); // -1 => object going left | 1 => object going right
 
             float velocity = latest.velocity;
@@ -72,6 +72,9 @@ public class Track {
             mMaxVelocity = Math.max(velocity, mMaxVelocity);
 
             mVelocityNumFrames++;
+        } else {
+            latest.directionY = latest.directionY / Math.abs(latest.directionY);
+            latest.directionX = latest.directionX / Math.abs(latest.directionX);
         }
 
         mLastDetectionTime = detectionTime;

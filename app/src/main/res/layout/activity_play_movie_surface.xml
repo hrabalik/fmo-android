@@ -14,7 +14,14 @@
             android:layout_gravity="center" />
 
         <SurfaceView
-            android:id="@+id/playTracks_surface"
+            android:id="@+id/playMovie_surfaceTable"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:background="#00FFFFFF"/>
+
+        <SurfaceView
+            android:id="@+id/playMovie_surfaceTracks"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#00FFFFFF" />
