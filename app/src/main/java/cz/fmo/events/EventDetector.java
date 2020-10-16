@@ -11,6 +11,7 @@ public class EventDetector implements Lib.Callback {
     private int srcWidth;
     private int srcHeight;
     private float lastXDirection;
+    private float lastYDirection;
     public long countFrame;
 
     public EventDetector(Config config, int srcWidth, int srcHeight, EventDetectionCallback callback, TrackSet tracks) {
@@ -43,6 +44,11 @@ public class EventDetector implements Lib.Callback {
                 callback.onSideChange(curDirectionX < 0);
             }
             lastXDirection = curDirectionX;
+            float curDirectionY = tracks.getTracks().get(0).getLatest().directionY;
+            if (lastYDirection > 0 && curDirectionY < 0) {
+                callback.onBounce();
+            }
+            lastYDirection = curDirectionY;
         }
     }
 }
