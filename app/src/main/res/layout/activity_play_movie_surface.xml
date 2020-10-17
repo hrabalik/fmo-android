@@ -49,59 +49,112 @@
             android:layout_alignTop="@id/play_stop_button"
             android:layout_toEndOf="@id/play_stop_button" />
 
-        <TextView
-            android:id="@+id/txtLabelSide"
+        <GridLayout
+            android:id="@+id/playMovie_debugGrid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/play_stop_button"
-            android:layout_alignBottom="@+id/play_stop_button"
-            android:layout_toEndOf="@id/playMovieFile_spinner"
-            android:text="Ball shot from:"
-            android:textAlignment="viewStart"
-            android:textColor="#FF0000"
-            android:textSize="18sp" />
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:background="@drawable/radius_background"
+            android:columnCount="2"
+            android:rowCount="2"
+            android:padding="10dp">
+
+            <TextView
+                android:id="@+id/txtLabelSide"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/debugBallShotLabel"
+                android:textAlignment="viewStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/txtSide"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="@string/debugBallShotStart"
+                android:textAlignment="textEnd"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/txtLabelBounce"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/debugBallBounceLabel"
+                android:textAlignment="viewStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/txtBounce"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="@string/debugBallCountStart"
+                android:textAlignment="textStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </GridLayout>
+
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:rowCount="1"
+        android:columnCount="5"
+        android:background="@drawable/radius_background"
+        android:paddingVertical="4dp"
+        android:paddingHorizontal="24dp">
 
         <TextView
-            android:id="@+id/txtSide"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignTop="@id/play_stop_button"
-            android:layout_alignBottom="@+id/play_stop_button"
-            android:layout_toEndOf="@id/txtLabelSide"
-            android:text="None"
-            android:textAlignment="textStart"
-            android:layout_marginLeft="10dp"
-            android:textColor="#FF0000"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
+            android:layout_height="match_parent"
+            android:layout_marginEnd="12dp"
+            android:text="@string/playerLeftDefaultName"
+            android:textColor="@android:color/secondary_text_light"
+            android:textSize="14sp"
+            android:layout_gravity="center_vertical"/>
         <TextView
-            android:id="@+id/txtLabelBounce"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/play_stop_button"
-            android:layout_alignBottom="@+id/play_stop_button"
-            android:layout_toEndOf="@id/txtSide"
-            android:text="Bounce count:"
-            android:layout_marginLeft="10dp"
-            android:textAlignment="viewStart"
-            android:textColor="#FF0000"
-            android:textSize="18sp" />
-
+            android:text="@string/gameScoreStart"
+            android:textSize="22sp"
+            android:layout_marginEnd="6dp"
+            android:textStyle="bold"
+            android:textColor="@android:color/secondary_text_light"/>
         <TextView
-            android:id="@+id/txtBounce"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/play_stop_button"
-            android:layout_alignBottom="@+id/play_stop_button"
-            android:layout_toEndOf="@id/txtLabelBounce"
-            android:text="0"
-            android:layout_marginLeft="10dp"
-            android:textAlignment="textStart"
-            android:textColor="#FF0000"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
+            android:text="@string/gameScoreDivider"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/secondary_text_light"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/gameScoreStart"
+            android:textSize="22sp"
+            android:layout_marginStart="6dp"
+            android:textStyle="bold"
+            android:textColor="@android:color/secondary_text_light"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/playerRightDefaultName"
+            android:layout_marginStart="12dp"
+            android:textSize="14sp"
+            android:layout_gravity="center_vertical"
+            android:textColor="@android:color/secondary_text_light"/>
+    </GridLayout>
     </RelativeLayout>
-
 </merge>

@@ -137,4 +137,15 @@
     <string name="runBenchmark">Run benchmark</string>
     <string name="runVideoPlayer">Run video player</string>
     <string name="prefDisableDetection">Disable FMO detection</string>
+
+    <!-- Movie Player Activity -->
+    <string name="playerLeftDefaultName">Player 1</string>
+    <string name="playerRightDefaultName">Player 2</string>
+    <string name="gameScoreStart">0</string>
+    <string name="gameScoreDivider">:</string>
+    <string name="debugBallShotLabel">Ball shot from:</string>
+    <string name="debugBallBounceLabel">Bounce count:</string>
+    <string name="debugBallShotStart">None</string>
+    <string name="debugBallCountStart">0</string>
+    
 </resources>
