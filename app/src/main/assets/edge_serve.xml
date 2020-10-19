@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-    <comment>table location (4 corners) of test video "bounce_back_1.mp4"</comment>
+    <comment>table location (4 corners) and net location (n1 = closer net end, n2 = further away) of test video "edge_serve.mp4"</comment>
     <entry key="c1_x">160</entry>
     <entry key="c1_y">616</entry>
     <entry key="c2_x">1152</entry>
@@ -10,4 +10,8 @@
     <entry key="c3_y">540</entry>
     <entry key="c4_x">308</entry>
     <entry key="c4_y">546</entry>
+    <entry key="n1_x">655</entry>
+    <entry key="n1_y">608</entry>
+    <entry key="n2_x">655</entry>
+    <entry key="n2_y">541</entry>
 </properties>

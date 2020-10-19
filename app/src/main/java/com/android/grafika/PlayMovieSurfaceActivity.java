@@ -458,6 +458,9 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                 p.setStrokeWidth(5f);
                 canvas.drawLine(c1.x, c1.y, c2.x, c2.y, p);
             }
+            Point closeNetEnd = scalePoint(table.getCloseNetEnd());
+            Point farNetEnd = scalePoint(table.getFarNetEnd());
+            canvas.drawLine(closeNetEnd.x, closeNetEnd.y, farNetEnd.x, farNetEnd.y, p);
             surfaceHolderTable.unlockCanvasAndPost(canvas);
         }
 
