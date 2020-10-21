@@ -22,6 +22,7 @@ public class Track {
     private long mLastDetectionTime;
     private float mMaxVelocity;
     private int mVelocityNumFrames = 0;
+    private boolean hasCrossedTable = false;
 
     Track(Config config) {
         mConfig = config;
@@ -37,6 +38,14 @@ public class Track {
 
     public long getLastDetectionTime() {
         return mLastDetectionTime;
+    }
+
+    public void setTableCrossed() {
+        this.hasCrossedTable = true;
+    }
+
+    public boolean hasCrossedTable() {
+        return this.hasCrossedTable;
     }
 
     void setLatest(Lib.Detection latest, long detectionTime) {

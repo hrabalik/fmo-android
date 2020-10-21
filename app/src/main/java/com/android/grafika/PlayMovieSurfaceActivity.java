@@ -185,7 +185,6 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
         mSelectedMovie = spinner.getSelectedItemPosition();
 
         Log.d("onItemSelected: " + mSelectedMovie + " '" + mMovieFiles[mSelectedMovie] + "'");
-        trySettingTableLocationFromXML(mMovieFiles[mSelectedMovie]);
     }
 
     /**
@@ -243,6 +242,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
                         callback, mHandler);
                 Config mConfig = new Config(this);
                 mHandler.init(mConfig, player.getVideoWidth(), player.getVideoHeight());
+                trySettingTableLocationFromXML(mMovieFiles[mSelectedMovie]);
                 mHandler.startDetections();
             } catch (IOException ioe) {
                 Log.e("Unable to play movie", ioe);
@@ -349,6 +349,7 @@ public class PlayMovieSurfaceActivity extends Activity implements OnItemSelected
             if (table != null) {
                 hasNewTable = true;
                 this.table = table;
+                eventDetector.setTable(table);
             }
         }
 

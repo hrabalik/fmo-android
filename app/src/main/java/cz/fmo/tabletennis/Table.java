@@ -71,6 +71,12 @@ public class Table {
         return new Table(corners, net);
     }
 
+    public boolean isInsideTable(int x) {
+        double leftThreshold = this.getCornerTopLeft().x * 1.05;
+        double rightThreshold = this.getCornerTopRight().x / 1.05;
+        return (x >= leftThreshold && x <= rightThreshold);
+    }
+
     static class NotFourCornersException extends RuntimeException {
         private static final String MESSAGE = "Table needs 4 points as corners, you provided: ";
         NotFourCornersException(int amountOfCorners) {

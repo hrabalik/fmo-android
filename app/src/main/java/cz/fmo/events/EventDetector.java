@@ -1,7 +1,9 @@
 package cz.fmo.events;
 
 import cz.fmo.Lib;
+import cz.fmo.data.Track;
 import cz.fmo.data.TrackSet;
+import cz.fmo.tabletennis.Table;
 import cz.fmo.util.Config;
 import helper.DirectionX;
 import helper.DirectionY;
@@ -18,6 +20,7 @@ public class EventDetector implements Lib.Callback {
     private float lastXDirection;
     private float lastYDirection;
     private long detectionCount;
+    private Table table;
 
     public EventDetector(Config config, int srcWidth, int srcHeight, EventDetectionCallback callback, TrackSet tracks) {
         this.srcHeight = srcHeight;
@@ -48,8 +51,20 @@ public class EventDetector implements Lib.Callback {
         tracks.addDetections(detections, this.srcWidth, this.srcHeight, detectionTime); // after this, object direction is updated
 
         if(tracks.getTracks().size() == 1) {
-            Lib.Detection latestDetection = tracks.getTracks().get(0).getLatest();
-            callback.onStrikeFound(tracks);
+            Track track = tracks.getTracks().get(0);
+            Lib.Detection latestDetection = track.getLatest();
+            if (table != null && table.isInsideTable(latestDetection.centerX)) {
+                track.setTableCrossed();
+            }
+
+            if(isInsideTable(track)) {
+                callback.onStrikeFound(tracks);
+            }
+
+            if(table == null) {
+                callback.onStrikeFound(tracks);
+            }
+
             if(isNearlyOutOfFrame(latestDetection)) {
                 callback.onNearlyOutOfFrame(latestDetection);
             }
@@ -60,6 +75,10 @@ public class EventDetector implements Lib.Callback {
                 callback.onBounce();
             }
         }
+    }
+
+    public void setTable(Table table) {
+        this.table = table;
     }
 
     private boolean isOnSideChange(float directionX) {
@@ -95,6 +114,10 @@ public class EventDetector implements Lib.Callback {
             }
         }
         return isNearlyOutOfFrame;
+    }
+
+    private boolean isInsideTable(Track track) {
+        return track.hasCrossedTable();
     }
 
     public int[] getNearlyOutOfFrameThresholds() {
