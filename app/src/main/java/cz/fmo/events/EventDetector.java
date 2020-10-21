@@ -86,11 +86,13 @@ public class EventDetector implements Lib.Callback {
 
     private boolean isNearlyOutOfFrame(Lib.Detection detection) {
         boolean isNearlyOutOfFrame = false;
-        if(detection.centerX < nearlyOutOfFrameThresholds[0] && detection.directionX == DirectionX.LEFT ||
-                detection.centerX > nearlyOutOfFrameThresholds[1] && detection.directionX == DirectionX.RIGHT ||
-                detection.centerY < nearlyOutOfFrameThresholds[2] && detection.directionY == DirectionY.UP ||
-                detection.centerY > nearlyOutOfFrameThresholds[3] && detection.directionY == DirectionY.DOWN) {
-            isNearlyOutOfFrame = true;
+        if(detection.predecessor != null) {
+            if(detection.centerX < nearlyOutOfFrameThresholds[0] && detection.directionX == DirectionX.LEFT ||
+                    detection.centerX > nearlyOutOfFrameThresholds[1] && detection.directionX == DirectionX.RIGHT ||
+                    detection.centerY < nearlyOutOfFrameThresholds[2] && detection.directionY == DirectionY.UP ||
+                    detection.centerY > nearlyOutOfFrameThresholds[3] && detection.directionY == DirectionY.DOWN) {
+                isNearlyOutOfFrame = true;
+            }
         }
         return isNearlyOutOfFrame;
     }

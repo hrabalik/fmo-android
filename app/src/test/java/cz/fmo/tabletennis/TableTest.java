@@ -17,6 +17,7 @@ import static org.junit.Assert.fail;
 public class TableTest {
     private Table table;
     private Point[] corners;
+    private Point[] net;
     @Before
     public void setUp() {
         corners = new Point[4];
@@ -24,13 +25,17 @@ public class TableTest {
         corners[1] = new Point(4,5);
         corners[2] = new Point(6,7);
         corners[3] = new Point(8,9);
-        table = new Table(corners);
+        net = new Point[2];
+        net[0] = new Point(2,3);
+        net[1] = new Point(7,8);
+        table = new Table(corners, net);
     }
 
     @After
     public void tearDown() {
         table = null;
         corners = null;
+        net = null;
     }
 
     @Test
@@ -52,6 +57,24 @@ public class TableTest {
     }
 
     @Test
+    public void getFarNetEnd() {
+        assertNotNull(table.getFarNetEnd());
+        assertEquals(table.getFarNetEnd(), net[1]);
+    }
+
+    @Test
+    public void getCloseNetEnd() {
+        assertNotNull(table.getCloseNetEnd());
+        assertEquals(table.getCloseNetEnd(), net[0]);
+    }
+
+    @Test
+    public void getNet() {
+        assertEquals(2, table.getNet().length);
+        assertSame(net, table.getNet());
+    }
+
+    @Test
     public void getCornerTopLeft() {
         assertNotNull(table.getCornerTopLeft());
         assertEquals(table.getCornerTopLeft(), corners[3]);
@@ -68,9 +91,24 @@ public class TableTest {
         for (int i=0; i<100; i++) {
             if(i != 4) {
                 try {
-                    table = new Table(new Point[i]);
+                    table = new Table(new Point[i], new Point[2]);
                     fail();
                 } catch (Table.NotFourCornersException ex) {
+                    // should throw an error message
+                    assertTrue(ex.getMessage().contains(String.valueOf(i)));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testThrowsExceptionOnInvalidNetEnds() {
+        for (int i=0; i<100; i++) {
+            if(i != 2) {
+                try {
+                    table = new Table(new Point[4], new Point[i]);
+                    fail();
+                } catch (Table.NotTwoNetEndsException ex) {
                     // should throw an error message
                     assertTrue(ex.getMessage().contains(String.valueOf(i)));
                 }
@@ -89,6 +127,10 @@ public class TableTest {
         properties.setProperty("c3_y","367");
         properties.setProperty("c4_x","363");
         properties.setProperty("c4_y","365");
+        properties.setProperty("n1_x","986");
+        properties.setProperty("n1_y","491");
+        properties.setProperty("n2_x","686");
+        properties.setProperty("n2_y","490");
         table = Table.makeTableFromProperties(properties);
         assertEquals(4, table.getCorners().length);
         assertEquals(147, table.getCornerDownLeft().x);
@@ -99,5 +141,10 @@ public class TableTest {
         assertEquals(367, table.getCornerTopRight().y);
         assertEquals(363, table.getCornerTopLeft().x);
         assertEquals(365, table.getCornerTopLeft().y);
+        assertEquals(2, table.getNet().length);
+        assertEquals(986, table.getCloseNetEnd().x);
+        assertEquals(491, table.getCloseNetEnd().y);
+        assertEquals(686, table.getFarNetEnd().x);
+        assertEquals(490, table.getFarNetEnd().y);
     }
 }
