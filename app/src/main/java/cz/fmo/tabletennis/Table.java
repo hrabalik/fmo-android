@@ -71,7 +71,7 @@ public class Table {
         return new Table(corners, net);
     }
 
-    public boolean isInsideTable(int x) {
+    public boolean isOn(int x) {
         double leftThreshold = this.getCornerTopLeft().x * 1.05;
         double rightThreshold = this.getCornerTopRight().x / 1.05;
         return (x >= leftThreshold && x <= rightThreshold);

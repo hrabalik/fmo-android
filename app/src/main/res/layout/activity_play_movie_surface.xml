@@ -125,6 +125,7 @@
             android:textSize="14sp"
             android:layout_gravity="center_vertical"/>
         <TextView
+            android:id="@+id/txtPlayMovieScoreLeft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/gameScoreStart"
@@ -140,6 +141,7 @@
             android:textStyle="bold"
             android:textColor="@android:color/secondary_text_light"/>
         <TextView
+            android:id="@+id/txtPlayMovieScoreRight"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/gameScoreStart"
