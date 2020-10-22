@@ -57,7 +57,7 @@
             android:layout_alignParentEnd="true"
             android:background="@drawable/radius_background"
             android:columnCount="2"
-            android:rowCount="2"
+            android:rowCount="5"
             android:padding="10dp">
 
             <TextView
@@ -103,6 +103,47 @@
                 android:textColor="@android:color/secondary_text_light"
                 android:textSize="14sp"
                 android:textStyle="bold" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="Current state:"
+                android:textAlignment="textStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/txtPlayMovieState"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="NONE"
+                android:textAlignment="textStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="12sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="Server:"
+                android:textAlignment="textStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp" />
+            <TextView
+                android:id="@+id/txtPlayMovieServing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:text="true"
+                android:textAlignment="textStart"
+                android:textColor="@android:color/secondary_text_light"
+                android:textSize="14sp"
+                android:textStyle="bold"/>
+
         </GridLayout>
 
     <GridLayout
@@ -111,7 +152,7 @@
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:rowCount="1"
-        android:columnCount="5"
+        android:columnCount="7"
         android:background="@drawable/radius_background"
         android:paddingVertical="4dp"
         android:paddingHorizontal="24dp">
@@ -125,20 +166,31 @@
             android:textSize="14sp"
             android:layout_gravity="center_vertical"/>
         <TextView
+            android:id="@+id/txtPlayMovieGameLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/gameScoreStart"
+            android:textSize="14sp"
+            android:layout_marginEnd="8dp"
+            android:layout_gravity="center_vertical"
+            android:textStyle="bold"
+            android:textColor="@android:color/secondary_text_light"/>
+        <TextView
             android:id="@+id/txtPlayMovieScoreLeft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/gameScoreStart"
             android:textSize="22sp"
-            android:layout_marginEnd="6dp"
+            android:layout_marginEnd="3dp"
             android:textStyle="bold"
             android:textColor="@android:color/secondary_text_light"/>
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/gameScoreDivider"
-            android:textSize="22sp"
+            android:textSize="18sp"
             android:textStyle="bold"
+            android:layout_gravity="center_vertical"
             android:textColor="@android:color/secondary_text_light"/>
         <TextView
             android:id="@+id/txtPlayMovieScoreRight"
@@ -146,7 +198,17 @@
             android:layout_height="wrap_content"
             android:text="@string/gameScoreStart"
             android:textSize="22sp"
-            android:layout_marginStart="6dp"
+            android:layout_marginStart="3dp"
+            android:textStyle="bold"
+            android:textColor="@android:color/secondary_text_light"/>
+        <TextView
+            android:id="@+id/txtPlayMovieGameRight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/gameScoreStart"
+            android:textSize="14sp"
+            android:layout_marginStart="8dp"
+            android:layout_gravity="center_vertical"
             android:textStyle="bold"
             android:textColor="@android:color/secondary_text_light"/>
         <TextView

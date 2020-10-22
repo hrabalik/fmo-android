@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId "cz.fmo"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
@@ -71,6 +71,12 @@ sourceSets {
         java {
             srcDirs = ["src/test/java", "src/androidTest/java"]
         }
+    }
+}
+
+task copyVideosToEmulator(type: Exec) {
+    doFirst {
+        commandLine 'adb', 'push', '../recordings/fast_1.mp4', '/storage/emulated/0/DCIM/camera/fast_1.mp4'
     }
 }
 

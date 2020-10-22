@@ -15,23 +15,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 1.8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Run Unit and Instrumentation Tests with Coverage Report
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 26
-        ndk: 16.1.4479499
-        cmake: 3.6.4111459
-        profile: Nexus 6
-        script: ./gradlew jacocoTestReport --info
-    - name: Push to SonarQube
-      env:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: 1.8
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Install adb tools
+        run: sudo apt-get -y install adb
+      - name: Start Android Emulator and Run Unit and Instrumentation Tests with Coverage Report
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 26
+          ndk: 16.1.4479499
+          cmake: 3.6.4111459
+          profile: Nexus 6
+          script: ./runTestsOnEmulator.sh
+      - name: Push to SonarQube
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: ./gradlew sonarqube
+        run: ./gradlew sonarqube

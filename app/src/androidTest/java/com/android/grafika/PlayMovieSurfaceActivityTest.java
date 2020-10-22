@@ -37,7 +37,10 @@ public class PlayMovieSurfaceActivityTest {
 
     @Rule
     public ActivityTestRule<PlayMovieSurfaceActivity> pmsActivityRule = new ActivityTestRule<PlayMovieSurfaceActivity>(PlayMovieSurfaceActivity.class);
-    public GrantPermissionRule grantPermissionRule = GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE);
+    @Rule
+    public GrantPermissionRule grantPermissionRuleCamera = GrantPermissionRule.grant(Manifest.permission.CAMERA);
+    @Rule
+    public GrantPermissionRule grantPermissionRuleStorage = GrantPermissionRule.grant(Manifest.permission.READ_EXTERNAL_STORAGE);
 
     @Before
     public void setUp() throws Exception {

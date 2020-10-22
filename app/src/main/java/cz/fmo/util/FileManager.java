@@ -76,9 +76,10 @@ public final class FileManager {
                 return p.matcher(name).matches();
             }
         });
-        if (out.length>0) {
-            Arrays.sort(out);
+        if(out == null) {
+            out = new String[0];
         }
+        Arrays.sort(out);
         return out;
     }
 }

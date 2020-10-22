@@ -52,7 +52,7 @@ public class TrackSetTest {
         int delay = 1000/FRAME_RATE;
         long detectionTime = System.nanoTime();
         spyTrackSet.setConfig(mockConfig);
-        Lib.Detection[] someDetections = DetectionGenerator.makeDetectionsInXDirection(true);
+        Lib.Detection[] someDetections = DetectionGenerator.makeDetectionsInXDirectionOnTable(true);
         for (Lib.Detection someDetection : someDetections) {
             detectionTime = detectionTime + delay;
             spyTrackSet.addDetections(new Lib.Detection[]{someDetection}, SOME_WIDTH, SOME_HEIGHT, detectionTime);
@@ -79,7 +79,7 @@ public class TrackSetTest {
         // generate some random object detections
         for (int i = 0; i<nObjects; i++) {
             double r = Math.random();
-            someDetections[i] = DetectionGenerator.makeDetectionsInXDirection(r > 0.5);
+            someDetections[i] = DetectionGenerator.makeDetectionsInXDirectionOnTable(r > 0.5);
         }
 
         // now use the detections an add them to trackSet
@@ -103,7 +103,7 @@ public class TrackSetTest {
     public void clear() {
         spyTrackSet.setConfig(mockConfig);
         assertEquals(0, spyTrackSet.getTracks().size());
-        Lib.Detection[] someDetections = DetectionGenerator.makeDetectionsInXDirection(Math.random() > 0.5);
+        Lib.Detection[] someDetections = DetectionGenerator.makeDetectionsInXDirectionOnTable(Math.random() > 0.5);
         spyTrackSet.addDetections(new Lib.Detection[]{someDetections[0]}, SOME_WIDTH, SOME_HEIGHT, 1234);
         assertEquals(1, spyTrackSet.getTracks().size());
         spyTrackSet.clear();
