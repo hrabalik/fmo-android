@@ -1,5 +1,7 @@
 package cz.fmo.tabletennis;
 
+import com.android.grafika.Log;
+
 import cz.fmo.Lib;
 import cz.fmo.data.TrackSet;
 import cz.fmo.events.EventDetectionCallback;
@@ -71,6 +73,7 @@ public class Referee implements EventDetectionCallback {
                 if ((server == Side.LEFT && tracks.getTracks().get(0).getLatest().directionX == DirectionX.RIGHT) ||
                         (server == Side.RIGHT && tracks.getTracks().get(0).getLatest().directionX == DirectionX.LEFT)) {
                     this.state = GameState.SERVING;
+                    currentBallSide = server;
                 }
                 break;
             case SERVING:
@@ -124,12 +127,12 @@ public class Referee implements EventDetectionCallback {
     private void applyRuleSet() {
         if (bounces == 1) {
             if (this.currentStriker == this.currentBallSide) {
-                System.out.println("Bounce on same Side");
+                Log.d("Bounce on same Side");
                 faultBySide(this.currentStriker);
             }
         } else if (bounces >= 2) {
             if (this.currentStriker != this.currentBallSide) {
-                System.out.println("Double Bounce");
+                Log.d("Double Bounce");
                 pointBySide(this.currentStriker);
             }
         }
@@ -137,7 +140,7 @@ public class Referee implements EventDetectionCallback {
 
     private void applyRuleSetServing() {
         if (bounces > 1 && currentBallSide == server) {
-            System.out.println("Server Fault: Multiple Bounces on same Side");
+            Log.d("Server Fault: Multiple Bounces on same Side");
             faultBySide(this.server);
         }
     }

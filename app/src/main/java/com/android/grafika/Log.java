@@ -2,6 +2,7 @@ package com.android.grafika;
 
 @SuppressWarnings("SameParameterValue")
 public class Log {
+    private Log(){}
     private static final String TAG = "Grafika";
 
     public static void d(String msg) {

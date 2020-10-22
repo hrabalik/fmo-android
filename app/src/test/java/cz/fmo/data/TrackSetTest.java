@@ -46,6 +46,14 @@ public class TrackSetTest {
         verify(spyTrackSet, times(1)).clear();
     }
 
+    @Test(expected = RuntimeException.class)
+    public void addInvalidDetections() {
+        spyTrackSet.setConfig(mockConfig);
+        Lib.Detection[] someDetections = DetectionGenerator.makeDetectionsInXDirectionOnTable(true);
+        someDetections[0].id = -123;
+        spyTrackSet.addDetections(new Lib.Detection[]{someDetections[0]}, SOME_WIDTH, SOME_HEIGHT, System.nanoTime());
+    }
+
     @Test
     public void oldTracksGetFilteredOutAfterNFrames() {
         int nFrames = 4; // needs to be bigger or equal to FRAMES_UNTIL_OLD_TRACK_REMOVAL in TrackSet.java
